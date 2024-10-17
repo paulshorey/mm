@@ -31,9 +31,11 @@ export default function Logs({ logs }: any) {
         key={i}
         title={Title}
         buttonsRight={[
-          log.dev ? <Badge>dev</Badge> : undefined,
-          <Badge className="font-bold">{log.type}</Badge>,
-          <Badge>
+          log.dev ? <Badge key="1">dev</Badge> : undefined,
+          <Badge key="2" className="font-bold">
+            {log.type}
+          </Badge>,
+          <Badge key="3">
             <LocalShortTime epoch={log.time} />
           </Badge>,
         ]}
