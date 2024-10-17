@@ -1,7 +1,7 @@
 'use server';
 
-import { sql } from '@vercel/postgres';
 import { LogsData, LogsOptions } from './types';
+import { getSql } from '@/src/lib/sql/getSql';
 
 export const addLog = async function (data: LogsData, options: LogsOptions = {}) {
   'use server';
@@ -11,8 +11,10 @@ export const addLog = async function (data: LogsData, options: LogsOptions = {})
   const dev = process.env.NODE_ENV === 'development';
   try {
     const dataString = JSON.stringify(data, null, ' ');
-    await sql`INSERT INTO events.logs (type, data, access_key, dev, time) VALUES
-      (${type}, ${dataString}, ${access_key}, ${dev},  ${Date.now()}) RETURNING *`;
+    await getSql(
+      'INSERT INTO events.logs (type, data, access_key, dev, time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [type, dataString, access_key, dev, Date.now()]
+    );
     //@ts-ignore
   } catch (e: Error) {
     try {
@@ -21,8 +23,10 @@ export const addLog = async function (data: LogsData, options: LogsOptions = {})
         message: e.message,
         stack: e.stack,
       });
-      await sql`INSERT INTO events.logs (type, data, access_key, dev, time) VALUES
-      ('Error', ${dataString}, ${access_key}, ${dev}, ${Date.now()}) RETURNING *`;
+      await getSql(
+        'INSERT INTO events.logs (type, data, access_key, dev, time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        ['Error', dataString, access_key, dev, Date.now()]
+      );
       //@ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (e: Error) {
