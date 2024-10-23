@@ -1,12 +1,12 @@
 'use client';
 
 import { Accordion } from '@mantine/core';
-import Json from './Json';
+import Json from '@my/fe/components/blocks/Json';
 import classes from './Logs.module.scss';
 import Collapsed from './LogCollapsed';
-import LocalShortTime from './LocalShortTime';
+import LocalShortTime from '@my/fe/components/inline/LocalShortTime';
 // import { cc } from '../../lib/cc';
-import Badge from './Badge';
+import Badge from '@my/fe/components/inline/Badge';
 
 export default function Logs({ logs }: any) {
   // cc.info(['client', 'Logs.tsx', `logs.length=${logs.length}`]);
@@ -31,7 +31,6 @@ export default function Logs({ logs }: any) {
         key={i}
         title={Title}
         buttonsRight={[
-          log.access_key ? <Badge>{log.access_key}</Badge> : undefined,
           log.dev ? <Badge>dev</Badge> : undefined,
           <Badge className="font-bold">{log.type}</Badge>,
           <Badge>

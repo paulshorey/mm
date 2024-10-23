@@ -5,6 +5,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 export default withBundleAnalyzer({
+  transpilePackages: ['@my/fe', '@my/be'],
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,

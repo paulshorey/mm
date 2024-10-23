@@ -9,7 +9,7 @@ import { theme } from '@my/fe/styles/theme';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 export const metadata = {
-  title: 'Web data',
+  title: 'Logs',
 };
 
 export default async function RootLayout({ children }: { children: any }) {

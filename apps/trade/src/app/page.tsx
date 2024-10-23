@@ -1,4 +1,4 @@
-import { ErrorTemplate } from '@src/components/ErrorTemplate';
+import { ErrorTemplate } from '@my/fe/components/mains/ErrorTemplate';
 import {
   // OrderExecution,
   // OrderSide,
@@ -11,7 +11,7 @@ import {
   Network,
   IndexerClient,
 } from '@dydxprotocol/v4-client-js';
-import Json from '@src/components/ui/Json';
+import Json from '@my/fe/components/blocks/Json';
 
 export const revalidate = 0;
 
