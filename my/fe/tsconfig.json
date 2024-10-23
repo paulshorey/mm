@@ -1,13 +1,8 @@
 {
   "extends": "@my/config/ts/react-library.json",
   "compilerOptions": {
-    "verbatimModuleSyntax": false,
-    "incremental": true,
-    "baseUrl": ".",
-    "paths": {
-      "@my/fe/*": ["./*"]
-    }
+    "outDir": "dist"
   },
-  "include": ["src", "components", "styles"],
+  "include": ["**/*"],
   "exclude": ["node_modules", "dist"]
 }
