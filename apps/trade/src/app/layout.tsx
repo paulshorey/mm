@@ -5,7 +5,7 @@ import '@src/styles/mantine.scss';
 // import 'react-json-view-lite/dist/index.css';
 import { MantineProvider } from '@mantine/core';
 import { Analytics } from '@vercel/analytics/react';
-import { theme } from '@/theme';
+import { theme } from '@my/fe/styles/theme';
 
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
