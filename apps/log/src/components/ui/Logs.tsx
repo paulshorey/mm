@@ -31,9 +31,9 @@ export default function Logs({ logs }: any) {
         key={i}
         title={Title}
         buttonsRight={[
-          log.dev ? <Badge>dev</Badge> : undefined,
-          <Badge className="font-bold">{log.type}</Badge>,
-          <Badge>
+          log.dev ? <Badge key="dev">dev</Badge> : undefined,
+          <Badge key="type" className="font-bold">{log.type}</Badge>,
+          <Badge key="time">
             <LocalShortTime epoch={log.time} />
           </Badge>,
         ]}
@@ -46,5 +46,5 @@ export default function Logs({ logs }: any) {
     );
   });
 
-  return <Accordion className={classes.Accordion}>{sections}</Accordion>;
+  return <Accordion className={classes.Accordion}>{sections}</Accordion>
 }

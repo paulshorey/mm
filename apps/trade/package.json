@@ -20,6 +20,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@my/fe": "workspace:*",
+    "@my/be": "workspace:*",
     "@dydxprotocol/v4-client-js": "^1.11.1",
     "@mantine/code-highlight": "^7.13.2",
     "@mantine/core": "7.13.4",
@@ -48,6 +50,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@my/config": "workspace:*",
     "@next/eslint-plugin-next": "^14.2.15",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^14.3.1",
