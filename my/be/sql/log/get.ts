@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { sqlQuery } from "../sqlQuery";
 import { pool } from "../pool/events";
+import { cc } from "../../cc";
 
 type Output = {
   ip?: string;
@@ -14,7 +15,11 @@ type Output = {
   };
 };
 
-export const get = async function (): Promise<Output> {
+type Props = {
+  where?: Record<string, string | string[]>;
+};
+
+export const get = async function ({ where }: Props = {}): Promise<Output> {
   "use server";
 
   const output = {} as Output;
@@ -22,7 +27,22 @@ export const get = async function (): Promise<Output> {
   const ip = headersList.get("x-forwarded-for") || headersList.get("remote-addr") || "IP not available";
 
   try {
-    const result = await sqlQuery(pool, "SELECT * FROM v1.logs ORDER BY time DESC LIMIT 100");
+    let whereSQL = "";
+    let whereArr = [];
+    if (where) {
+      for (let key in where) {
+        let val = where[key];
+        if (Array.isArray(val)) {
+          whereArr.push(`${key} IN ('${val.join("','")}')`);
+        } else {
+          whereArr.push(`${key}='${val?.replace(/'/g, "''")}'`);
+        }
+      }
+    }
+    if (whereArr.length) {
+      whereSQL = "WHERE " + whereArr.join(" AND ");
+    }
+    const result = await sqlQuery(pool, `SELECT * FROM v1.logs ${whereSQL} ORDER BY time DESC LIMIT 100`);
     output.ip = ip;
     output.result = result;
     //@ts-ignore
@@ -35,8 +55,7 @@ export const get = async function (): Promise<Output> {
         stack: e.stack,
       };
       output.error = error;
-      const dataString = JSON.stringify(error);
-      await sqlQuery(pool, "INSERT INTO v1.logs (type, data, dev, time) VALUES ($1, $2, $3, $4, $5) RETURNING *", ["Error", dataString, dev, Date.now()]);
+      cc.error("@my/be/sql/log Error", error);
       //@ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (e: Error) {

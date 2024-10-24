@@ -18,7 +18,7 @@ export const add = async function (logData: LogsData, options: LogsOptions = {})
   try {
     // Log
     const stack = JSON.stringify({ ...logData, ...addr }, null, " ");
-    const message = addr?.server_location || addr?.server_ip || "unknown server address";
+    const message = options?.title || options?.message || addr?.server_location || addr?.server_ip || "unknown server address";
     await sqlQuery(pool, sql, [type, message, stack, access_key, server_name, app_name, dev, Date.now()]);
     return stack;
     //@ts-ignore

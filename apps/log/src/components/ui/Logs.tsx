@@ -1,28 +1,35 @@
-'use client';
+'use client'
 
-import Accordion from '@my/fe/components/blocks/Accordion';
-import Json from '@my/fe/components/blocks/Json';
-import classes from './Logs.module.scss';
-import Collapsed from './LogCollapsed';
-import LocalShortTime from '@my/fe/components/inline/LocalShortTime';
-// import { cc } from '../../lib/cc';
-import Badge from '@my/fe/components/inline/Badge';
+import Accordion from '@my/fe/components/blocks/Accordion'
+import Json from '@my/fe/components/blocks/Json'
+import classes from './Logs.module.scss'
+import Collapsed from './LogCollapsed'
+import LocalShortTime from '@my/fe/components/inline/LocalShortTime'
+import Badge from '@my/fe/components/inline/Badge'
+import Link from 'next/link'
+// import { cc } from '@my/be/cc';
+// import { useEffect } from 'react';
 
-export default function Logs({ logs }: any) {
-  // cc.info(['client', 'Logs.tsx', `logs.length=${logs.length}`]);
+export default function Logs({ logs, where }: any) {
+  // cc.info('Logs client rendered', ['client', 'Logs.tsx', `logs.length=${logs.length}`]);
+  // useEffect(() => {
+  //   cc.info('Logs client useEffect', ['client', 'Logs.tsx', `logs.length=${logs.length}`]);
+  // },[]);
+  let tempReset = false
+  if (Object.keys(where).length > 0) {
+    tempReset = true
+  }
+
   const sections = logs.map((log: any, i: number) => {
-    let string = log.data;
-    if (typeof string === 'string' && (string[0] === '{' || string[0] === '[')) {
-      string = string.substring(1, string.length - 1);
-    }
-    let dataParsed;
+    let message = log.message
+    let dataParsed
     try {
-      dataParsed = log.data ? JSON.parse(log.data) : null;
+      dataParsed = log.stack ? JSON.parse(log.stack) : null
     } catch (e) {
-      dataParsed = `Could not serialize log.data=${log.data}`;
+      dataParsed = `Could not serialize log.stack=${log.stack}`
     }
 
-    const Title = string?.substring(0, 100);
+    const Title = message
     return (
       <Collapsed
         classNames={{
@@ -31,8 +38,18 @@ export default function Logs({ logs }: any) {
         key={i}
         title={Title}
         buttonsRight={[
-          log.dev ? <Badge key="dev">dev</Badge> : undefined,
-          <Badge key="type" className="font-bold">{log.type}</Badge>,
+          <Badge className="font-bold pr-2">
+            <Link key="edit" href={`/?name=${log.name}`}>
+              {' '}
+              {log.name}{' '}
+            </Link>
+          </Badge>,
+          log.dev ? (
+            <Badge key="dev" className="pr-2">
+              {' '}
+              dev{' '}
+            </Badge>
+          ) : undefined,
           <Badge key="time">
             <LocalShortTime epoch={log.time} />
           </Badge>,
@@ -43,8 +60,13 @@ export default function Logs({ logs }: any) {
       >
         <Json data={dataParsed} />
       </Collapsed>
-    );
-  });
+    )
+  })
 
-  return <Accordion className={classes.Accordion}>{sections}</Accordion>
+  return (
+    <div>
+      {tempReset && <Link href="/">◀ clear</Link>}
+      <Accordion className={classes.Accordion}>{sections}</Accordion>
+    </div>
+  )
 }

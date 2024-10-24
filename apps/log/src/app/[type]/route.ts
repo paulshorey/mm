@@ -11,6 +11,7 @@ type RouteParams = {
 const handler = async (request: NextRequest, { params }: RouteParams) => {
   try {
     const type = params.type;
+    const qs = Object.fromEntries(request.nextUrl.searchParams.entries());
 
     let body;
     const contentType = request.headers.get('Content-Type');
@@ -31,7 +32,7 @@ const handler = async (request: NextRequest, { params }: RouteParams) => {
     const access_key =
       request.nextUrl.searchParams.get('access_key') || request.headers.get('x-access_key') || '';
 
-    const data = await add(body, { type, access_key });
+    const data = await add(body, { type, access_key, message: qs.q||qs.title || qs.message });
     return formatResponse({
       saved: true,
       data,
