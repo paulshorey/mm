@@ -12,13 +12,9 @@
     "turbo": "^2.2.3",
     "typescript": "^5.4.5"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "pnpm@9.12.2",
   "XpackageManager": "bun@1.1.32",
   "engines": {
     "node": ">=18"
-  },
-  "workspaces": [
-    "apps/*",
-    "my/*"
-  ]
+  }
 }
