@@ -2,9 +2,7 @@ import '@my/fe/styles/tailwind.css';
 import '@my/fe/styles/global.scss';
 import '@mantine/core/styles.css';
 import '@my/fe/styles/mantine.scss';
-// import 'react-json-view-lite/dist/index.css';
-import { MantineProvider } from '@mantine/core';
-import { theme } from '@my/fe/styles/theme';
+import { Providers } from '@my/fe/components/wrappers/Providers';
 
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
@@ -24,9 +22,7 @@ export default async function RootLayout({ children }: { children: any }) {
         />
       </head>
       <body>
-        <MantineProvider forceColorScheme={defaultColorScheme} theme={theme}>
-          {children}
-        </MantineProvider>
+        <Providers defaultColorScheme={defaultColorScheme}>{children}</Providers>
       </body>
     </html>
   );

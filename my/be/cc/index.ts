@@ -1,5 +1,5 @@
-import { addLog } from "../sql/addLog";
-import { LogsData, LogsOptions } from "../sql/types";
+import { addLog } from "../sql/log/add";
+import { LogsData, LogsOptions } from "../sql/log/types";
 
 export const cc = {
   log: (getData: LogsData, options?: LogsOptions) => addLog(getData, { ...options, type: "log" }),
