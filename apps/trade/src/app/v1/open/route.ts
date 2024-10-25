@@ -3,13 +3,14 @@ import { formatResponse } from '@my/be/api/formatResponse'
 import { add } from '@my/be/sql/log/add'
 // import { dydxScout } from '@src/be/dydx/scout'
 
+//, { params }: RouteParams
 type RouteParams = {
   params: {
     type: string
   }
 }
 
-const handler = async (request: NextRequest, { params }: RouteParams) => {
+const handler = async (request: NextRequest) => {
   try {
     let bodyData
     let bodyText = ''
