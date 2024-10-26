@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
-import { add } from '@my/be/sql/log/add'
+import { addLog } from '@my/be/sql/log/add'
 import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
 import { dydxScout } from '@src/be/dydx/scout'
 
@@ -22,7 +22,7 @@ const handler = async (request: NextRequest) => {
     const data = dydxScout()
 
     // notify log
-    const log = await add('trade-scout', bodyText, { data: bodyData })
+    const log = await addLog('trade-scout', bodyText, { data: bodyData })
 
     // api response
     return formatResponse({

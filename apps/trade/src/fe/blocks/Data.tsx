@@ -1,5 +1,6 @@
 'use client'
 
+import classes from './Data.module.scss'
 import Json from '@my/fe/src/components/blocks/Json'
 import Collapsed from '@my/fe/src/components/blocks/Collapsed'
 // import LocalShortTime from '@my/fe/src/components/inline/LocalShortTime'
@@ -10,6 +11,7 @@ export default function Data({ data }: { data: Record<string, any> }) {
   const sections = Object.entries(data).map(([key, obj]: any, i: number) => {
     let heading = key
     let dataParsed = obj
+    const expandUntil = key === 'orders' ? 1 : 2
 
     return (
       <Collapsed
@@ -51,10 +53,10 @@ export default function Data({ data }: { data: Record<string, any> }) {
         isClickToToggle
         className="relative px-4 pt-3 pb-3 border-b border-gray-600 "
       >
-        <Json data={dataParsed} />
+        <Json data={dataParsed} expandUntil={expandUntil} />
       </Collapsed>
     )
   })
 
-  return <main>{sections}</main>
+  return <main className={classes.container}>{sections}</main>
 }

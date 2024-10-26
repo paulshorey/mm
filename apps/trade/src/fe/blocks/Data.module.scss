@@ -1,20 +1,8 @@
-.Accordion {
-}
-.AccordionItem {
-}
-.AccordionControl {
-}
-.AccordionPanel {
-  > div {
-    padding: 0 0 0.66rem 0.66rem;
+.container {
+  span[role='button'] {
+    text-decoration: none !important;
   }
-}
-
-.Title {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
-  p {
-    margin: 0.33rem 0;
+  span[role='button']:hover {
+    text-decoration: underline !important;
   }
 }
