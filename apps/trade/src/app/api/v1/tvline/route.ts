@@ -7,6 +7,7 @@ import { dydxTest } from '@src/be/dydx/test'
 
 const handler = async (request: NextRequest) => {
   try {
+    const qs = Object.fromEntries(request.nextUrl.searchParams.entries())
     let bodyData
     let bodyText = ''
     const contentType = request.headers.get('Content-Type')
@@ -15,7 +16,7 @@ const handler = async (request: NextRequest) => {
     } else {
       bodyText = (await request.text()) || ''
     }
-    let access_key = request.nextUrl.searchParams.get('access_key')
+    // let access_key = request.nextUrl.searchParams.get('access_key')
     // if (!access_key) throw new Error('!access_key')
     // if (
     //   !(access_key === 'itisverysecretddd' || access_key === 'postmansecret')
@@ -27,7 +28,8 @@ const handler = async (request: NextRequest) => {
     // sendToMyselfSMS(`${bodyText} tvline#${access_key}`)
 
     // notify log
-    const log = await addLog('trade-tvline', bodyText + '...' + access_key, {
+    const log = await addLog('trade-tvline', bodyText, {
+      qs,
       data: bodyData,
     })
 
