@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
-import { dydxTest } from '@src/be/dydx/test'
+import { dydxTestMarket } from '@src/be/dydx/testMarket'
 import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
 import { addLog } from '@my/be/sql/log/add'
 import { hash } from 'crypto'
@@ -19,7 +19,7 @@ const handler = async (request: NextRequest) => {
     }
 
     // dydx status
-    const data = await dydxTest({
+    const data = await dydxTestMarket({
       ticker: 'NEAR-USD',
       side: 'SHORT',
       size: 1,

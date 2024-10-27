@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
 import { addLog } from '@my/be/sql/log/add'
 import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-import { dydxTest } from '@src/be/dydx/test'
+import { dydxTestMarket } from '@src/be/dydx/testMarket'
 // import { dydxScout } from '@src/be/dydx/scout'
 
 const handler = async (request: NextRequest) => {
@@ -35,13 +35,13 @@ const handler = async (request: NextRequest) => {
 
     // trade
     // if (bodyText.trim() === 'buy-1-sol') {
-    //   await dydxTest({
+    //   await dydxTestMarket({
     //     ticker: 'NEAR-USD',
     //     side: 'LONG',
     //     size: 1,
     //   })
     // } else if (bodyText.trim() === 'sell-1-sol') {
-    //   await dydxTest({
+    //   await dydxTestMarket({
     //     ticker: 'NEAR-USD',
     //     side: 'SHORT',
     //     size: 1,
