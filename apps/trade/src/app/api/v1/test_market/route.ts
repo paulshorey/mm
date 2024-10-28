@@ -19,6 +19,12 @@ const handler = async (request: NextRequest) => {
       bodyText = await request.text()
     }
 
+    let access_key = request.nextUrl.searchParams.get('access_key')
+    if (!access_key) throw new Error('!access_key')
+    if (!(access_key === 'testkeyx' || access_key === 'postmansecret')) {
+      throw new Error('wrong access_key')
+    }
+
     // dydx status
     const trades = parseLine(bodyText)
     const trade = trades[0]

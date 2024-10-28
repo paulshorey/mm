@@ -1,60 +1,50 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
-import { addLog } from '@my/be/sql/log/add'
-import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
 import { dydxTestMarket } from '@src/be/dydx/tvline'
-// import { dydxScout } from '@src/be/dydx/scout'
+import { parseLine } from '@src/be/tv/parseLine'
+// import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
+// import { addLog } from '@my/be/sql/log/add'
+// import { hash } from 'crypto'
+
+export const maxDuration = 70
 
 const handler = async (request: NextRequest) => {
   try {
-    const qs = Object.fromEntries(request.nextUrl.searchParams.entries())
     let bodyData
     let bodyText = ''
     const contentType = request.headers.get('Content-Type')
     if (contentType && contentType.includes('form')) {
       bodyData = Object.fromEntries(await request.formData())
     } else {
-      bodyText = (await request.text()) || ''
+      bodyText = await request.text()
     }
-    // let access_key = request.nextUrl.searchParams.get('access_key')
-    // if (!access_key) throw new Error('!access_key')
-    // if (
-    //   !(access_key === 'itisverysecretddd' || access_key === 'postmansecret')
-    // ) {
-    //   throw new Error('wrong access_key')
-    // }
 
-    const order1 = undefined as any
+    let access_key = request.nextUrl.searchParams.get('access_key')
+    if (!access_key) throw new Error('!access_key')
+    if (!(access_key === 'testkeyx' || access_key === 'postmansecret')) {
+      throw new Error('wrong access_key')
+    }
 
-    // notify sms
-    // sendToMyselfSMS(`${bodyText} tvline#${access_key}`)
-
-    // notify log
-    const log = await addLog('trade-tvline', bodyText, {
-      qs,
-      data: bodyData,
-    })
-
-    // trade
-    // if (bodyText.trim() === 'buy-1-sol') {
-    //   await dydxTestMarket({
-    //     ticker: 'NEAR-USD',
-    //     side: 'LONG',
-    //     size: 1,
-    //   })
-    // } else if (bodyText.trim() === 'sell-1-sol') {
-    //   await dydxTestMarket({
-    //     ticker: 'NEAR-USD',
-    //     side: 'SHORT',
-    //     size: 1,
-    //   })
-    // }
+    // dydx status
+    const trades = parseLine(bodyText)
+    const trade = trades[0]
+    const data = await dydxTestMarket(trade)
+    fixDydxDataTx(data)
 
     // api response
+    if (data?.error) {
+      return formatResponse(
+        {
+          ok: false,
+          data,
+          message: data.error,
+        },
+        405
+      )
+    }
     return formatResponse({
       ok: true,
-      // data,
-      log,
+      data,
     })
 
     // @ts-ignore
@@ -71,14 +61,52 @@ const handler = async (request: NextRequest) => {
   }
 }
 
-//, { params }: RouteParams
-//, { params }
-//, { params }: RouteParams
-// type RouteParams = {
-//   params: {
-//     type: string
-//   }
-// }
 export async function POST(request: NextRequest) {
   return handler(request)
+}
+
+// process.on('uncaughtException', async (err) => {
+//   const message = `Uncaught Exception: ${
+//     err?.message ? err.message : err.toString()
+//   }`
+//   console.error(message, err)
+//   sendToMyselfSMS(message)
+//   await addLog('trade-error', message, {
+//     str: err?.toString(),
+//     json: JSON.stringify(err),
+//   })
+//   return formatResponse({ error: 'Uncaught Exception' }, 500)
+// })
+// process.on('unhandledRejection', async (reason, promise) => {
+//   const message = `Unhandled Rejection: ${reason ? reason : promise.toString()}`
+//   console.error(message, promise, 'reason:', reason)
+//   sendToMyselfSMS(message)
+//   await addLog('trade-error', message, {
+//     str: reason?.toString(),
+//     json: JSON.stringify(reason),
+//   })
+//   return formatResponse({ error: 'Unhandled Rejection' }, 500)
+// })
+
+function fixDydxDataTx(data: any) {
+  if (typeof data?.tx === 'object' && data?.tx !== null) {
+    try {
+      if (data.tx.data)
+        data.tx.data = btoa(String.fromCharCode.apply(null, data.tx.data))
+      if (data.tx.hash)
+        data.tx.hash = btoa(String.fromCharCode.apply(null, data.tx.hash))
+      data.tx = {
+        code: data.tx.code,
+        codespace: data.tx.codespace,
+        log: data.tx.log,
+        events: data.tx.events,
+        data: data.tx.data,
+        hash: data.tx.hash,
+      }
+    } catch (error) {
+      console.error('error in JSON.stringify(data.tx)', error)
+      data.tx = {}
+    }
+  }
+  return data
 }

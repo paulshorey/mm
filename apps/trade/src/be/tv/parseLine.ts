@@ -10,7 +10,7 @@ export const parseLine = function (text: string): any {
     let sl = Number(p[3])
     let trade = {
       side: p[0] === 'buy' ? 'LONG' : p[0] === 'sell' ? 'SHORT' : '',
-      dollar: isNumber(dollar) && dollar >= 10 && dollar <= 1000 ? dollar : 0,
+      dollar: isNumber(dollar) && dollar >= 200 && dollar <= 1000 ? dollar : 0,
       ticker: typeof p[2] === 'string' ? p[2].toUpperCase() : '',
       sl: isNumber(sl) && sl > 0 && sl <= 5 ? sl : 0,
     }

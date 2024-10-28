@@ -10,10 +10,10 @@ import {
   Network,
   IndexerClient,
 } from '@dydxprotocol/v4-client-js'
-import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-import { addLog } from '@my/be/sql/log/add'
+// import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
+// import { addLog } from '@my/be/sql/log/add'
+// import { getPosition as getPositionRaw } from './actions/getPosition'
 import { marketOrder } from './orders/marketOrder'
-import { getPosition as getPositionRaw } from './actions/getPosition'
 import { catchError } from '@src/be/dydx/actions/catchError'
 import { stopMarketOrder } from '@src/be/dydx/orders/stopMarketOrder'
 import { isNumber } from '../../lib/numbers'
