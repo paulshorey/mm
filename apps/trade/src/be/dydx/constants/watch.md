@@ -1,12 +1,16 @@
-# New and Meme coins that might go to the moon
+## Maybe already bottomed - buy some ASAP
 
-## Buy these without stop loss and hope for the moon!
+-
+
+## Chart looks good - buy during election
 
 - BEAM - MONERO 2.0 ?
 
-- ZERO - chart looks extremely good!
-
 - XAI - also looks like a moonshot - but it's a L3 on Arbitrium and does the same thing as SUPER
+
+## Look promisig but risky right now
+
+- ZERO - chart looks extremely good!
 
 - TREMP - can it live without BODEN? price since August looks like a condensed BTC since last summer
 
@@ -17,5 +21,3 @@
 - SUNDOG - very very new - maybe its worth a shot? But it's on the TRON chain, so IDK if anybody cares about that
 
 - NOT - NOT-USD, like anything except USD hahaha - just launched in May, consolidating down to a stable price, probably drop once more
-
--

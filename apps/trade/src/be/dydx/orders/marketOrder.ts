@@ -4,29 +4,36 @@ import {
   OrderTimeInForce,
   OrderSide,
 } from '@dydxprotocol/v4-client-js'
+import type { CompositeClient } from '@dydxprotocol/v4-client-js/build/src/clients/composite-client.d.ts'
 
 type Props = {
-  compositeClient: any
+  compositeClient: CompositeClient
   subaccount: any
   ticker: string
   side: 'SHORT' | 'LONG'
   size: number
-  triggerPrice: number
+  price: number
 }
 
-export const stopMarketOrder = ({
+export const marketOrder = ({
   compositeClient,
   subaccount,
   ticker,
   side,
   size,
-  triggerPrice,
+  price,
 }: Props) => {
+  console.log('wtf', {
+    ticker,
+    side,
+    size,
+    price,
+  })
   const orderId = Math.ceil(Math.random() * 1000000)
-  const type = OrderType.STOP_MARKET // order type
+  const type = OrderType.MARKET // order type
   const timeInForce = OrderTimeInForce.GTT // UX TimeInForce
-  const goodTilTimeInSeconds = 60 * 60 * 24 * 7 // week
-  const execution = OrderExecution.IOC // OrderExecution.DEFAULT
+  const goodTilTimeInSeconds = Date.now() / 1000 + 60 * 5 // epoch seconds
+  const execution = OrderExecution.DEFAULT
   const executionPrice = side === 'LONG' ? 10000000 : 0.01 //= 30_000; // price of 30,000;
   const postOnly = true // If true, order is post only
   const reduceOnly = false // if true, the order will only reduce the position size
@@ -42,8 +49,7 @@ export const stopMarketOrder = ({
     goodTilTimeInSeconds,
     execution,
     postOnly,
-    reduceOnly,
-    triggerPrice
+    reduceOnly
   )
   return orderId
 }

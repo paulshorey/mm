@@ -11,22 +11,25 @@ type Props = {
   ticker: string
   side: 'SHORT' | 'LONG'
   size: number
+  triggerPrice: number
 }
 
-export const marketOrder = ({
+export const stopMarketOrder = ({
   compositeClient,
   subaccount,
   ticker,
   side,
-  size,
+  size: sizeAbs,
+  triggerPrice,
 }: Props) => {
+  const size = side === 'LONG' ? sizeAbs : -sizeAbs
   const orderId = Math.ceil(Math.random() * 1000000)
-  const type = OrderType.MARKET // order type
+  const type = OrderType.STOP_MARKET // order type
   const timeInForce = OrderTimeInForce.GTT // UX TimeInForce
-  const goodTilTimeInSeconds = Date.now() / 1000 + 60 * 5 // epoch seconds
-  const execution = OrderExecution.DEFAULT
+  const goodTilTimeInSeconds = 60 * 60 * 24 * 7 // week
+  const execution = OrderExecution.IOC // OrderExecution.DEFAULT
   const executionPrice = side === 'LONG' ? 10000000 : 0.01 //= 30_000; // price of 30,000;
-  const postOnly = false // If true, order is post only
+  const postOnly = true // If true, order is post only
   const reduceOnly = false // if true, the order will only reduce the position size
   compositeClient.placeOrder(
     subaccount,
@@ -40,7 +43,8 @@ export const marketOrder = ({
     goodTilTimeInSeconds,
     execution,
     postOnly,
-    reduceOnly
+    reduceOnly,
+    triggerPrice
   )
   return orderId
 }

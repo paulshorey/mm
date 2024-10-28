@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
 import { addLog } from '@my/be/sql/log/add'
 import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-import { dydxTestMarket } from '@src/be/dydx/testMarket'
+import { dydxTestMarket } from '@src/be/dydx/tvline'
 // import { dydxScout } from '@src/be/dydx/scout'
 
 const handler = async (request: NextRequest) => {
@@ -23,6 +23,8 @@ const handler = async (request: NextRequest) => {
     // ) {
     //   throw new Error('wrong access_key')
     // }
+
+    const order1 = undefined as any
 
     // notify sms
     // sendToMyselfSMS(`${bodyText} tvline#${access_key}`)

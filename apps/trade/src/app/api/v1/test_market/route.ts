@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
-import { dydxTestMarket } from '@src/be/dydx/testMarket'
-import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-import { addLog } from '@my/be/sql/log/add'
-import { hash } from 'crypto'
+import { dydxTestMarket } from '@src/be/dydx/tvline'
+import { parseLine } from '@src/be/tv/parseLine'
+// import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
+// import { addLog } from '@my/be/sql/log/add'
+// import { hash } from 'crypto'
 
 export const maxDuration = 70
 
@@ -19,11 +20,9 @@ const handler = async (request: NextRequest) => {
     }
 
     // dydx status
-    const data = await dydxTestMarket({
-      ticker: 'NEAR-USD',
-      side: 'LONG',
-      num: 1,
-    })
+    const trades = parseLine(bodyText)
+    const trade = trades[0]
+    const data = await dydxTestMarket(trade)
     fixDydxDataTx(data)
 
     // api response

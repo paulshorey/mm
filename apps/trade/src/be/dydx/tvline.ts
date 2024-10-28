@@ -12,29 +12,29 @@ import {
 } from '@dydxprotocol/v4-client-js'
 import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
 import { addLog } from '@my/be/sql/log/add'
-import { marketOrder } from './orders/market'
+import { marketOrder } from './orders/marketOrder'
 import { getPosition as getPositionRaw } from './actions/getPosition'
 import { catchError } from '@src/be/dydx/actions/catchError'
-import { stopMarketOrder } from '@src/be/dydx/orders/stopMarket'
+import { stopMarketOrder } from '@src/be/dydx/orders/stopMarketOrder'
+import { isNumber } from '../../lib/numbers'
+import { OrderProps } from '@src/be/types'
+import { defaults } from '@src/be/dydx/constants/defaults'
 
-type Output = Record<string, any> | undefined
+type Data = Record<string, any> | undefined
 
 export const dydxTestMarket = async ({
   ticker,
   side,
-  num,
-}: {
-  ticker: string
-  side: 'SHORT' | 'LONG'
-  num: number
-}) => {
+  dollar,
+  sl,
+}: OrderProps): Promise<Data> => {
   const data = {} as Record<string, any>
   try {
     /*
      * Inputs
      */
-    if (!ticker || !side || !num || isNaN(Number(num))) {
-      data.error = 'bad input: !ticker | !side | !num'
+    if (!ticker || !side || !isNumber(dollar)) {
+      data.error = 'bad input: !ticker | !side | !dollar'
       throw new Error(data.error)
     }
     if (!/[A-Z]-USD/.test(ticker)) {
@@ -45,9 +45,11 @@ export const dydxTestMarket = async ({
       data.error = 'malformed input: side="' + side + '"'
       throw new Error(data.error)
     }
-    const size = side === 'LONG' ? num : -num // ignore sign, use side LONG or SHORT
-    data.size_add = size
-    data.size_intended = data.size_before + data.size_add
+    if (!sl || !isNumber(sl)) {
+      // @ts-ignore
+      const stoploss = defaults[ticker][side]
+      sl = stoploss || 1
+    }
 
     /*
      * Connection
@@ -99,7 +101,7 @@ export const dydxTestMarket = async ({
         )
       ),
     ])
-    data.direction = data.daily?.[0] < data.daily?.[1] ? -1 : 1 // remember: prices array is reversed
+    data.direction = data.daily?.[0] < data.daily?.[1] ? 'down' : 'up' // remember: prices array is reversed
     data.subaccount = (
       await indexer.client.account.getSubaccount(
         indexer.address,
@@ -109,12 +111,19 @@ export const dydxTestMarket = async ({
     data.position = data.subaccount?.openPerpetualPositions[ticker]
     data.size_before = Number(data.position?.size || 0)
     data.margin_available = (data.subaccount?.freeCollateral || 0) * 9 //(90% of 10x)
+    if (dollar > data.margin_available) {
+      data.error = `Not enough margin: $${dollar} > ${data.margin_available}`
+      throw new Error(data.error)
+    }
+    data.size = dollar / data.price
+    data.size_add = side === 'LONG' ? data.num : -data.num
+    data.size_intended = data.size_before + data.size_add
 
     /*
      * Check before placing order
      */
-    data.margin_needed = data.price * Math.abs(size)
-    data.enough_margin = data.margin_available > data.price * Math.abs(size)
+    data.margin_needed = data.price * data.size
+    data.enough_margin = data.margin_available > data.price * data.size
     if (!data.enough_margin) {
       data.error = `Not enough margin: ${data.margin_needed} > ${data.margin_available}`
       throw new Error(data.error)
@@ -128,15 +137,18 @@ export const dydxTestMarket = async ({
       subaccount,
       ticker,
       side,
-      size,
+      size: data.size,
+      price: data.price,
     })
+
+    const slMultiplier = 1 + (side === 'LONG' ? -sl : sl) / 100
     const stopOrderId = stopMarketOrder({
       compositeClient: composite.client,
       subaccount,
       ticker,
       side: side === 'LONG' ? 'SHORT' : 'LONG',
-      size: size * -1,
-      triggerPrice: data.price * 0.99,
+      size: data.size,
+      triggerPrice: data.price * slMultiplier,
     })
 
     // /*

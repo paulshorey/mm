@@ -1,4 +1,5 @@
 import { IndexerClient } from '@dydxprotocol/v4-client-js'
+import { isNumber } from '../../../lib/numbers'
 
 type Props = {
   client: IndexerClient
@@ -23,7 +24,7 @@ export async function getPosition({
         )
       )?.positions || []
     ).filter((p: any) => p.market === ticker && p.status === 'OPEN')?.[0]
-    position.size = Number(position.size) || 0
+    position.size = isNumber(position.size) ? Number(position.size) : 0
     return position
   } catch (error) {
     return { size: 0, error }
