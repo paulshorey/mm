@@ -45,6 +45,7 @@ const handler = async (request: NextRequest) => {
     return formatResponse({
       ok: true,
       data,
+      test: 1,
     })
 
     // @ts-ignore
