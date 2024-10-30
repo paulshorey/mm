@@ -7,7 +7,7 @@ import { logAdd } from '@my/be/sql/log/add'
 // import { logAdd } from '@my/be/sql/log/add'
 // import { hash } from 'crypto'
 
-export const maxDuration = 120
+export const maxDuration = 70
 
 const handler = async (request: NextRequest) => {
   try {

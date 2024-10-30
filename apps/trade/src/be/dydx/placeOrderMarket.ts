@@ -121,6 +121,39 @@ export const dydxPlaceOrderMarket = async (
     }
 
     /*
+     * Check 4
+     */
+    if (!output.size_is_filled) {
+      output.size_is_filled = await new Promise((resolve) =>
+        setTimeout(async () => {
+          resolve(await checkIfFilled())
+        }, 40000)
+      )
+    }
+
+    /*
+     * Check 5
+     */
+    if (!output.size_is_filled) {
+      output.size_is_filled = await new Promise((resolve) =>
+        setTimeout(async () => {
+          resolve(await checkIfFilled())
+        }, 50000)
+      )
+    }
+
+    /*
+     * Check 6
+     */
+    if (!output.size_is_filled) {
+      output.size_is_filled = await new Promise((resolve) =>
+        setTimeout(async () => {
+          resolve(await checkIfFilled())
+        }, 60000)
+      )
+    }
+
+    /*
      * Place stoploss
      */
     if (output.size_is_filled) {
