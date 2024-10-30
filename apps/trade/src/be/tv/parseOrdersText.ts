@@ -20,7 +20,7 @@ export const parseOrdersText = function (text: string): Output[] {
     p[2] = Number(p[2])
     if (isNumber(p[2]) && p[2] >= 10 && p[2] <= 1000) t.dollar = p[2]
     p[3] = Number(p[3])
-    if (isNumber(p[3]) && p[3] > 0 && p[3] <= 5) t.sl = p[3]
+    if (isNumber(p[3]) && p[3] > 0.1 && p[3] <= 5) t.sl = p[3]
     if (t.side && t.ticker && t.dollar) {
       trades.push(t)
     }
