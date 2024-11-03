@@ -2,10 +2,12 @@ export const defaults = {
   default: {
     LONG: 0.33,
     SHORT: 0.5,
+    floor: 1,
   },
   'SOL-USD': {
     LONG: 0.67,
     SHORT: 0.75,
+    floor: 0.1,
   },
   'AVAX-USD': {
     LONG: 0.5,
@@ -22,6 +24,7 @@ export const defaults = {
   'SUI-USD': {
     LONG: 1,
     SHORT: 1.25,
+    floor: 10,
   },
   'ATOM-USD': {
     LONG: 0.66,
@@ -30,5 +33,12 @@ export const defaults = {
   'ETH-USD': {
     LONG: 0.11,
     SHORT: 0.11,
+    floor: 0.01,
   },
-} as Record<string, Record<'LONG' | 'SHORT', number>>
+} as {
+  [key: string]: {
+    LONG: number
+    SHORT: number
+    floor?: number
+  }
+}

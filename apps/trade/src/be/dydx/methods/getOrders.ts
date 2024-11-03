@@ -4,7 +4,7 @@ import { Data } from '@dydxprotocol/v4-client-js/build/src/clients/types'
 export async function getOrders(
   this: DydxInterface,
   ticker?: string,
-  status = 'OPEN'
+  status?: string | ((status: string) => boolean)
 ): Promise<Data> {
   const indexer = await this.getIndexerClient()
   return (
@@ -15,7 +15,13 @@ export async function getOrders(
   ).filter((p: any) => {
     let keep = true
     if (ticker && p.ticker !== ticker) keep = false
-    if (status && p.status !== status) keep = false
+    if (status) {
+      if (typeof status === 'string') {
+        keep = p.status === status
+      } else if (typeof status === 'function') {
+        keep = status(p.status)
+      }
+    }
     return keep
   })
 }

@@ -1,60 +1,33 @@
-import {
-  OrderExecution,
-  OrderType,
-  OrderTimeInForce,
-  OrderSide,
-} from '@dydxprotocol/v4-client-js'
-import type { CompositeClient } from '@dydxprotocol/v4-client-js/build/src/clients/composite-client.d.ts'
-import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-import type { IndexerClient } from '@dydxprotocol/v4-client-js/build/src/clients/indexer-client.d.ts'
-import { logAdd } from '@my/be/sql/log/add'
 import { DydxInterface } from '@src/be/dydx'
-import { orderMarket } from '@src/be/dydx/methods/orderMarket'
+import { cc } from '@my/be/cc'
 
 type Props = {
   ticker: string
-  side: 'SHORT' | 'LONG'
-  orderId: number
-  data: any
+  clientId: number
 }
 
-export async function orderCancel(
-  this: DydxInterface,
-  { ticker, side, orderId, data }: Props
-) {
-  console.log('cancel inputs', {
-    ticker,
-    side,
-    orderId,
-    data,
-  })
+export async function orderCancel(this: DydxInterface, input: Props) {
+  if (!input.clientId) throw new Error('dydx.orderCancel !input.clientId')
   const indexerClient = await this.getIndexerClient()
   const compositeClient = await this.getCompositeClient()
-  // cancel order needs blockheight
   const block = await indexerClient.utility.getHeight()
   const blockHeight = Number(block.height)
   if (!blockHeight || isNaN(blockHeight)) {
     throw new Error('blockHeight is NaN')
   }
-  console.log('cancel blockHeight', blockHeight)
-  // cancel attempted
-  const tx = await compositeClient.cancelOrder(
+  // cancel
+  compositeClient.cancelOrder(
     this.subaccount,
-    orderId,
+    input.clientId,
     0,
-    ticker,
+    input.ticker,
     blockHeight + 15
   )
-  console.log('cancel tx', tx)
   // notify
-  await logAdd(
-    'info',
-    `dydx.orderCancel: ${ticker} ${side} ${orderId} Intended:${data.size_intended} Unfilled:${data.size_remaining}`,
-    {
-      ticker,
-      side,
-      orderId,
-      ...data,
-    }
-  )
+  await cc.info(`dydx.orderCancel`, {
+    ticker: input.ticker,
+    clientId: input.clientId,
+  })
+  // done
+  return input.clientId
 }

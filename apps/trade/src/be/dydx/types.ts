@@ -37,22 +37,24 @@ export type MarketOrderOutput = {
   inputs: MarketOrderProps
   error: string
   price: number
-  price_direction: 'up' | 'down'
+  // price_direction: 'up' | 'down'
+  hourly: number[]
   daily: number[]
   direction: string
-  size_original: number
   margin_available: number
-  size_absolute: number
-  size_add: number
-  size_intended: number
   margin_needed: number
   enough_margin: boolean
-  size_unfilled: number
-  size_filled: number
-  size_is_filled: boolean
   seconds_passed: number
   seconds_passed_stoploss: number
   seconds_passed_cancelled: number
+  coins_original: number
+  coins_current: number
+  coins_add: number
+  coins_intended: number
+  coins_unfilled: number
+  coins_filled: number
+  coins_is_filled: boolean
+  order_id: number
 }
 
 export type MarketOrderProps = {
@@ -61,7 +63,7 @@ export type MarketOrderProps = {
   /**
    * Size in dollars. Absolute amount to buy or sell. Sign will be ignored.
    */
-  dollar: number
+  dollars: number
   /**
    * 1= 0.01%
    */

@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
-import { dydxPlaceOrderMarket } from '@src/be/dydx/placeOrderMarket'
+import { dydxPlaceOrderMarket } from '@src/be/dydx/executeOrderMarket'
 import { parseOrdersText } from '@src/be/tv/parseOrdersText'
 import { logAdd } from '@my/be/sql/log/add'
 // import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
-// import { logAdd } from '@my/be/sql/log/add'
 // import { hash } from 'crypto'
 
 export const maxDuration = 70
@@ -38,6 +37,7 @@ const handler = async (request: NextRequest) => {
         return formatResponse(
           {
             ok: false,
+            message: '!parsedOrders[0]',
             parsedOrders,
           },
           405
@@ -50,6 +50,7 @@ const handler = async (request: NextRequest) => {
         return formatResponse(
           {
             ok: false,
+            message: 'data?.error',
             data,
             bodyText,
             bodyData,

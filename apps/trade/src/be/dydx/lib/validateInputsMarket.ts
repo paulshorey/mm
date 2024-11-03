@@ -5,9 +5,9 @@ export const validateInputsMarket = (
   input: MarketOrderProps,
   output: MarketOrderOutput
 ): void => {
-  input.dollar = Math.abs(numberOrZero(input.dollar))
-  if (!input.ticker || !input.side || !input.dollar) {
-    output.error = 'bad input: !ticker | !side | !dollar'
+  input.dollars = Math.abs(numberOrZero(input.dollars))
+  if (!input.ticker || !input.side || !input.dollars) {
+    output.error = 'bad input: !ticker | !side | !dollars'
     throw new Error(output.error)
   }
   if (!/[A-Z]-USD/.test(input.ticker)) {

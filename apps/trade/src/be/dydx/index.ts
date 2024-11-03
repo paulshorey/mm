@@ -3,6 +3,7 @@ import {
   LocalWallet,
   SubaccountClient,
   CompositeClient,
+  ValidatorClient,
   Network,
   IndexerClient,
 } from '@dydxprotocol/v4-client-js'
@@ -25,6 +26,7 @@ export interface DydxInterface {
   init: () => Promise<void>
   getIndexerClient: () => Promise<IndexerClient>
   getCompositeClient: () => Promise<CompositeClient>
+  getValidatorClient: () => Promise<ValidatorClient>
   getAccount: typeof getAccount
   getCandles: typeof getCandles
   getOrders: typeof getOrders
@@ -43,6 +45,7 @@ export class Dydx implements DydxInterface {
   network: Network
   indexerClient?: IndexerClient
   compositeClient?: CompositeClient
+  validatorClient?: ValidatorClient
   // @ts-ignore
   wallet: LocalWallet
   // @ts-ignore
@@ -79,6 +82,15 @@ export class Dydx implements DydxInterface {
       this.compositeClient = await CompositeClient.connect(this.network)
     }
     return this.compositeClient
+  }
+
+  async getValidatorClient() {
+    if (!this.validatorClient) {
+      this.validatorClient = await ValidatorClient.connect(
+        this.network.validatorConfig
+      )
+    }
+    return this.validatorClient
   }
 
   getAccount = getAccount

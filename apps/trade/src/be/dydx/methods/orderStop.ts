@@ -4,66 +4,63 @@ import {
   OrderTimeInForce,
   OrderSide,
 } from '@dydxprotocol/v4-client-js'
-import { logAdd } from '@my/be/sql/log/add'
 import { DydxInterface } from '@src/be/dydx'
-import { defaults } from '../constants/notes/defaults'
+import { defaults } from '../constants/defaults'
+import { cc } from '@my/be/cc'
+import { orderAdd } from '@my/be/sql/order/add'
 
 type Props = {
   ticker: string
   side: 'SHORT' | 'LONG'
-  size: number
+  coins: number
   price: number
-  debugData: Record<string, any>
   sl?: number
 }
 
 export async function orderStop(
   this: DydxInterface,
-  { ticker, side, size: sizeAbs, price, debugData, sl }: Props
+  { ticker, side, coins, price, sl }: Props
 ) {
-  await logAdd('info', 'debug dydxPlaceOrderStop inputs', {
+  coins = Math.abs(coins) // UNLIKE MARKET ORDER WHICH REQUIRES NEGATIVE FOR SHORT ORDERS, STOP LOSS SIZE IS ALWAYS ABSOLUTE
+  await cc.info('orderStop.inputs:', {
     ticker,
     side,
-    size: sizeAbs,
+    coins,
     price,
-    debugData,
+    sl,
   })
   const slDefined =
     sl || defaults?.[ticker]?.[side] || defaults?.default?.[side] || 0.33
   const compositeClient = await this.getCompositeClient()
   const slMultiplier = 1 + (side === 'SHORT' ? -slDefined : slDefined) / 100 // if shorting, trigger price is bellow market
   const triggerPrice = price * slMultiplier
-  const size = Math.abs(sizeAbs) // UNLIKE MARKET ORDER WHICH REQUIRES NEGATIVE FOR SHORT ORDERS, STOP LOSS SIZE IS ALWAYS ABSOLUTE
-  const orderId = Math.ceil(Math.random() * 1000000)
+  const clientId = Math.ceil(Math.random() * 1000000)
   const type = OrderType.STOP_MARKET // order type
   const timeInForce = OrderTimeInForce.GTT // UX TimeInForce
   const goodTilTimeInSeconds = 60 * 60 * 24 * 7 // week
   const execution = OrderExecution.IOC // OrderExecution.DEFAULT
   const executionPrice = side === 'LONG' ? 10000000 : 0.01 //= 30_000; // price of 30,000;
   const postOnly = false // If true, order is post only
-  const reduceOnly = false // if true, the order will only reduce the position size
-  console.log('stop order', {
+  const reduceOnly = true // if true, the order will only reduce the position
+
+  // record
+  await orderAdd({
+    type: 'STOP_MARKET',
     ticker,
-    type,
-    side: (side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY).toString(),
-    executionPrice,
-    size,
-    orderId,
-    timeInForce,
-    goodTilTimeInSeconds,
-    execution,
-    postOnly,
-    reduceOnly,
-    triggerPrice,
+    side,
+    size: coins,
+    price,
   })
-  const tx = compositeClient.placeOrder(
+
+  // place
+  compositeClient.placeOrder(
     this.subaccount,
     ticker,
     type,
     side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY,
     executionPrice,
-    size,
-    orderId,
+    coins,
+    clientId,
     timeInForce,
     goodTilTimeInSeconds,
     execution,
@@ -71,11 +68,10 @@ export async function orderStop(
     reduceOnly,
     triggerPrice
   )
-  console.log('stop order tx', tx)
+
   // notify
-  await logAdd(
-    'info',
-    `dydx.orderStop: ${ticker} ${side} ${size
+  await cc.warn(
+    `dydx.orderStop: ${ticker} ${side} ${coins
       .toString()
       .substring(0, 5)} ${triggerPrice.toString().substring(0, 5)}`,
     {
@@ -84,20 +80,20 @@ export async function orderStop(
         type,
         side: (side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY).toString(),
         executionPrice,
-        size,
-        orderId,
+        coins,
+        clientId,
         timeInForce,
         goodTilTimeInSeconds,
         execution,
         postOnly,
         reduceOnly,
-        price,
-        slMultiplier,
         triggerPrice,
       },
-      debugData,
+    },
+    {
+      price,
+      slMultiplier,
     }
-    // { sms: true }
   )
-  return orderId
+  return clientId
 }
