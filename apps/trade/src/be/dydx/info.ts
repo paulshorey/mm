@@ -10,7 +10,7 @@ import {
   Network,
   IndexerClient,
 } from '@dydxprotocol/v4-client-js'
-import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
+import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 import { logAdd } from '@my/be/sql/log/add'
 
 type Output = Record<string, any>
