@@ -7,7 +7,7 @@ import { MarketOrderOutput } from '../../../../be/dydx/types'
 // import { sendToMyselfSMS } from '@src/be/twillio/sendToMyselfSMS'
 // import { hash } from 'crypto'
 
-export const maxDuration = 80
+export const maxDuration = 160
 
 const handler = async (request: NextRequest) => {
   try {
