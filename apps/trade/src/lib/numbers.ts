@@ -1,5 +1,11 @@
-export function roundToCustomDecimal(number: number, precision: number) {
+export function roundToCustomDecimal(
+  number: number,
+  precision: number,
+  upDown?: 'up' | 'down'
+): number {
   const factor = Math.pow(10, -Math.log10(precision))
+  if (upDown === 'up') return Math.ceil(number * factor) / factor
+  if (upDown === 'down') return Math.floor(number * factor) / factor
   return Math.round(number * factor) / factor
 }
 

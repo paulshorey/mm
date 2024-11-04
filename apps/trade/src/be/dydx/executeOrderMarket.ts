@@ -52,14 +52,17 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
       output.size_max =
         roundToCustomDecimal(
           input.dollarsMax / output.price,
-          output.precision
+          output.precision,
+          'up'
         ) * (input.side === 'SHORT' ? -1 : 1)
       cc.log('output.size_max', output.size_max)
       // Signed add
       output.size_add =
-        roundToCustomDecimal(input.dollars / output.price, output.precision) *
-        (input.side === 'SHORT' ? -1 : 1)
-      cc.log('output.size_add', output.size_add)
+        roundToCustomDecimal(
+          input.dollars / output.price,
+          output.precision,
+          'up'
+        ) * (input.side === 'SHORT' ? -1 : 1)
       // If adding would put me over the max
       if (
         (input.side === 'LONG' &&
@@ -70,15 +73,18 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
         // then only add the difference to get to the max and not over
         output.size_add = roundToCustomDecimal(
           output.size_max - output.size_current,
-          output.precision
+          output.precision,
+          'up'
         )
       }
+      cc.log('output.size_add', output.size_add)
       // Set size_intended (only first time this function is run)
       if (output.size_original === undefined) {
         output.size_original = output.size_current
         output.size_intended = roundToCustomDecimal(
           output.size_original + output.size_add,
-          output.precision
+          output.precision,
+          'down'
         )
       }
       cc.log('output.size_intended', output.size_intended)

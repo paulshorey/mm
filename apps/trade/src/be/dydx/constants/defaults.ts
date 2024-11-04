@@ -43,7 +43,7 @@ export const defaults = {
   'BTC-USD': {
     LONG: 0.33,
     SHORT: 0.33,
-    precision: 0.00001,
+    precision: 0.0001,
   },
 } as {
   [key: string]: {
