@@ -1,21 +1,21 @@
 export const defaults = {
   default: {
-    LONG: 0.334,
+    LONG: 0.33,
     SHORT: 0.5,
     precision: 1,
   },
   'SOL-USD': {
-    LONG: 0.5,
-    SHORT: 0.67,
+    LONG: 0.33,
+    SHORT: 0.5,
     precision: 0.1,
   },
   'AVAX-USD': {
-    LONG: 0.5,
-    SHORT: 0.67,
+    LONG: 0.33,
+    SHORT: 0.5,
   },
   'NEAR-USD': {
-    LONG: 0.67,
-    SHORT: 1.33,
+    LONG: 0.5,
+    SHORT: 0.67,
   },
   'FIL-USD': {
     LONG: 0.33,
@@ -27,8 +27,8 @@ export const defaults = {
     precision: 10,
   },
   'ATOM-USD': {
-    LONG: 0.66,
-    SHORT: 0.66,
+    LONG: 0.33,
+    SHORT: 0.33,
   },
   'ETH-USD': {
     LONG: 0.33,
