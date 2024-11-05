@@ -324,10 +324,6 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
           break
         }
         const stopSide = output.size_current > 0 ? 'SHORT' : 'LONG'
-        // cancel other stops
-        if (await cancelOtherStops(stopCoins, stopSide)) {
-          break
-        }
         // create new stop
         await dydx.orderStop({
           ticker: input.ticker,
@@ -344,6 +340,10 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
           }, 10000)
         )
         timer()
+        // cancel other stops
+        if (await cancelOtherStops(stopCoins, stopSide)) {
+          break
+        }
       }
     }
 

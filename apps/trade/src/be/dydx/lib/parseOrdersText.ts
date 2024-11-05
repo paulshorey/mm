@@ -26,7 +26,7 @@ export const parseOrdersText = function (text: string): Output[] {
     // dollars amount
     let narr = split[2]?.toString().split('/')
     let num = numberOrZero(narr?.[0])
-    if (isNumber(num) && num >= 1 && num <= 1000) trade.dollars = num
+    if (isNumber(num) && num >= 1 && num <= 10000) trade.dollars = num
     if (narr?.[1]) {
       // dollarsMax is required (pyramiding: dollars/dollarsMax)
       trade.dollarsMax = numberOrZero(narr?.[1])
