@@ -46,7 +46,7 @@ export const defaults = {
     precision: 0.0001,
   },
   'SUNDOG-USD': {
-    precision: 1000,
+    precision: 20,
   },
 } as {
   [key: string]: {
