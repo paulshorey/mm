@@ -4,12 +4,12 @@ export const catchError = async (
   error: Error,
   options: Record<string, any> = {}
 ) => {
-  console.error(`${options.file || 'be/dydx/lib'} catchError`, error)
-  // Error
+  // error
   const message =
-    `catch in dydx: ` +
+    `${options.file || 'dydx/lib'} catchError:` +
     (typeof error?.message === 'string' ? error?.message : '!message')
-  // notify sms
+  // notify
+  console.error(message, error)
   cc.error(message, {
     name: error.name,
     message: error.message,

@@ -74,7 +74,8 @@ export async function orderStop(
 
     // notify
     await cc.info(
-      `dydx.orderStop: ${ticker} ${side} 
+      `dydx.order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}  
+      $:${(coins * triggerPrice).toString().substring(0, 7)} 
       n:${coins.toString().substring(0, 5)} 
       p:${price.toString().substring(0, 7)} 
       x:${triggerPrice.toString().substring(0, 7)}

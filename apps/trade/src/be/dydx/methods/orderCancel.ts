@@ -1,12 +1,13 @@
 import { DydxInterface } from '@src/be/dydx'
 import { cc } from '@my/be/cc'
 import { numberOrZero } from '../../../lib/numbers'
-import { catchError } from '@src/be/dydx/lib/catchError'
+// import { catchError } from '@src/be/dydx/lib/catchError'
 
 type Props = {
   short?: boolean
   ticker: string
   clientId: number
+  orderType?: string
 }
 
 export async function orderCancel(this: DydxInterface, input: Props) {
@@ -42,15 +43,16 @@ export async function orderCancel(this: DydxInterface, input: Props) {
       )
     }
     // notify
-    await cc.info(`dydx.orderCancel`, {
+    await cc.info(`dydx.order Cancel`, {
       ticker: input.ticker,
       clientId,
+      type: input.orderType,
     })
     // done
     return clientId
 
     // @ts-ignore
   } catch (err: Error) {
-    catchError(err, { file: 'dydx.orderCancel' })
+    // catchError(err, { file: 'dydx.orderCancel' })
   }
 }

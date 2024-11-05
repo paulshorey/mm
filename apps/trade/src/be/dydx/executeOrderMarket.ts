@@ -19,7 +19,7 @@ export const executeOrderMarket = async (
     `
   
 new executeOrderMarket 
-${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax} 
+${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}   
   
 `,
     input
@@ -38,7 +38,7 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
     await new Promise((resolve) =>
       setTimeout(async () => {
         resolve(true)
-      }, 500)
+      }, 250)
     )
 
     /**
@@ -53,7 +53,7 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
           order.type.substring(0, 4) === 'STOP' &&
           (order.status === 'UNTRIGGERED' ||
             order.status === 'OPEN' ||
-            order.status === 'UNFILLED') // && order.side !== input.side
+            order.status === 'UNFILLED') // && order.side !== output.side
       )
       // find the same size stop order, to avoid creating a duplicate new one
       let foundTheOne = false
@@ -71,9 +71,10 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
           // but if it's not the first, then go on to cancel
         }
         // cancel all other unfilled orders before adding the new one
-        await dydx.orderCancel({
+        dydx.orderCancel({
           ticker: input.ticker,
           clientId: order.clientId,
+          orderType: order.type,
         })
       }
       return foundTheOne
@@ -93,62 +94,37 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
       // Current position
       output.size_current = numberOrZero(positionData?.size)
       cc.log('output.size_current', output.size_current)
-      // Max to add/subtract
-      output.size_max =
-        roundToCustomDecimal(
-          input.dollarsMax / output.price,
-          output.precision,
-          'up'
-        ) * (input.side === 'SHORT' ? -1 : 1)
-      cc.log('output.size_max', output.size_max)
-      // Signed add
-      output.size_add =
-        roundToCustomDecimal(
-          input.dollars / output.price,
-          output.precision,
-          'up'
-        ) * (input.side === 'SHORT' ? -1 : 1)
-      // If adding would put me over the max
-      if (
-        (input.side === 'LONG' &&
-          output.size_current + output.size_add > output.size_max) ||
-        (input.side === 'SHORT' &&
-          output.size_current + output.size_add < output.size_max)
-      ) {
-        // then only add the difference to get to the max and not over
-        output.size_add = roundToCustomDecimal(
-          output.size_max - output.size_current,
-          output.precision,
-          'up'
-        )
-      }
-      cc.log('output.size_add', output.size_add)
-      // Set size_intended (only first time this function is run)
+      // Intended position
       if (output.size_original === undefined) {
         output.size_original = output.size_current
         output.size_intended = roundToCustomDecimal(
-          output.size_original + output.size_add,
+          input.position / output.price,
           output.precision,
           'down'
         )
+        cc.log('output.size_intended', output.size_intended)
       }
-      cc.log('output.size_intended', output.size_intended)
-      // How much is left to fill
-      output.size_unfilled = roundToCustomDecimal(
-        output.size_intended - output.size_current,
-        output.precision
-      )
-      cc.log('output.size_unfilled', output.size_unfilled)
-      // Finished filling
-      output.order_is_filled = Math.abs(output.size_unfilled) < output.precision
-      // Reached size_max
-      if (
-        (input.side === 'LONG' && output.size_current >= output.size_max) ||
-        (input.side === 'SHORT' && output.size_current <= output.size_max)
-      ) {
+      // How much to add
+      if (output.size_intended === output.size_current) {
+        output.size_unfilled = 0
         output.order_is_filled = true
-        output.message = `Reached maximum position size: ${output.size_max}`
+        output.message = `Position already at ${output.size_intended}`
+      } else {
+        output.size_unfilled = roundToCustomDecimal(
+          output.size_intended - output.size_current,
+          output.precision,
+          'up'
+        )
       }
+      cc.log('output.size_unfilled', output.size_unfilled)
+      // Side
+      if (output.size_unfilled > 0) {
+        output.side = 'LONG'
+      } else if (output.size_unfilled < 0) {
+        output.side = 'SHORT'
+      }
+      // Filled to top
+      output.order_is_filled = Math.abs(output.size_unfilled) < output.precision
       cc.log('output.order_is_filled', output.order_is_filled)
     }
     async function updatePositionCheckMargin() {
@@ -156,9 +132,12 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
       await updatePosition()
       const accountData = await dydx.getAccount()
       const cashAvailable = numberOrZero(accountData?.freeCollateral)
+      if (!cashAvailable) {
+        throw new Error('updatePositionCheckMargin() !cashAvailable')
+      }
       // Margin
       output.margin_available = Math.floor(cashAvailable * 9) // 90% of 10x
-      output.margin_needed = Math.ceil(output.price * output.size_add)
+      output.margin_needed = Math.ceil(output.price * output.size_unfilled)
       // Not enough margin!
       if (output.margin_available < output.margin_needed) {
         output.error = `Not enough margin: ${output.margin_needed} > ${output.margin_available}`
@@ -179,7 +158,7 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
     }
 
     /*
-     * Order attempt #2 - limit
+     * Order attempt #1 - limit
      */
     // Get latest price, current position, and margin
     await updatePrice()
@@ -187,31 +166,35 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
     if (!(await updatePositionCheckMargin())) {
       throw new Error(output.error)
     }
+    // #1 order attempt, updatePrice() and updatePositionCheckMargin()
+    // must go outside of !output.order_is_filled check
     if (!output.order_is_filled) {
       // Place limit order
-      output.order_client_id = Math.ceil(Math.random() * 1000000)
-      await dydx.orderLimit({
-        clientId: output.order_client_id,
-        ticker: input.ticker,
-        side: input.side,
-        coins: Math.abs(output.size_add),
-        price: output.price,
-        x1: 0.005,
-      })
-      output.order_is_filled = false
-      timer()
-      // check that it's filled
-      await new Promise((resolve) =>
-        setTimeout(async () => {
-          await updatePosition()
-          resolve(true)
-        }, 15000)
-      )
-      timer()
+      if (output.size_unfilled) {
+        output.order_client_id = Math.ceil(Math.random() * 1000000)
+        await dydx.orderLimit({
+          clientId: output.order_client_id,
+          ticker: input.ticker,
+          side: output.side,
+          coins: Math.abs(output.size_unfilled),
+          price: output.price,
+          x1: 0.005,
+        })
+        output.order_is_filled = false
+        timer()
+        // check that it's filled
+        await new Promise((resolve) =>
+          setTimeout(async () => {
+            await updatePosition()
+            resolve(true)
+          }, 15000)
+        )
+        timer()
+      }
     }
 
     /*
-     * Order attempt #3 - limit
+     * Order attempt #2 - limit
      */
     if (!output.order_is_filled) {
       // Get latest price, current position, and margin
@@ -221,25 +204,62 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
         throw new Error(output.error)
       }
       // Place limit order
-      output.order_client_id = Math.ceil(Math.random() * 1000000)
-      await dydx.orderLimit({
-        clientId: output.order_client_id,
-        ticker: input.ticker,
-        side: input.side,
-        coins: Math.abs(output.size_add),
-        price: output.price,
-        x1: 0.01,
-      })
-      output.order_is_filled = false
-      timer()
-      // check that it's filled
-      await new Promise((resolve) =>
-        setTimeout(async () => {
-          await updatePosition()
-          resolve(true)
-        }, 15000)
-      )
-      timer()
+      if (output.size_unfilled) {
+        output.order_client_id = Math.ceil(Math.random() * 1000000)
+        await dydx.orderLimit({
+          clientId: output.order_client_id,
+          ticker: input.ticker,
+          side: output.side,
+          coins: Math.abs(output.size_unfilled),
+          price: output.price,
+          x1: 0.01,
+        })
+        output.order_is_filled = false
+        timer()
+        // check that it's filled
+        await new Promise((resolve) =>
+          setTimeout(async () => {
+            await updatePosition()
+            resolve(true)
+          }, 15000)
+        )
+        timer()
+      }
+    }
+
+    /*
+     * Order attempt #3 - market
+     */
+    if (!output.order_is_filled) {
+      // Get latest price, current position, and margin
+      await updatePrice()
+      // Check that I have enough available cash margin to place this order
+      if (!(await updatePositionCheckMargin())) {
+        throw new Error(output.error)
+      }
+      // Place market order
+      if (output.size_unfilled) {
+        output.order_client_id = Math.ceil(Math.random() * 1000000)
+        await dydx.orderMarket({
+          clientId: output.order_client_id,
+          ticker: input.ticker,
+          side: output.side,
+          coins: Math.abs(output.size_unfilled),
+          price: output.price,
+          reduce: output.size_intended === 0,
+        })
+        output.order_is_filled = false
+        timer()
+        // check that it's filled
+        await new Promise((resolve) =>
+          setTimeout(async () => {
+            timer()
+            await updatePosition()
+            resolve(true)
+          }, 15000)
+        )
+        timer()
+      }
     }
 
     /*
@@ -253,59 +273,28 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
         throw new Error(output.error)
       }
       // Place market order
-      output.order_client_id = Math.ceil(Math.random() * 1000000)
-      await dydx.orderMarket({
-        clientId: output.order_client_id,
-        ticker: input.ticker,
-        side: input.side,
-        coins: Math.abs(output.size_add),
-        price: output.price,
-        reduce: input.dollarsMax === 0,
-      })
-      output.order_is_filled = false
-      timer()
-      // check that it's filled
-      await new Promise((resolve) =>
-        setTimeout(async () => {
-          timer()
-          await updatePosition()
-          resolve(true)
-        }, 15000)
-      )
-      timer()
-    }
-
-    /*
-     * Order attempt #5 - market
-     */
-    if (!output.order_is_filled) {
-      // Get latest price, current position, and margin
-      await updatePrice()
-      // Check that I have enough available cash margin to place this order
-      if (!(await updatePositionCheckMargin())) {
-        throw new Error(output.error)
+      if (output.size_unfilled) {
+        output.order_client_id = Math.ceil(Math.random() * 1000000)
+        await dydx.orderMarket({
+          clientId: output.order_client_id,
+          ticker: input.ticker,
+          side: output.side,
+          coins: Math.abs(output.size_unfilled),
+          price: output.price,
+          reduce: output.size_intended === 0,
+        })
+        output.order_is_filled = false
+        timer()
+        // check that it's filled
+        await new Promise((resolve) =>
+          setTimeout(async () => {
+            timer()
+            await updatePosition()
+            resolve(true)
+          }, 15000)
+        )
+        timer()
       }
-      // Place market order
-      output.order_client_id = Math.ceil(Math.random() * 1000000)
-      await dydx.orderMarket({
-        clientId: output.order_client_id,
-        ticker: input.ticker,
-        side: input.side,
-        coins: Math.abs(output.size_add),
-        price: output.price,
-        reduce: input.dollarsMax === 0,
-      })
-      output.order_is_filled = false
-      timer()
-      // check that it's filled
-      await new Promise((resolve) =>
-        setTimeout(async () => {
-          timer()
-          await updatePosition()
-          resolve(true)
-        }, 15000)
-      )
-      timer()
     }
 
     /*
@@ -319,7 +308,7 @@ ${input.ticker} ${input.side} $${input.dollars} <$${input.dollarsMax}
         cc.log(`whileStopAttemptNumber # ${whileStopAttemptNumber}`)
         if (whileStopAttemptNumber > 5) {
           cc.error(
-            `whileStopAttemptNumber>5 ${input.ticker} ${input.side} $${input.dollars} size_current:${output.size_current}`,
+            `whileStopAttemptNumber>5 ${input.ticker} ${output.side} $${input.position} size_current:${output.size_current}`,
             output
           )
           break

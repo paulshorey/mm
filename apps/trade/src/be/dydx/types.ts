@@ -50,19 +50,11 @@ export type MarketOrderOutput = {
   /*
    * size_ is signed
    */
-  size_add: number
-  size_original: number
-  size_current: number
-  size_current_floor: number
+  side: 'LONG' | 'SHORT'
   size_intended: number
   size_unfilled: number
-  /*
-   * coins_ is absolute
-   */
-  size_max: number
-  coins_add: number
-  coins_filled: number
-  coins_stop_order: number
+  size_original: number
+  size_current: number
   /**
    * order completion
    */
@@ -72,14 +64,13 @@ export type MarketOrderOutput = {
 
 export type MarketOrderInput = {
   ticker: string
-  side: 'SHORT' | 'LONG'
   /**
-   * Size in dollars. Absolute amount to buy or sell. Sign will be ignored.
+   * In dollars, signed (can be negative).
+   * Can be zero (0) to exit the position.
    */
-  dollars: number
-  dollarsMax: number
+  position: number
   /**
-   * 1= 0.01%
+   * Fraction of 1% (as a decimal ofcourse).
    */
   sl?: number
 }

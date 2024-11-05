@@ -1,48 +1,27 @@
-import { cc } from '@my/be/cc'
-import { isNumber, numberOrZero } from '../../../lib/numbers'
+import { isNumber } from '../../../lib/numbers'
+import { MarketOrderInput } from '@src/be/dydx/types'
 
-type Output = {
-  side: 'LONG' | 'SHORT'
-  ticker: string
-  dollars: number
-  dollarsMax: number
-  sl?: number
-  reduce?: boolean
-}
-
-export const parseOrdersText = function (text: string): Output[] {
-  const trades: Output[] = []
+export const parseOrdersText = function (text: string): MarketOrderInput[] {
+  const trades: MarketOrderInput[] = []
   text = text.trim()
   const arr = text.split(/\s+/)
   for (let str of arr) {
-    let trade = {} as Output
+    let trade = {} as MarketOrderInput
     let split = str.split(':') as Array<string | number>
-    // side
-    if (split[0] === 'buy' || split[0] === 'long') trade.side = 'LONG'
-    if (split[0] === 'sell' || split[0] === 'short') trade.side = 'SHORT'
     // ticker
-    if (typeof split[1] === 'string')
-      trade.ticker = split[1].toUpperCase() + '-USD'
-    // dollars amount
-    let narr = split[2]?.toString().split('/')
-    let num = numberOrZero(narr?.[0])
-    if (isNumber(num) && num >= 1 && num <= 10000) trade.dollars = num
-    if (narr?.[1]) {
-      // dollarsMax is required (pyramiding: dollars/dollarsMax)
-      trade.dollarsMax = numberOrZero(narr?.[1])
-    } else {
-      // if unspecified, will be same as dollars (pyramiding:1)
-      trade.dollarsMax = trade.dollars
+    if (typeof split[0] === 'string')
+      trade.ticker = split[0].toUpperCase() + '-USD'
+    // position
+    let num = Number(split[1])
+    if (isNumber(num)) {
+      trade.position = num
     }
-    // stop loss | reduce
-    let sl = Number(split[3])
+    // stoploss
+    let sl = Number(split[2])
     if (isNumber(sl)) {
       if (sl >= 0.1 && sl <= 10) trade.sl = sl
-    } else {
-      let reduce = split[3]
-      if (reduce === 'reduce') trade.reduce = true
     }
-    if (trade.side && trade.ticker && trade.dollars) {
+    if (trade.ticker && trade.position !== undefined) {
       trades.push(trade)
     }
   }

@@ -62,7 +62,10 @@ export async function orderMarket(
 
     // notify
     await cc.warn(
-      `dydx.orderMarket: ${ticker} ${side} ${reduceOnly ? 'reduce' : ''}
+      `dydx.order Market ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker} ${
+        reduceOnly ? 'reduce' : ''
+      }
+      $:${(coins * price).toString().substring(0, 7)} 
       n:${coins.toString().substring(0, 5)} 
       p:${price.toString().substring(0, 7)}`,
       { ticker, side, coins, price }

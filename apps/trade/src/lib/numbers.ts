@@ -25,20 +25,25 @@ export const isNumber = function (val: any): boolean {
   return true
 }
 
+/**
+ * Does not check, but simply forces a value to be a number (if not Number then zero)
+ */
 export const numberOrZero = function (val: any): number {
   return isNumber(val) ? Number(val) : 0
 }
 
-export function stringToHash(str: string): number {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const charCode = str.charCodeAt(i)
-    hash = (hash << 5) - hash + charCode
-    hash |= 0 // Convert to 32-bit integer
-  }
-  return hash
-}
-
+/**
+ * One way hash a string into a number.
+ */
+// export function stringToHash(str: string): number {
+//   let hash = 0
+//   for (let i = 0; i < str.length; i++) {
+//     const charCode = str.charCodeAt(i)
+//     hash = (hash << 5) - hash + charCode
+//     hash |= 0 // Convert to 32-bit integer
+//   }
+//   return hash
+// }
 // type HashableOrder = {
 //   type: string
 //   ticker: string

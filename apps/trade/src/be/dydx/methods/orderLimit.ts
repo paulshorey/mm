@@ -65,7 +65,8 @@ export async function orderLimit(
 
     // notify
     await cc.warn(
-      `dydx.orderLimit: ${ticker} ${side} 
+      `dydx.order Limit ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}  
+      $:${(coins * price).toString().substring(0, 7)} 
       n:${coins.toString().substring(0, 5)} 
       p:${price.toString().substring(0, 7)} 
       x:${executionPrice.toString().substring(0, 7)}
