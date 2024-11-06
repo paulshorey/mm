@@ -1,7 +1,7 @@
 export const defaults = {
   default: {
-    LONG: 0.33,
-    SHORT: 0.33,
+    LONG: 0.5,
+    SHORT: 0.5,
     precision: 1,
   },
   'SOL-USD': {
@@ -17,6 +17,8 @@ export const defaults = {
     precision: 0.01,
   },
   'BTC-USD': {
+    LONG: 0.33,
+    SHORT: 0.33,
     precision: 0.0001,
   },
   'SUNDOG-USD': {
