@@ -83,7 +83,9 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
         output.side = 'SHORT'
       }
       // Filled to top
-      output.order_is_filled = Math.abs(output.size_unfilled) < output.precision
+      const unfilled = Math.abs(output.size_unfilled)
+      output.order_is_filled =
+        unfilled < output.precision || unfilled * output.price < 15
       cc.log('output.order_is_filled', output.order_is_filled)
     }
     async function updatePositionCheckMargin() {
@@ -263,11 +265,8 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
       // get all open orders
       const orders = await dydx.getOrders(
         input.ticker,
-        (order) =>
-          order.type.substring(0, 4) === 'STOP' &&
-          (order.status === 'UNTRIGGERED' ||
-            order.status === 'OPEN' ||
-            order.status === 'UNFILLED') // && order.side !== output.side
+        true,
+        (order) => order.type.substring(0, 4) === 'STOP'
       )
       // find the same size stop order, to avoid creating a duplicate new one
       let foundTheOne = false

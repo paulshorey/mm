@@ -1,5 +1,6 @@
 import Data from '@src/fe/blocks/Data'
 import { dydxScout } from '@src/be/dydx/info'
+import Json from '@my/fe/src/components/blocks/Json'
 
 export const revalidate = 0
 
@@ -30,5 +31,5 @@ export default async function Page({}: {}) {
     }
     data.asksAndBids = { asks, bids }
   }
-  return <Data data={data} />
+  return <Data data={data} expandUntil={5} />
 }

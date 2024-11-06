@@ -7,11 +7,17 @@ import Collapsed from '@my/fe/src/components/blocks/Collapsed'
 // import Badge from '@my/fe/src/components/inline/Badge'
 // import Link from 'next/link'
 
-export default function Data({ data }: { data: Record<string, any> }) {
+export default function Data({
+  data,
+  expandUntil,
+}: {
+  data: Record<string, any>
+  expandUntil: number
+}) {
   const sections = Object.entries(data).map(([key, obj]: any, i: number) => {
     let heading = key
     let dataParsed = obj
-    const expandUntil = key === 'orders' ? 1 : 2
+    if (!expandUntil) expandUntil || (key === 'orders' ? 1 : 2)
 
     return (
       <Collapsed

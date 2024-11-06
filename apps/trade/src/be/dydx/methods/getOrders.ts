@@ -59,7 +59,8 @@ export type Order = {
 export async function getOrders(
   this: DydxInterface,
   ticker?: string,
-  status?: string | ((order: Order) => boolean)
+  activeOnly?: boolean,
+  filterFunction?: (order: Order) => boolean
 ): Promise<Order[]> {
   const indexer = await this.getIndexerClient()
   return (
@@ -80,7 +81,12 @@ export async function getOrders(
         clientMetadata: parseInt(p.clientMetadata),
         triggerPrice: parseFloat(p.triggerPrice),
         updatedAtHeight: parseInt(p.updatedAtHeight),
-        status: p.status === 'CANCELED' ? 'CANCELLED' : p.status,
+        status:
+          p.status === 'CANCELED'
+            ? 'CANCELLED'
+            : p.status === 'CANCELING'
+              ? 'CANCELLING'
+              : p.status,
         // @ts-ignore see check in .filter
         side: p.side === 'SELL' ? 'SHORT' : p.side === 'BUY' ? 'LONG' : '',
       })
@@ -92,12 +98,21 @@ export async function getOrders(
       if (ticker && p.ticker !== ticker) return false
       // status, or custom filter by any property
       let keep = true
-      if (status) {
-        if (typeof status === 'string') {
-          keep = p.status === status
-        } else if (typeof status === 'function') {
-          keep = status(p)
-        }
+      if (
+        activeOnly &&
+        !(
+          p.status === 'UNTRIGGERED' ||
+          p.status === 'CANCELLING' ||
+          p.status === 'CANCELING' ||
+          p.status === 'BEST_EFFORT_CANCELED' ||
+          p.status === 'OPEN' ||
+          p.status === 'UNFILLED'
+        )
+      ) {
+        keep = false
+      }
+      if (filterFunction && !filterFunction(p)) {
+        keep = false
       }
       return keep
     })

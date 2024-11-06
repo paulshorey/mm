@@ -74,3 +74,19 @@ export type MarketOrderInput = {
    */
   sl?: number
 }
+
+export type orderType =
+  | 'LIMIT'
+  | 'MARKET'
+  | 'STOP_LIMIT'
+  | 'STOP_MARKET'
+  | 'TRAILING_STOP'
+  | 'TAKE_PROFIT'
+  | 'TAKE_PROFIT_MARKET'
+
+export type orderStatus =
+  | 'OPEN'
+  | 'FILLED'
+  | 'CANCELED'
+  | 'BEST_EFFORT_CANCELED'
+  | 'UNTRIGGERED'

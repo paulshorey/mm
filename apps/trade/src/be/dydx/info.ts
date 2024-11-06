@@ -13,6 +13,13 @@ import {
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 import { logAdd } from '@my/be/sql/log/add'
 import { Order } from '@src/be/dydx/methods/getOrders'
+import Dydx from '@src/be/dydx'
+import { numberOrZero } from '@src/lib/numbers'
+import { getCandles } from '@src/be/dydx/methods/getCandles'
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 type Output = Record<string, any>
 
@@ -20,60 +27,111 @@ type Output = Record<string, any>
  * Throws error if something went wrong!
  */
 export const dydxScout = async (): Promise<Output | undefined> => {
-  const data = {} as Output
+  const output = {
+    account: {},
+    data: {},
+  } as Output
   try {
-    // Connect to my DYDX
-    const NETWORK = Network.mainnet()
-    const client = new IndexerClient(NETWORK.indexerConfig)
-    const ticker = 'AVAX-USD'
-
-    // const compositeClient = await CompositeClient.connect(NETWORK);
-    const mnemonic = process.env.DYDX_MNEMONIC || ''
-    const wallet = await LocalWallet.fromMnemonic(mnemonic, BECH32_PREFIX)
-    const address = wallet.address || ''
-    const subaccount = new SubaccountClient(wallet, 0)
-    const subaccountNumber = subaccount.subaccountNumber
-    const accountData = (
-      await client.account.getSubaccount(address, subaccountNumber)
-    )?.subaccount
-
-    // Fetch data
-    const blockHeight = await client.utility.getHeight()
-    // const trades = (await client.markets.getPerpetualMarketTrades(ticker))
-    //   ?.trades
-    const orders = (
-      (await client.account.getSubaccountOrders(address, subaccountNumber)) ||
-      []
-    ).filter((p: Order) => {
-      return (
-        p.status === 'OPEN' ||
-        p.status === 'UNTRIGGERED' ||
-        p.status === 'PENDING'
-      )
-    })
-    // const positions = (
-    //   (
-    //     await client.account.getSubaccountPerpetualPositions(
-    //       address,
-    //       subaccountNumber
-    //     )
-    //   )?.positions || []
-    // ).filter((p: any) => p.status === 'OPEN')
-    // const orderbook = await client.markets.getPerpetualMarketOrderbook(ticker)
-    // const asksAndBids = { asks: orderbook.asks, bids: orderbook.bids }
-    // const sparklines = await client.markets.getPerpetualMarketSparklines()
-
-    // Format data
-    data.positions = {
-      equity: Number(accountData.equity).toFixed(2),
-      margin: Number(accountData.freeCollateral).toFixed(2),
-      ...accountData.openPerpetualPositions,
+    /*
+     * Connection
+     */
+    const dydx = new Dydx()
+    await sleep(300)
+    /*
+     * Account
+     */
+    const accountData = await dydx.getAccount()
+    const cashAvailable = numberOrZero(accountData?.freeCollateral)
+    if (!cashAvailable) {
+      throw new Error('updatePositionCheckMargin() !cashAvailable')
     }
-    data.orders = orders
-    data.blockHeight = blockHeight
-    // data.asksAndBids = asksAndBids
-    // data.trades = trades
-    // data.sparklines = sparklines
+    // Margin
+    output.account.equity = numberOrZero(Number(accountData.equity).toFixed(2))
+    output.account.margin = numberOrZero(
+      numberOrZero(accountData?.freeCollateral).toFixed(2)
+    )
+    // Positions
+    const positions = accountData.openPerpetualPositions || {}
+    output.account.positions = {}
+    // output.data.positions = positions
+    // console.log('positions', positions)
+    // Orders
+    const orders = await dydx.getOrders(undefined, true)
+    output.data.orders = orders
+    // Order per position
+    for (let ticker in positions) {
+      const raw = positions[ticker]
+      const position = {} as Record<string, any>
+      output.account.positions[ticker] = position
+      // Price
+      let candles = await dydx.getCandles(ticker, '1MIN', 1)
+      // position.side = raw.side
+      position.price = numberOrZero(candles[0]?.close)
+      position.size = numberOrZero(raw.size)
+      // Entry price
+      // const entryPrice = Number(
+      //   numberOrZero(raw.entryPrice).toString().substring(0, 7)
+      // )
+      // const entry = Math.round(numberOrZero(raw.size) * entryPrice)
+      // position.pnl = (position.price - entryPrice) * raw.size
+      // position.entry = entry
+      // position.percent = entry + position.pnl
+      // position.entryPrice = entryPrice
+      // Orders
+      position.orders = {}
+      position.sl = 0
+      let sl_size_total = 0
+      for (let ord of orders) {
+        if (ord.ticker === ticker) {
+          let order = {} as Record<string, any>
+          position.orders[
+            `${ord.type.toLowerCase()} ${
+              ord.status === 'UNTRIGGERED' ? '' : ord.status
+            }`
+          ] = order
+          order.price = numberOrZero(ord.triggerPrice)
+          // order.side = ord.side
+          order.size =
+            Math.abs(numberOrZero(ord.size)) * (ord.side === 'LONG' ? 1 : -1)
+          // sl
+          if (ord.type.substring(0, 4) === 'STOP') {
+            // instead of averaging all stop loss amounts,
+            // simply record the sl value for the largest order
+            if (!position.sl || order.size > sl_size_total) {
+              position.sl = order.price
+            }
+            // increment order size after calculating sl value
+            sl_size_total += order.size
+          }
+        }
+      }
+      position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ =
+        (position.size + sl_size_total) / position.size
+      if (
+        !position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ ||
+        position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ < 0.01
+      ) {
+        delete position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___
+      }
+
+      // PNL vs SL
+      const pnl_sl = (position.price / position.sl - 1) * -100
+      if (pnl_sl > 0) {
+        position.stoploss =
+          '+ ' + Math.abs(pnl_sl).toFixed(2).replace('0.', '.') + '  %'
+      }
+      if (pnl_sl < 0) {
+        position.stoploss =
+          '- ' + Math.abs(pnl_sl).toFixed(2).replace('0.', '.') + '  %'
+      }
+
+      // Cleanup before returning
+      // position.percent = Number(
+      //   ((position.percent / position.entry) * 100).toFixed(2)
+      // )
+      // position.pnl = Math.round(position.pnl)
+      // position.entry = Math.round(position.entry)
+    }
 
     // @ts-ignore
   } catch (err: Error) {
@@ -90,5 +148,5 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       stack: err.stack,
     })
   }
-  return data
+  return output
 }
