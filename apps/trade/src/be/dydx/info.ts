@@ -50,8 +50,8 @@ export const dydxScout = async (): Promise<Output | undefined> => {
     // output.account.margin = numberOrZero(
     //   numberOrZero(accountData?.freeCollateral).toFixed(2)
     // )
-    output.account.stopped = output.account.current
-    output.account.pnlp = 0
+    output.account.stop = output.account.current
+    output.account.risk = 0
     output.account.coins = {}
     // Positions
     const positions = accountData.openPerpetualPositions || {}
@@ -140,30 +140,30 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       // PNL vs SL
       const pnl_sl = ((position.price - position_sl) / position_sl) * -100
       if (position.size > 0) {
-        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2))
+        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2)) + 0.25
       }
       if (position.size < 0) {
-        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2))
+        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2)) + 0.25
       }
 
       // Summary
       output.account.coins[ticker.replace('-USD', '')] = position.to_stoploss
       if (position.to_stoploss) {
-        output.account.stopped -=
+        output.account.stop -=
           position.dollars * (Math.abs(position.to_stoploss) / 100)
       } else {
-        output.account.stopped -= position.dollars * 0.05
+        output.account.stop -= position.dollars * 0.05
       }
-      output.account.pnlp = Number(
+      output.account.risk = Number(
         (
-          ((output.account.current - output.account.stopped) /
-            output.account.stopped) *
+          ((output.account.current - output.account.stop) /
+            output.account.stop) *
           100
         ).toFixed(2)
       )
 
       // Cleanup before returning
-      output.account.stopped = Number(output.account.stopped.toFixed(2))
+      output.account.stop = Number(output.account.stop.toFixed(2))
       // position.percent = Number(
       //   ((position.percent / position.entry) * 100).toFixed(2)
       // )
