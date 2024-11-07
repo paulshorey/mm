@@ -50,13 +50,14 @@ export const dydxScout = async (): Promise<Output | undefined> => {
     output.account.margin = numberOrZero(
       numberOrZero(accountData?.freeCollateral).toFixed(2)
     )
+    output.account.coins = {}
     // Positions
     const positions = accountData.openPerpetualPositions || {}
     output.account.positions = {}
     // output.data.positions = positions
     // console.log('positions', positions)
     // Orders
-    const orders = await dydx.getOrders(undefined, true)
+    const orders = await dydx.getOrders(undefined)
     output.data.orders = orders
     // Order per position
     for (let ticker in positions) {
@@ -82,29 +83,46 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       // position.entryPrice = entryPrice
       // Orders
       position.orders = {}
+      let historic_orders = {} as Record<string, any>
       let position_sl = 0
       let sl_size_total = 0
       for (let ord of orders) {
         if (ord.ticker === ticker) {
           let order = {} as Record<string, any>
-          position.orders[
-            `${ord.type.toLowerCase()} ${
-              ord.status === 'UNTRIGGERED' ? '' : ord.status
-            }`
-          ] = order
           order.price = numberOrZero(ord.triggerPrice)
-          // order.side = ord.side
           order.size =
             Math.abs(numberOrZero(ord.size)) * (ord.side === 'LONG' ? 1 : -1)
-          // sl
-          if (ord.type.substring(0, 4) === 'STOP') {
-            // instead of averaging all stop loss amounts,
-            // simply record the sl value for the largest order
-            if (!position_sl || order.size > sl_size_total) {
-              position_sl = order.price
+          // OPEN ORDERS
+          if (
+            ord.status === 'UNTRIGGERED' ||
+            ord.status === 'CANCELLING' ||
+            ord.status === 'CANCELING' ||
+            ord.status === 'BEST_EFFORT_CANCELED' ||
+            ord.status === 'OPEN' ||
+            ord.status === 'UNFILLED'
+          ) {
+            position.orders[
+              `${ord.type.toLowerCase()} ${
+                ord.status === 'UNTRIGGERED' ? '' : ord.status
+              }`
+            ] = order
+            // sl
+            if (ord.type.substring(0, 4) === 'STOP') {
+              // instead of averaging all stop loss amounts,
+              // simply record the sl value for the largest order
+              if (!position_sl || order.size > sl_size_total) {
+                position_sl = order.price
+              }
             }
             // increment order size after calculating sl value
             sl_size_total += order.size
+          } else {
+            // HISTORIC ORDERS
+            historic_orders[
+              `${ord.type.toLowerCase()} ${
+                ord.status === 'UNTRIGGERED' ? '' : ord.status
+              }`
+            ] = order
           }
         }
       }
@@ -134,6 +152,7 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       // )
       // position.pnl = Math.round(position.pnl)
       // position.entry = Math.round(position.entry)
+      output.account.coins[ticker.replace('-USD', '')] = position.to_stoploss
     }
 
     // @ts-ignore
