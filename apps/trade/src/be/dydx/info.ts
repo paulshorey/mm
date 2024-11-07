@@ -46,10 +46,12 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       throw new Error('updatePositionCheckMargin() !cashAvailable')
     }
     // Margin
-    output.account.equity = numberOrZero(Number(accountData.equity).toFixed(2))
-    output.account.margin = numberOrZero(
-      numberOrZero(accountData?.freeCollateral).toFixed(2)
-    )
+    output.account.current = numberOrZero(Number(accountData.equity).toFixed(2))
+    // output.account.margin = numberOrZero(
+    //   numberOrZero(accountData?.freeCollateral).toFixed(2)
+    // )
+    output.account.stopped = output.account.current
+    output.account.pnlp = 0
     output.account.coins = {}
     // Positions
     const positions = accountData.openPerpetualPositions || {}
@@ -138,21 +140,35 @@ export const dydxScout = async (): Promise<Output | undefined> => {
       // PNL vs SL
       const pnl_sl = ((position.price - position_sl) / position_sl) * -100
       if (position.size > 0) {
-        position.to_stoploss =
-          ' ' + Math.abs(pnl_sl).toFixed(2).replace('0.', '.') + '  %'
+        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2))
       }
       if (position.size < 0) {
-        position.to_stoploss =
-          ' ' + Math.abs(pnl_sl).toFixed(2).replace('0.', '.') + '  %'
+        position.to_stoploss = Number(Math.abs(pnl_sl).toFixed(2))
       }
 
+      // Summary
+      output.account.coins[ticker.replace('-USD', '')] = position.to_stoploss
+      if (position.to_stoploss) {
+        output.account.stopped -=
+          position.dollars * (Math.abs(position.to_stoploss) / 100)
+      } else {
+        output.account.stopped -= position.dollars * 0.05
+      }
+      output.account.pnlp = Number(
+        (
+          ((output.account.current - output.account.stopped) /
+            output.account.stopped) *
+          100
+        ).toFixed(2)
+      )
+
       // Cleanup before returning
+      output.account.stopped = Number(output.account.stopped.toFixed(2))
       // position.percent = Number(
       //   ((position.percent / position.entry) * 100).toFixed(2)
       // )
       // position.pnl = Math.round(position.pnl)
       // position.entry = Math.round(position.entry)
-      output.account.coins[ticker.replace('-USD', '')] = position.to_stoploss
     }
 
     // @ts-ignore
