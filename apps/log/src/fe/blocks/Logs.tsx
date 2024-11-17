@@ -4,7 +4,7 @@ import { Json } from '@my/fe/src/components/blocks/Json'
 import { Collapsed } from '@my/fe/src/components/blocks/Collapsed'
 import { LocalShortTime } from '@my/fe/src/components/inline/LocalShortTime'
 import { Badge } from '@my/fe/src/components/inline/Badge'
-import { Link } from 'next/link'
+import Link from 'next/link'
 import { Copy } from '../../../../../my/fe/src/components/buttons/Copy'
 // import { cc } from '@my/be/cc';
 // import { useEffect } from 'react';
