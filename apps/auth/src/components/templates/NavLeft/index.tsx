@@ -8,7 +8,7 @@ import { ColorSchemeSwitcher } from '@my/fe/auth/components/ColorSchemeSwitcher'
 import { useState } from 'react'
 import classes from './index.module.scss'
 import { nav } from './constants'
-import useOutsideClickOrEscape from '@src/hooks/useOutsideClickOrEscape'
+import useOutsideClickOrEscape from '@my/fe/ui/hooks/useOutsideClickOrEscape'
 import DrawerWithTrigger from '../DrawerWithTrigger/DrawerWithHoverTrigger'
 
 export default function NavLeft() {
