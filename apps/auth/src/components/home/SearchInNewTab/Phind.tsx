@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Button, Group, Textarea } from '@my/fe/src/components/mantine'
+import { Button, Group, Textarea } from '@my/fe/ui/components/mantine'
 import classes from './index.module.scss'
 
 export default function HomePhind() {

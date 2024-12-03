@@ -1,5 +1,3 @@
-import PasswordReset from '@src/components/auth/AccordionSignin/PasswordResetContinue';
+import PasswordReset from '@my/fe/auth/components/PasswordResetContinue'
 
-export default async function AuthSigninPage() {
-  return <PasswordReset />;
-}
+export default PasswordReset

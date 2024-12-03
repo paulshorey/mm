@@ -1,5 +1,5 @@
 import { render as testingLibraryRender } from '@testing-library/react'
-import { MantineProvider } from '@my/fe/src/components/mantine'
+import { MantineProvider } from '@my/fe/ui/components/mantine'
 import { theme } from '../theme'
 
 export function render(ui: React.ReactNode) {

@@ -1,12 +1,12 @@
-'use server';
+'use server'
 
-import { redirect } from 'next/navigation';
-import { sessionGet } from '@src/app/auth/actions/session';
+import { redirect } from 'next/navigation'
+import { sessionGet } from '@my/be/auth/actions/session'
 
 export default async function useSessionOrLoginServer(redirectUrl: string) {
-  const session = await sessionGet();
+  const session = await sessionGet()
   if (!session?.user?.auth) {
-    redirect(`/auth?redirect=${encodeURIComponent(redirectUrl)}`);
+    redirect(`/auth?redirect=${encodeURIComponent(redirectUrl)}`)
   }
-  return session;
+  return session
 }

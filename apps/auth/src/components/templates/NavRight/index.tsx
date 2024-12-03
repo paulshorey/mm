@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import * as React from 'react'
 import { useState } from 'react'
-import { Group } from '@my/fe/src/components/mantine'
+import { Group } from '@my/fe/ui/components/mantine'
 import classes from './index.module.scss'
 import useOutsideClickOrEscape from '@src/hooks/useOutsideClickOrEscape'
 import DrawerWithTrigger from '../DrawerWithTrigger/DrawerWithHoverTrigger'
 import AvatarIcon from '@src/components/icons/AvatarIcon'
 import { SessionContext } from '@src/context/SessionProvider'
-import stytchRevokeSession from '@src/app/auth/actions/stytchRevokeSession'
+import stytchRevokeSession from '@my/be/auth/actions/stytchRevokeSession'
 
 export default function NavRight() {
   const session = React.useContext(SessionContext)

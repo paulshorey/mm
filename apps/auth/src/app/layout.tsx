@@ -1,12 +1,12 @@
-import { ErrorBoundary } from '@my/fe/src/components/wrappers/ErrorBoundary'
-import { Providers } from '@my/fe/src/components/wrappers/Providers'
+import { ErrorBoundary } from '@my/fe/ui/components/wrappers/ErrorBoundary'
+import { Providers } from '@my/fe/ui/components/wrappers/Providers'
 import '@src/styles/tailwind.css'
 import '@src/styles/global.scss'
 import '@mantine/core/styles.css'
 import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import SessionProvider from '@src/context/SessionProvider'
-import { sessionGet } from '@src/app/auth/actions/session'
+import { sessionGet } from '@my/be/auth/actions/session'
 import dynamic from 'next/dynamic'
 import NavLeft from '../components/templates/NavLeft'
 import NavRight from '../components/templates/NavRight'
@@ -17,7 +17,7 @@ export const metadata = {
 }
 
 const OnLoad = dynamic(
-  async () => (await import('@src/components/atoms/OnLoad')).default,
+  async () => (await import('@my/fe/auth/components/OnLoad')).default,
   {
     ssr: false,
     loading: () => <p>Loading...</p>,

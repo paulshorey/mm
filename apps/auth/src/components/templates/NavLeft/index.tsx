@@ -1,10 +1,10 @@
 'use client'
 
-import { Group } from '@my/fe/src/components/mantine'
+import { Group } from '@my/fe/ui/components/mantine'
 import Link from 'next/link'
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
-import { ColorSchemeSwitcher } from '@src/components/atoms/ColorSchemeSwitcher'
+import { ColorSchemeSwitcher } from '@my/fe/auth/components/ColorSchemeSwitcher'
 import { useState } from 'react'
 import classes from './index.module.scss'
 import { nav } from './constants'

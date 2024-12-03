@@ -1,9 +1,9 @@
 // import Image from 'next/image';
-import { SessionData } from '@src/app/auth/actions/types';
+import { SessionData } from '@my/be/auth/actions/types'
 
 type Props = {
-  user: SessionData['user'];
-};
+  user: SessionData['user']
+}
 
 export default function Card({ user }: Props) {
   //console.log(user)
@@ -12,17 +12,17 @@ export default function Card({ user }: Props) {
     <div className="flex flex-col items-center p-6 bg-white rounded-lg font-bold text-5xl text-black">
       Hello {user?.name}!
     </div>
-  ) : null;
+  ) : null
   const emailDisplay = user?.email ? (
     <div className="flex flex-col items-center p-6 bg-white rounded-lg font-bold text-5xl text-black">
       email: {user?.email}
     </div>
-  ) : null;
+  ) : null
   const phoneDisplay = user?.phone ? (
     <div className="flex flex-col items-center p-6 bg-white rounded-lg font-bold text-5xl text-black">
       phone: {user?.phone}
     </div>
-  ) : null;
+  ) : null
 
   // const userImage = user?.image ? (
   //   <Image
@@ -42,5 +42,5 @@ export default function Card({ user }: Props) {
       {emailDisplay}
       {/* {userImage} */}
     </section>
-  );
+  )
 }

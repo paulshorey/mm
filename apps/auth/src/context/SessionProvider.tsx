@@ -1,16 +1,24 @@
-'use client';
+'use client'
 
-import { createContext } from 'react';
-import type { SessionData } from '@src/app/auth/actions/types';
+import { createContext } from 'react'
+import type { SessionData } from '@my/be/auth/actions/types'
 
-export const SessionContext = createContext<SessionData>({ ui: {}, user: {}, session: {} });
+export const SessionContext = createContext<SessionData>({
+  ui: {},
+  user: {},
+  session: {},
+})
 
 export default function SessionProvider({
   session,
   children,
 }: {
-  session: SessionData;
-  children: React.ReactNode;
+  session: SessionData
+  children: React.ReactNode
 }) {
-  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={session}>
+      {children}
+    </SessionContext.Provider>
+  )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Button, Flex, Select, TextInput } from '@my/fe/src/components/mantine'
+import { Button, Flex, Select, TextInput } from '@my/fe/ui/components/mantine'
 import { fromByteArray } from 'base64-js'
 import classes from './index.module.scss'
 

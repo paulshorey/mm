@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Tabs } from '@my/fe/src/components/mantine'
+import { Tabs } from '@my/fe/ui/components/mantine'
 import classes from './index.module.scss'
 import Phind from './Phind'
 import Perplexity from './Perplexity'

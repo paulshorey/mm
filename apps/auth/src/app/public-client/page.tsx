@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import dynamic from 'next/dynamic'
-import { CodeHighlight } from '@my/fe/src/components/inline/CodeHighlight'
+import { CodeHighlight } from '@my/fe/ui/components/inline/CodeHighlight'
 import PageContentHeader from '@src/components/templates/PageContentHeader'
 import PageContent from '@src/components/templates/PageContent'
 
