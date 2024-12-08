@@ -5,4 +5,4 @@ export const mockControls: Controls = {
   groupBy: 'message',
   where: { name: '!error' },
 }
-export const mockResults: Results = {}
+export const mockResults: Results = []
