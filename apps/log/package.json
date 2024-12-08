@@ -22,15 +22,17 @@
   "dependencies": {
     "@my/be": "workspace:*",
     "@my/fe": "workspace:*",
-    "@tabler/icons-react": "^2.47.0",
     "@next/bundle-analyzer": "^14.2.15",
+    "@tabler/icons-react": "^2.47.0",
     "@vercel/analytics": "^1.3.1",
     "@vercel/postgres": "^0.10.0",
     "anychart-react": "^1.4.1",
     "base64-js": "^1.5.1",
     "html-entities": "^2.5.2",
+    "immer": "^10.1.1",
     "iron-session": "^8.0.3",
     "next": "14.0.1",
+    "nuqs": "^2.2.3",
     "openai": "^4.67.3",
     "pg": "^8.13.0",
     "react": "18.2.0",
@@ -41,7 +43,9 @@
     "sass": "^1.79.5",
     "stytch": "^10.20.0",
     "swr": "^2.2.5",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.2",
+    "zustand-querystring": "^0.1.0"
   },
   "devDependencies": {
     "@my/config": "workspace:*",

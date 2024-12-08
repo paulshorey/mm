@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Group, Textarea } from '@my/fe/ui/components/mantine'
+import { Group, Textarea } from '@my/fe/src/ui/components/mantine'
 import classes from './index.module.scss'
 
 export default function HomePhind() {

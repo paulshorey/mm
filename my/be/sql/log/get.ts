@@ -17,9 +17,11 @@ type Output = {
 
 type Props = {
   where?: Record<string, string | string[]>;
+  groupBy?: string;
+  limit?: number;
 };
 
-export const logGets = async function ({ where }: Props = {}): Promise<Output> {
+export const logGets = async function ({ where, groupBy, limit }: Props = {}): Promise<Output> {
   "use server";
 
   const output = {} as Output;
@@ -34,17 +36,38 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
         let val = where[key];
         if (Array.isArray(val)) {
           whereArr.push(`${key} IN ('${val.join("','")}')`);
+        } else if (!val) {
+          whereArr.push(`${key} IS NOT NULL'`);
         } else {
-          whereArr.push(`${key}='${val?.replace(/'/g, "''")}'`);
+          let op = "=";
+          if (val[0] === "!") {
+            op = "!=";
+            val = val.substring(1, val.length);
+          }
+          whereArr.push(`${key}${op}'${val?.replace(/'/g, "''")}'`);
         }
       }
     }
-    if (whereArr.length) {
-      whereSQL = "WHERE " + whereArr.join(" AND ");
+    let selectSQL = groupBy
+      ? `WITH ranked_logs AS (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY ${groupBy} ORDER BY time DESC) AS rn
+  FROM v1.logs
+) SELECT * FROM ranked_logs`
+      : `SELECT * FROM v1.logs`;
+    if (whereArr.length || groupBy) {
+      whereSQL = "WHERE " + (groupBy ? "rn = 1" : "") + (whereArr.length ? (groupBy ? " AND " : "") + whereArr.join(" AND ") : "");
     }
-    const result = await sqlQuery(pool, `SELECT * FROM v1.logs ${whereSQL} ORDER BY time DESC LIMIT 100`);
-    output.ip = ip;
-    output.result = result;
+    try {
+      const result = await sqlQuery(pool, `${selectSQL} ${whereSQL} ORDER BY time DESC LIMIT ${limit || 100}`);
+      output.ip = ip;
+      output.result = result.rows || [];
+    } catch (e) {
+      output.result = {
+        name: "error",
+        message: "SQL query failed. Probably because a requested column does not exist",
+        trace: { table: "logs", where },
+      };
+    }
     //@ts-ignore
   } catch (e: Error) {
     try {

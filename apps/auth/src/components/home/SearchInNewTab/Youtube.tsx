@@ -1,7 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { Button, NativeSelect, TextInput } from '@my/fe/ui/components/mantine'
+import {
+  Button,
+  NativeSelect,
+  TextInput,
+} from '@my/fe/src/ui/components/mantine'
 import classes from './index.module.scss'
 
 export default function HomeYoutube() {

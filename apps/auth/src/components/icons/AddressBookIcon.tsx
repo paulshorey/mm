@@ -1,4 +1,4 @@
-import { rem } from '@my/fe/ui/components/mantine'
+import { rem } from '@my/fe/src/ui/components/mantine'
 
 interface AddressBookIconProps extends React.ComponentPropsWithoutRef<'svg'> {
   size?: number | string

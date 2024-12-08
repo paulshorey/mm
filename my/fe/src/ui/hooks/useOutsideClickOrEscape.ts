@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { blur } from '@my/fe/ui/functions/blur'
+import { blur } from '@my/fe/src/ui/functions/blur'
 
 export default function useOutsideClickOrEscape(
   isOpen: boolean,

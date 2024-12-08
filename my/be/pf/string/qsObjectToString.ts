@@ -1,3 +1,3 @@
-export default function qsObjectToString(qsObject: Record<string, string>) {
-  return Object.entries(qsObject).join("&").replaceAll(",", "=");
+export function qsObjectToString(qsObject: Record<string, string>) {
+  return (Object.entries(qsObject).join("&").replaceAll(",", "=") + "&").replace(/=&/g, "&").replace(/&$/, "");
 }

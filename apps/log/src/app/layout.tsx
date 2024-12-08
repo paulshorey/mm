@@ -1,8 +1,10 @@
-import { Providers } from '@my/fe/src/components/wrappers/Providers'
+import { Providers } from '@my/fe/src/ui/components/wrappers/Providers'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
+
 // import dynamic from 'next/dynamic'
 // const Providers = dynamic(
 //   () =>
-//     import('@my/fe/src/components/wrappers/Providers').then(
+//     import('@my/fe/src/ui/components/wrappers/Providers').then(
 //       (mod) => mod.Providers
 //     ),
 //   {
@@ -33,7 +35,7 @@ export default async function RootLayout({ children }: { children: any }) {
       </head>
       <body suppressHydrationWarning>
         <Providers defaultColorScheme={defaultColorScheme}>
-          {children}
+          <NuqsAdapter>{children}</NuqsAdapter>
         </Providers>
       </body>
     </html>

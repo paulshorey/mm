@@ -1,8 +1,14 @@
 'use client'
 
-import { JsonView, darkStyles } from 'react-json-view-lite'
+import { darkStyles } from 'react-json-view-lite'
 import classes from './Json.module.scss'
-import { Copy } from '../buttons/Copy'
+import { Copy } from '../inline/Copy'
+
+import dynamic from 'next/dynamic'
+const JsonView = dynamic(
+  () => import('react-json-view-lite').then((mod) => mod.JsonView),
+  { ssr: false }
+)
 
 type Props = {
   data: Record<string, any>

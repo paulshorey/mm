@@ -1,14 +1,14 @@
 'use client'
 
-import { Group } from '@my/fe/ui/components/mantine'
+import { Group } from '@my/fe/src/ui/components/mantine'
 import Link from 'next/link'
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
-import { ColorSchemeSwitcher } from '@my/fe/auth/components/ColorSchemeSwitcher'
+import { ColorSchemeSwitcher } from '@my/fe/src/auth/components/ColorSchemeSwitcher'
 import { useState } from 'react'
 import classes from './index.module.scss'
 import { nav } from './constants'
-import useOutsideClickOrEscape from '@my/fe/ui/hooks/useOutsideClickOrEscape'
+import useOutsideClickOrEscape from '@my/fe/src/ui/hooks/useOutsideClickOrEscape'
 import DrawerWithTrigger from '../DrawerWithTrigger/DrawerWithHoverTrigger'
 
 export default function NavLeft() {

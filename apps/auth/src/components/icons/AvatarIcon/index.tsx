@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Avatar } from '@my/fe/ui/components/mantine'
+import { Avatar } from '@my/fe/src/ui/components/mantine'
 import classes from './index.module.scss'
 
 export default function AvatarIcon({ size }: { size?: string } = {}) {

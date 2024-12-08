@@ -1,5 +1,5 @@
-import { ErrorBoundary } from '@my/fe/ui/components/wrappers/ErrorBoundary'
-import { Providers } from '@my/fe/ui/components/wrappers/Providers'
+import { ErrorBoundary } from '@my/fe/src/ui/components/wrappers/ErrorBoundary'
+import { Providers } from '@my/fe/src/ui/components/wrappers/Providers'
 import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import SessionProvider from '@src/context/SessionProvider'
@@ -14,7 +14,7 @@ export const metadata = {
 }
 
 const OnLoad = dynamic(
-  async () => (await import('@my/fe/auth/components/OnLoad')).default,
+  async () => (await import('@my/fe/src/auth/components/OnLoad')).default,
   {
     ssr: false,
     loading: () => <p>Loading...</p>,

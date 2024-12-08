@@ -1,5 +1,5 @@
 import React from 'react'
-import { Notifications } from '@my/fe/ui/components/mantineNotifications'
+import { Notifications } from '@my/fe/src/ui/components/mantineNotifications'
 import classes from './index.module.scss'
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {}

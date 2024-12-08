@@ -40,25 +40,27 @@ export function Collapsed({
   return (
     <div
       {...props}
-      role="button"
       tabIndex={-1}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           setOpen(false)
         }
       }}
+      suppressHydrationWarning
     >
       <div
+        suppressHydrationWarning
         className="w-full flex flex-row align-middle justify-between"
         {...headerProps}
       >
         <div className="flex flex-row align-middle">{title}</div>
         {buttonsRight && (
-          <div className="flex flex-row align-middle">
+          <div className="flex flex-row align-middle" suppressHydrationWarning>
             {buttonsRight.map((Button: any) => {
               if (Button === 'toggle') {
                 return (
                   <span
+                    suppressHydrationWarning
                     key="toggle"
                     role="button"
                     tabIndex={-1}

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import * as React from 'react'
-import SigninSignupReset from '@my/fe/auth/components/AccordionSignin'
+import SigninSignupReset from '@my/fe/src/auth/components/AccordionSignin'
 import stytchRevokeSession from '@my/be/auth/actions/stytchRevokeSession'
 import { SessionContext } from '@src/context/SessionProvider'
 
