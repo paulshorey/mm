@@ -7,7 +7,7 @@ export const SessionContext = createContext<SessionData>({
   ui: {},
   user: {},
   session: {},
-}) as any
+})
 
 export default function SessionProvider({
   session,
