@@ -15,7 +15,7 @@ export default function SessionProvider({
 }: {
   session: SessionData
   // @ts-ignore
-  children: React.ReactNode
+  children: any
 }) {
   return (
     <SessionContext.Provider value={session}>
