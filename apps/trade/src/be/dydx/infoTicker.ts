@@ -1,23 +1,8 @@
 'use server'
 
-import {
-  OrderExecution,
-  OrderSide,
-  OrderType,
-  BECH32_PREFIX,
-  LocalWallet,
-  SubaccountClient,
-  CompositeClient,
-  OrderTimeInForce,
-  Network,
-  IndexerClient,
-} from '@dydxprotocol/v4-client-js'
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 import { logAdd } from '@my/be/sql/log/add'
-import { Order } from '@src/be/dydx/methods/getOrders'
 import Dydx from '@src/be/dydx'
-import { numberOrZero } from '@src/lib/numbers'
-import { getCandles } from '@src/be/dydx/methods/getCandles'
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

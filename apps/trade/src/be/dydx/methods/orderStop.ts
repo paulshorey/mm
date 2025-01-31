@@ -67,27 +67,23 @@ export async function orderStop(
 
     // notify
     await cc.info(
-      `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}  
-      $:${(coins * triggerPrice).toString().substring(0, 7)} 
-      n:${coins.toString().substring(0, 5)} 
-      p:${price.toString().substring(0, 7)} 
-      x:${triggerPrice.toString().substring(0, 7)}
-      %:${(triggerPrice / price).toString().substring(0, 7)}
-      `,
+      `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}`,
       {
         order: {
           ticker,
           type,
           side: (side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY).toString(),
+          coins: coins.toPrecision(5),
+          price: price.toPrecision(7),
+          amount: (coins * price).toPrecision(5),
           executionPrice,
-          coins,
+          triggerPrice: triggerPrice.toPrecision(7),
           clientId,
           timeInForce,
           goodTilTimeInSeconds,
           execution,
           postOnly,
           reduceOnly,
-          triggerPrice,
         },
         input: {
           price,

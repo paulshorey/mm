@@ -80,14 +80,14 @@ export const infoAccount = async (): Promise<Output | undefined> => {
         position.size = numberOrZero(raw.size)
         position.dollars = Math.round(position.size * position.price)
         // Entry price
-        // const entryPrice = Number(
-        //   numberOrZero(raw.entryPrice).toString().substring(0, 7)
-        // )
-        // const entry = Math.round(numberOrZero(raw.size) * entryPrice)
-        // position.pnl = (position.price - entryPrice) * raw.size
-        // position.entry = entry
-        // position.percent = entry + position.pnl
-        // position.entryPrice = entryPrice
+        const entryPrice = Number(
+          numberOrZero(raw.entryPrice).toString().substring(0, 7)
+        )
+        const entry = Math.round(numberOrZero(raw.size) * entryPrice)
+        position.pnl = (position.price - entryPrice) * raw.size
+        position.entry = entry
+        position.percent = entry + position.pnl
+        position.entryPrice = entryPrice
         // Orders
         position.orders = {}
         let historic_orders = {} as Record<string, any>
