@@ -1,23 +1,11 @@
 'use server'
 
-import {
-  OrderExecution,
-  OrderSide,
-  OrderType,
-  BECH32_PREFIX,
-  LocalWallet,
-  SubaccountClient,
-  CompositeClient,
-  OrderTimeInForce,
-  Network,
-  IndexerClient,
-} from '@dydxprotocol/v4-client-js'
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 import { logAdd } from '@my/be/sql/log/add'
-import { Order } from '@src/be/dydx/methods/getOrders'
 import Dydx from '@src/be/dydx'
 import { numberOrZero } from '@src/lib/numbers'
-import { getCandles } from '@src/be/dydx/methods/getCandles'
+// import { Order } from '@src/be/dydx/methods/getOrders'
+// import { getCandles } from '@src/be/dydx/methods/getCandles'
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -157,14 +145,14 @@ export const infoAccount = async (): Promise<Output | undefined> => {
             }
           }
         }
-        position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ =
-          (position.coins + sl_size_total) / position.coins
-        if (
-          !position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ ||
-          position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ < 0.01
-        ) {
-          delete position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___
-        }
+        // position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ =
+        //   (position.coins + sl_size_total) / position.coins
+        // if (
+        //   !position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ ||
+        //   position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ < 0.01
+        // ) {
+        //   delete position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___
+        // }
 
         // PNL vs SL
         const pnl_sl = ((position.price - position_sl) / position_sl) * -100
