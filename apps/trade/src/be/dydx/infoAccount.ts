@@ -55,42 +55,65 @@ export const infoAccount = async (): Promise<Output | undefined> => {
       // output.account.margin = numberOrZero(
       //   numberOrZero(accountData?.freeCollateral).toFixed(2)
       // )
-      output.account.stop = output.account.current
-      output.account.risk = 0
-      output.account.coins = {}
+      // output.account.stop = output.account.current
+      // output.account.risk = 0
+      // output.account.coins = {}
       // Positions
       const positions = accountData.openPerpetualPositions || {}
       output.account.positions = {}
       // output.data.positions = positions
       // console.log('positions', positions)
       // Orders
-      const orders = await dydx.getOrders(undefined)
+      const orders = ((await dydx.getOrders(undefined, true)) || []).map(
+        (order) => ({
+          triggerPrice: order.triggerPrice,
+          updatedAt: order.updatedAt,
+          postOnly: order.postOnly,
+          ticker: order.ticker,
+          size: order.size,
+          side: order.side,
+          type: order.type,
+          status: order.status,
+        })
+      )
       output.data.orders = orders
       // Order per position
       for (let ticker in positions) {
         const raw = positions[ticker]
-        const position = {} as Record<string, any>
+        const position = {
+          'pnl%': 0,
+          pnl$: 0,
+          entry: 0,
+          price: 0,
+          coins: 0,
+          original: 0,
+          remaining: 0,
+        } as Record<string, any>
         output.account.positions[ticker] = position
-        position.to_stoploss = 0
-        position.dollars = 0
         // Price
         let candles = await dydx.getCandles(ticker, '1MIN', 1)
         // position.side = raw.side
         position.price = numberOrZero(candles[0]?.close)
-        position.size = numberOrZero(raw.size)
-        position.dollars = Math.round(position.size * position.price)
+        position.coins = numberOrZero(raw.size)
+        position.original = Math.round(position.coins * raw.entryPrice)
+        position.remaining = Math.round(position.coins * position.price)
         // Entry price
-        const entryPrice = Number(
-          numberOrZero(raw.entryPrice).toString().substring(0, 7)
+        // const entryPrice = Number(
+        //   numberOrZero(raw.entryPrice).toString().substring(0, 7)
+        // )
+        // const entry = Math.round(numberOrZero(raw.size) * entryPrice)
+        // position.raw = raw
+        position['pnl$'] = Number(
+          (
+            numberOrZero(raw.unrealizedPnl) + numberOrZero(raw.realizedPnl)
+          ).toFixed(2)
         )
-        const entry = Math.round(numberOrZero(raw.size) * entryPrice)
-        position.status = {}
-        position.status.pnl = (position.price - entryPrice) * raw.size
-        position.status.entry = entry
-        position.status.percent = entry + position.pnl
-        position.status.entryPrice = entryPrice
+        position.entry = numberOrZero(raw.entryPrice)
+        position['pnl%'] = Number(
+          ((position['pnl$'] / position.remaining) * 100).toFixed(2)
+        )
         // Orders
-        position.orders = {}
+        // position.orders = {}
         let historic_orders = {} as Record<string, any>
         let position_sl = 0
         let sl_size_total = 0
@@ -109,11 +132,11 @@ export const infoAccount = async (): Promise<Output | undefined> => {
               ord.status === 'OPEN' ||
               ord.status === 'UNFILLED'
             ) {
-              position.orders[
-                `${ord.type.toLowerCase()} ${
-                  ord.status === 'UNTRIGGERED' ? '' : ord.status
-                }`
-              ] = order
+              // position.orders[
+              //   `${ord.type.toLowerCase()} ${
+              //     ord.status === 'UNTRIGGERED' ? '' : ord.status
+              //   }`
+              // ] = order
               // sl
               if (ord.type.substring(0, 4) === 'STOP') {
                 // instead of averaging all stop loss amounts,
@@ -135,7 +158,7 @@ export const infoAccount = async (): Promise<Output | undefined> => {
           }
         }
         position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ =
-          (position.size + sl_size_total) / position.size
+          (position.coins + sl_size_total) / position.coins
         if (
           !position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ ||
           position.___ORDERS_SIZE_LEFTOVER___THIS_SHOULD_BE_ZERO___ < 0.01
@@ -147,39 +170,39 @@ export const infoAccount = async (): Promise<Output | undefined> => {
         const pnl_sl = ((position.price - position_sl) / position_sl) * -100
 
         // LONG
-        if (position.size > 0) {
-          position.to_stoploss = Number((Math.abs(pnl_sl) + 0.25).toFixed(2))
+        if (position.coins > 0) {
+          position['sl%'] = Number((Math.abs(pnl_sl) + 0.25).toFixed(2))
         }
-        if (position.size < 0) {
-          position.to_stoploss = Number((Math.abs(pnl_sl) + 0.25).toFixed(2))
+        if (position.coins < 0) {
+          position['sl%'] = Number((Math.abs(pnl_sl) + 0.25).toFixed(2))
         }
         // SHORT
-        if (position.dollars < 0) {
-          position.to_stoploss = -position.to_stoploss
+        if (position.remaining < 0) {
+          position['sl%'] = -position['sl%']
         }
 
         // Summary
-        output.account.coins[ticker.replace('-USD', '')] = position.to_stoploss
-        if (position.to_stoploss) {
-          output.account.stop -=
-            Math.abs(position.dollars) * (Math.abs(position.to_stoploss) / 100)
-        } else {
-          output.account.stop -= Math.abs(position.dollars) * 0.05
-        }
-        output.account.risk = Number(
-          (
-            ((output.account.current - output.account.stop) /
-              output.account.stop) *
-            100
-          ).toFixed(2)
-        )
+        // output.account.coins[ticker.replace('-USD', '')] = position['sl%']
+        // if (position['sl%']) {
+        //   output.account.stop -=
+        //     Math.abs(position.remaining) * (Math.abs(position['sl%']) / 100)
+        // } else {
+        //   output.account.stop -= Math.abs(position.remaining) * 0.05
+        // }
+        // output.account.risk = Number(
+        //   (
+        //     ((output.account.current - output.account.stop) /
+        //       output.account.stop) *
+        //     100
+        //   ).toFixed(2)
+        // )
 
         // Cleanup before returning
-        output.account.stop = Number(output.account.stop.toFixed(2))
-        // position.percent = Number(
-        //   ((position.percent / position.entry) * 100).toFixed(2)
+        // output.account.stop = Number(output.account.stop.toFixed(2))
+        // position['pnl%'] = Number(
+        //   ((position['pnl%'] / position.entry) * 100).toFixed(2)
         // )
-        // position.pnl = Math.round(position.pnl)
+        // position['pnl$'] = Math.round(position['pnl$'])
         // position.entry = Math.round(position.entry)
       }
     }
