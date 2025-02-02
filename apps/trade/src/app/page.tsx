@@ -1,13 +1,13 @@
-import { Data } from '@src/fe/blocks/Data'
 import { infoAccount } from '@src/be/dydx/infoAccount'
+import { PageAccount } from '@src/fe/pages/PageAccount'
 
 export const revalidate = 0
 
-export default async function Page({}: {}) {
-  const data = await infoAccount()
-  if (!data) {
-    throw new Error('No data from DYDX')
-  }
+export default async function Page() {
+  const data = (await infoAccount()) || {}
+  // if (!data) {
+  //   throw new Error('No data from DYDX')
+  // }
   if (data.orders) {
     let orders = {} as Record<string, any>
     for (let row of data.orders) {
@@ -30,5 +30,5 @@ export default async function Page({}: {}) {
     }
     data.asksAndBids = { asks, bids }
   }
-  return <Data data={data} expandUntil={5} />
+  return <PageAccount data={data} expandUntil={5} />
 }

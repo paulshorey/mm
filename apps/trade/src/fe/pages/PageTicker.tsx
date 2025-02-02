@@ -6,6 +6,9 @@ import { VolumeColumn } from '@src/fe/blocks/VolumeColumn'
 import useSWR from 'swr'
 import classes from './PageTicker.module.scss'
 import { roundToCustomDecimal } from '@src/lib/numbers'
+import { useState } from 'react'
+import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
+import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
 
 export const revalidate = 0
 
@@ -152,8 +155,28 @@ export function PageTicker({ params }: { params: Params }) {
       sizes: sizesLinear,
     }
   }
+
+  const [orderText, setOrderText] = useState('')
+
   return (
     <div className={classes.container}>
+      <form
+        onSubmit={() => {
+          var orderObject = (parseOrdersText(orderText) || [])[0]
+          if (orderObject) {
+            executeOrderMarket(orderObject)
+          }
+        }}
+      >
+        <input
+          type="text"
+          value={orderText}
+          onChange={(e) => {
+            setOrderText(e.target.value)
+          }}
+        />
+        <button type="submit">☑️</button>
+      </form>
       <Data data={output} expandUntil={5} />
       <VolumeColumn
         asksAndBids={output.asksAndBids}

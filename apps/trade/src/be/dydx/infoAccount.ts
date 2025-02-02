@@ -3,7 +3,7 @@
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 import { logAdd } from '@my/be/sql/log/add'
 import Dydx from '@src/be/dydx'
-import { numberOrZero } from '@src/lib/numbers'
+import { numberOrZero, numberToFixed } from '@src/lib/numbers'
 // import { Order } from '@src/be/dydx/methods/getOrders'
 // import { getCandles } from '@src/be/dydx/methods/getCandles'
 
@@ -96,10 +96,11 @@ export const infoAccount = async (): Promise<Output | undefined> => {
             numberOrZero(raw.unrealizedPnl) + numberOrZero(raw.realizedPnl)
           ).toFixed(2)
         )
-        position.entry = numberOrZero(raw.entryPrice)
+        position.entry = numberToFixed(numberOrZero(raw.entryPrice))
         position['pnl%'] = Number(
           ((position['pnl$'] / position.remaining) * 100).toFixed(2)
         )
+        position.price = numberToFixed(position.price)
         // Orders
         // position.orders = {}
         let historic_orders = {} as Record<string, any>

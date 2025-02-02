@@ -11,6 +11,7 @@ import { cc } from '@my/be/cc'
 export const executeOrderMarket = async (
   input: MarketOrderInput
 ): Promise<MarketOrderOutput> => {
+  'use server'
   const output = {} as unknown as MarketOrderOutput
   const timeStarted = Date.now()
   function timer() {

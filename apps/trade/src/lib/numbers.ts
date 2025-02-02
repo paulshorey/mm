@@ -31,6 +31,9 @@ export const isNumber = function (val: any): boolean {
 export const numberOrZero = function (val: any): number {
   return isNumber(val) ? Number(val) : 0
 }
+export const numberToFixed = function (num: number, fixed = 2): number {
+  return Number(num.toFixed(fixed))
+}
 
 /**
  * One way hash a string into a number.
