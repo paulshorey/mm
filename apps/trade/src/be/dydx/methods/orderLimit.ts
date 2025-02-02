@@ -48,7 +48,7 @@ export async function orderLimit(
     })
 
     // place
-    compositeClient.placeOrder(
+    const data = await compositeClient.placeOrder(
       this.subaccount,
       ticker,
       type,
@@ -67,8 +67,11 @@ export async function orderLimit(
     await cc.warn(
       `order Limit ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker} ${
         reduceOnly ? 'reduce' : ''
-      }`,
+      }
+      $:${(coins * price).toString().substring(0, 7)} 
+      @:${price.toString().substring(0, 7)}`,
       {
+        data,
         ticker,
         side,
         coins: coins.toPrecision(5),
