@@ -67,7 +67,8 @@ export async function orderStop(
 
     // notify
     await cc.info(
-      `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}`,
+      `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}
+`,
       {
         order: {
           ticker,

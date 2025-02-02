@@ -181,8 +181,8 @@ importers:
         specifier: ^0.0.84
         version: 0.0.84(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@dydxprotocol/v4-client-js':
-        specifier: 1.12.3
-        version: 1.12.3(bufferutil@4.0.8)
+        specifier: 1.16.0
+        version: 1.16.0(bufferutil@4.0.8)
       '@mantine/code-highlight':
         specifier: ^7.13.2
         version: 7.13.4(@mantine/core@7.13.4(@mantine/hooks@7.13.4(react@18.2.0))(@types/react@18.2.34)(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(@mantine/hooks@7.13.4(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -689,6 +689,7 @@ packages:
 
   '@confio/ics23@0.6.8':
     resolution: {integrity: sha512-wB6uo+3A50m0sW/EWcU64xpV/8wShZ6bMTa7pF8eYsTrSkQA7oLUIJcs/wb8g4y2Oyq701BaGiO6n/ak5WXO1w==}
+    deprecated: Unmaintained. The codebase for this package was moved to https://github.com/cosmos/ics23 but then the JS implementation was removed in https://github.com/cosmos/ics23/pull/353. Please consult the maintainers of https://github.com/cosmos for further assistance.
 
   '@cosmjs/amino@0.32.4':
     resolution: {integrity: sha512-zKYOt6hPy8obIFtLie/xtygCkH9ZROiQ12UHfKsOkWaZfPQUvVbtgmu6R4Kn1tFLI/SRkw7eqhaogmW/3NYu/Q==}
@@ -772,11 +773,11 @@ packages:
   '@dual-bundle/import-meta-resolve@4.1.0':
     resolution: {integrity: sha512-+nxncfwHM5SgAtrVzgpzJOI1ol0PkumhVo469KCf9lUi21IGcY90G98VuHm9VRrUypmAzawAHO9bs6hqeADaVg==}
 
-  '@dydxprotocol/v4-client-js@1.12.3':
-    resolution: {integrity: sha512-73D5jAhGYV7LqKjkWevpqKQXfSwveFZks1QXrZxZpRGLHQNJbOAiG6aWWV3rPAQvjPHI2RyB3KI5MAjnE3RToQ==}
+  '@dydxprotocol/v4-client-js@1.16.0':
+    resolution: {integrity: sha512-yBOkYmhHYhSBQs29u0pClaKGsL0tbUG4SFj2FVo+N5WUhMmRJrQ75FDq/OLBXebWnpIOiGI/6iKuJTrawgWkDA==}
 
-  '@dydxprotocol/v4-proto@7.0.0-dev.0':
-    resolution: {integrity: sha512-yQ3xMW8GmKCCwtzXF1E/TMYvPYDPRmAR2T/AFXKlE2YF/P/yQMrz/IySzX4Z+wyAMI+G4Sr+AML7V8ehvAcjog==}
+  '@dydxprotocol/v4-proto@8.0.0':
+    resolution: {integrity: sha512-QO4YLuptOH2BhkdKpXOvdSdGCy5IYUPYl/w4Xj3aoTrxCTa4Dp41HBC69ji8dzQ40eTLyCx5K+/+PCcBdZt4iw==}
 
   '@eslint-community/eslint-utils@4.4.0':
     resolution: {integrity: sha512-1/sA4dwrzBAyeUoQ6oxahHKmrZvsnLCg4RfxW3ZFGGmQkSNQPFNLV9CUEFQP1x9EYXHTo5p6xdhZM1Ne9p/AfA==}
@@ -5797,7 +5798,7 @@ snapshots:
 
   '@dual-bundle/import-meta-resolve@4.1.0': {}
 
-  '@dydxprotocol/v4-client-js@1.12.3(bufferutil@4.0.8)':
+  '@dydxprotocol/v4-client-js@1.16.0(bufferutil@4.0.8)':
     dependencies:
       '@cosmjs/amino': 0.32.4
       '@cosmjs/encoding': 0.32.4
@@ -5806,7 +5807,7 @@ snapshots:
       '@cosmjs/stargate': 0.32.4(bufferutil@4.0.8)
       '@cosmjs/tendermint-rpc': 0.32.4(bufferutil@4.0.8)
       '@cosmjs/utils': 0.32.4
-      '@dydxprotocol/v4-proto': 7.0.0-dev.0
+      '@dydxprotocol/v4-proto': 8.0.0
       '@osmonauts/lcd': 0.6.0
       '@scure/bip32': 1.5.0
       '@scure/bip39': 1.4.0
@@ -5824,7 +5825,7 @@ snapshots:
       - debug
       - utf-8-validate
 
-  '@dydxprotocol/v4-proto@7.0.0-dev.0':
+  '@dydxprotocol/v4-proto@8.0.0':
     dependencies:
       protobufjs: 6.11.4
 

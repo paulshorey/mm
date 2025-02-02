@@ -43,7 +43,7 @@ export async function orderMarket(
     })
 
     // place
-    const data = await compositeClient.placeOrder(
+    compositeClient.placeOrder(
       this.subaccount,
       ticker,
       type,
@@ -64,14 +64,28 @@ export async function orderMarket(
         reduceOnly ? 'reduce' : ''
       }
       $:${(coins * price).toString().substring(0, 7)} 
-      @:${price.toString().substring(0, 7)}`,
+      @:${price.toString().substring(0, 7)}
+`,
       {
-        data,
-        ticker,
-        side,
-        coins: coins.toPrecision(5),
-        price: price.toPrecision(7),
-        amount: (coins * price).toPrecision(5),
+        order: {
+          ticker,
+          type,
+          side: (side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY).toString(),
+          coins: coins.toPrecision(5),
+          executionPrice,
+          clientId,
+          timeInForce,
+          goodTilTimeInSeconds,
+          execution,
+          postOnly,
+          reduceOnly,
+        },
+        input: {
+          side,
+          coins,
+          price,
+          reduceOnly,
+        },
       },
       {
         category: 'order',
