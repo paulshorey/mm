@@ -22,9 +22,7 @@ export const executeOrderMarket = async (
     `
   
 new executeOrderMarket 
-${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}   
-  
-`,
+${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
     input
   )
   try {
@@ -130,9 +128,9 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
       throw new Error(output.error)
     }
     // New position = wait, in case there are outstanding orders still processing
-    if (output.size_intended > output.size_original) {
-      await cancelOtherStops()
-    }
+    // if (output.size_intended > output.size_original) {
+    //   await cancelOtherStops()
+    // }
     // #1 order attempt, updatePrice() and updatePositionCheckMargin()
     // must go outside of !output.order_is_filled check
     if (!output.order_is_filled) {
@@ -145,6 +143,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
           side: output.side,
           coins: Math.abs(output.size_unfilled),
           price: output.price,
+          reduceOnly: output.size_intended === 0,
           x1: 0.005,
         })
         output.order_is_filled = false
@@ -179,6 +178,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
           side: output.side,
           coins: Math.abs(output.size_unfilled),
           price: output.price,
+          reduceOnly: output.size_intended === 0,
           x1: 0.01,
         })
         output.order_is_filled = false
@@ -265,86 +265,100 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}
     }
 
     /**
+     * Is it filled successfully?
+     */
+    if (!output.order_is_filled) {
+      cc.warn(
+        `order could not be filled ${input.ticker} ${output.side} ${
+          output.size_original
+        }/${output.size_unfilled}/${output.size_intended} $:${
+          output.size_unfilled * output.price
+        } @:${output.price}`,
+        output
+      )
+    }
+
+    /**
      * Cancel any old stop orders that are not exactly like the new one (or all if unspecified)
      * @returns true if exact match was found (new stop order successfully created)
      */
-    async function cancelOtherStops(size?: number, side?: 'SHORT' | 'LONG') {
-      // get all open orders
-      const orders = await dydx.getOrders(
-        input.ticker,
-        true,
-        (order) => order.type.substring(0, 4) === 'STOP'
-      )
-      // find the same size stop order, to avoid creating a duplicate new one
-      let foundTheOne = false
-      for (let order of orders) {
-        // found one with same size! No need to start a new one
-        if (
-          Math.abs(numberOrZero(order.size)) === size &&
-          order.side === side
-        ) {
-          // do not cancel the first match, return it
-          if (!foundTheOne) {
-            foundTheOne = true
-            continue
-          }
-          // but if it's not the first, then go on to cancel
-        }
-        // cancel all other unfilled orders before adding the new one
-        await dydx.orderCancel({
-          ticker: input.ticker,
-          clientId: order.clientId,
-          orderType: order.type,
-        })
-      }
-      return foundTheOne
-    }
+    // async function cancelOtherStops(size?: number, side?: 'SHORT' | 'LONG') {
+    //   // get all open orders
+    //   const orders = await dydx.getOrders(
+    //     input.ticker,
+    //     true,
+    //     (order) => order.type.substring(0, 4) === 'STOP'
+    //   )
+    //   // find the same size stop order, to avoid creating a duplicate new one
+    //   let foundTheOne = false
+    //   for (let order of orders) {
+    //     // found one with same size! No need to start a new one
+    //     if (
+    //       Math.abs(numberOrZero(order.size)) === size &&
+    //       order.side === side
+    //     ) {
+    //       // do not cancel the first match, return it
+    //       if (!foundTheOne) {
+    //         foundTheOne = true
+    //         continue
+    //       }
+    //       // but if it's not the first, then go on to cancel
+    //     }
+    //     // cancel all other unfilled orders before adding the new one
+    //     await dydx.orderCancel({
+    //       ticker: input.ticker,
+    //       clientId: order.clientId,
+    //       orderType: order.type,
+    //     })
+    //   }
+    //   return foundTheOne
+    // }
 
     /*
      * Stoploss on the current position
      */
-    let whileStopAttemptNumber = 0
-    if (output.size_current !== 0) {
-      // keep checking after every dydx.orderStop if it was placed
-      while (true) {
-        whileStopAttemptNumber++
-        cc.log(`whileStopAttemptNumber # ${whileStopAttemptNumber}`)
-        if (whileStopAttemptNumber > 5) {
-          cc.error(
-            `whileStopAttemptNumber>5 ${input.ticker} ${output.side} $${input.position} size_current:${output.size_current}`,
-            output
-          )
-          break
-        }
-        // make sure to have stop order opposite of current position
-        await updatePosition()
-        const stopCoins = Math.abs(output.size_current)
-        if (!stopCoins) {
-          break
-        }
-        const stopSide = output.size_current > 0 ? 'SHORT' : 'LONG'
-        // create new stop
-        await dydx.orderStop({
-          ticker: input.ticker,
-          side: stopSide,
-          coins: stopCoins,
-          price: output.price,
-          sl: input.sl,
-        })
-        timer()
-        // wait 10 seconds for the new stop order to take effect
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            resolve(true)
-          }, 10000)
-        )
-        timer()
-        // cancel other stops
-        if (await cancelOtherStops(stopCoins, stopSide)) {
-          break
-        }
-      }
-    }
+    // let whileStopAttemptNumber = 0
+    // if (output.size_current !== 0) {
+    //   // keep checking after every dydx.orderStop if it was placed
+    //   while (true) {
+    //     whileStopAttemptNumber++
+    //     cc.log(`whileStopAttemptNumber # ${whileStopAttemptNumber}`)
+    //     if (whileStopAttemptNumber > 5) {
+    //       cc.error(
+    //         `whileStopAttemptNumber>5 ${input.ticker} ${output.side} $${input.position} size_current:${output.size_current}`,
+    //         output
+    //       )
+    //       break
+    //     }
+    //     // make sure to have stop order opposite of current position
+    //     await updatePosition()
+    //     const stopCoins = Math.abs(output.size_current)
+    //     if (!stopCoins) {
+    //       break
+    //     }
+    //     const stopSide = output.size_current > 0 ? 'SHORT' : 'LONG'
+    //     // create new stop
+    //     await dydx.orderStop({
+    //       ticker: input.ticker,
+    //       side: stopSide,
+    //       coins: stopCoins,
+    //       price: output.price,
+    //       sl: input.sl,
+    //     })
+    //     timer()
+    //     // wait 10 seconds for the new stop order to take effect
+    //     await new Promise((resolve) =>
+    //       setTimeout(async () => {
+    //         resolve(true)
+    //       }, 10000)
+    //     )
+    //     timer()
+    //     // cancel other stops
+    //     if (await cancelOtherStops(stopCoins, stopSide)) {
+    //       break
+    //     }
+    //   }
+    // }
 
     timer()
     // @ts-ignore

@@ -20,11 +20,12 @@ type Props = {
    */
   x1: number
   postOnly?: boolean
+  reduceOnly?: boolean
 }
 
 export async function orderLimit(
   this: DydxInterface,
-  { clientId, ticker, side, coins, price, x1, postOnly }: Props
+  { clientId, ticker, side, coins, price, x1, postOnly, reduceOnly }: Props
 ) {
   try {
     const compositeClient = await this.getCompositeClient()
@@ -34,8 +35,8 @@ export async function orderLimit(
     const execution = OrderExecution.DEFAULT
     const multiplier = 1 + (side === 'LONG' ? x1 : -x1) // buy high / sell low
     const executionPrice = price * multiplier
-    const reduceOnly = false
     postOnly = !!postOnly // default false
+    reduceOnly = !!reduceOnly // default false
 
     // record
     await orderAdd({
