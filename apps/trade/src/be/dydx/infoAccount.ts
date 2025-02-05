@@ -98,7 +98,7 @@ export const infoAccount = async (): Promise<Output | undefined> => {
         )
         position.entry = numberToFixed(numberOrZero(raw.entryPrice))
         position['pnl%'] = Number(
-          ((position['pnl$'] / position.remaining) * 100).toFixed(2)
+          ((position['pnl$'] / Math.abs(position.remaining)) * 100).toFixed(2)
         )
         position.price = numberToFixed(position.price)
         // Orders
