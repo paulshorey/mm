@@ -28,10 +28,14 @@ const handler = async (request: NextRequest) => {
       // dydx status
       const parsedOrders = parseOrdersText(bodyText)
       if (!parsedOrders[0]) {
-        await logAdd('warn', `parseOrdersText failed`, {
-          bodyText,
-          parsedOrders,
-          bodyData,
+        await logAdd({
+          name: 'warn',
+          message: `parseOrdersText failed`,
+          stack: {
+            bodyText,
+            parsedOrders,
+            bodyData,
+          },
         })
         return formatResponse(
           {
@@ -68,17 +72,21 @@ const handler = async (request: NextRequest) => {
 
       // @ts-ignore
     } catch (error: Error) {
-      await logAdd('error', `${bodyText} failed with error: ${error.message}`, {
-        error: error.stack,
-        bodyText,
-        bodyData,
+      await logAdd({
+        name: 'error',
+        message: `${bodyText} failed with error: ${error.message}`,
+        stack: {
+          error: error.stack,
+          bodyText,
+          bodyData,
+        },
       })
       return formatResponse({ error: error.message }, 500)
     }
 
     // @ts-ignore
   } catch (error: Error) {
-    await logAdd('error', error.message, error.stack)
+    await logAdd({ name: 'error', message: error.message, stack: error.stack })
     return formatResponse({ error: error.message }, 500)
   }
 }

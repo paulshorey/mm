@@ -13,13 +13,8 @@ type Output = Record<string, any>
 /**
  * Throws error if something went wrong!
  */
-export const infoTicker = async (
-  tickerString: string
-): Promise<Output | undefined> => {
-  const ticker = (tickerString.toUpperCase() + '-USD').replace(
-    '-USD-USD',
-    '-USD'
-  )
+export const infoTicker = async (tickerString: string): Promise<Output | undefined> => {
+  const ticker = (tickerString.toUpperCase() + '-USD').replace('-USD-USD', '-USD')
   const output = {} as Output
   try {
     /*
@@ -36,16 +31,18 @@ export const infoTicker = async (
     // @ts-ignore
   } catch (err: Error) {
     // Error
-    const message =
-      'DYDX Error! in scout ' +
-      (typeof err?.message === 'string' ? err?.message : 'unknown')
+    const message = 'DYDX Error! in scout ' + (typeof err?.message === 'string' ? err?.message : 'unknown')
     // notify sms
     sendToMyselfSMS(message)
     // notify log
-    await logAdd('error', message, {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
+    await logAdd({
+      name: 'error',
+      message,
+      stack: {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+      },
     })
   }
   return output

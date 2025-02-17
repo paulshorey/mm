@@ -1,13 +1,8 @@
-import {
-  OrderExecution,
-  OrderType,
-  OrderTimeInForce,
-  OrderSide,
-} from '@dydxprotocol/v4-client-js'
-import { cc } from '@my/be/cc'
+import { OrderExecution, OrderType, OrderTimeInForce, OrderSide } from '@dydxprotocol/v4-client-js'
 import { orderAdd } from '@my/be/sql/order/add'
 import { DydxInterface } from '@src/be/dydx'
 import { catchError } from '@src/be/dydx/lib/catchError'
+import { logAdd } from '@my/be/sql/log/add'
 
 type Props = {
   clientId: number
@@ -23,10 +18,7 @@ type Props = {
   reduceOnly?: boolean
 }
 
-export async function orderLimit(
-  this: DydxInterface,
-  { clientId, ticker, side, coins, price, x1, postOnly, reduceOnly }: Props
-) {
+export async function orderLimit(this: DydxInterface, { clientId, ticker, side, coins, price, x1, postOnly, reduceOnly }: Props) {
   try {
     const compositeClient = await this.getCompositeClient()
     const type = OrderType.LIMIT // order type
@@ -44,35 +36,21 @@ export async function orderLimit(
       type: 'LIMIT',
       ticker,
       side,
-      size: coins,
+      amount: coins * price,
       price,
     })
 
     // place
-    compositeClient.placeOrder(
-      this.subaccount,
-      ticker,
-      type,
-      side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY,
-      executionPrice,
-      coins,
-      clientId,
-      timeInForce,
-      goodTilTimeInSeconds,
-      execution,
-      postOnly,
-      reduceOnly
-    )
+    compositeClient.placeOrder(this.subaccount, ticker, type, side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY, executionPrice, coins, clientId, timeInForce, goodTilTimeInSeconds, execution, postOnly, reduceOnly)
 
     // notify
-    await cc.warn(
-      `order Limit ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker} ${
-        reduceOnly ? 'reduce' : ''
-      }
+    await logAdd({
+      name: 'warn',
+      message: `order Limit ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker} ${reduceOnly ? 'reduce' : ''}
       $:${(coins * price).toString().substring(0, 7)} 
       @:${price.toString().substring(0, 7)}
 `,
-      {
+      stack: {
         order: {
           ticker,
           type,
@@ -93,11 +71,9 @@ export async function orderLimit(
           reduceOnly,
         },
       },
-      {
-        category: 'order',
-        tag: 'place',
-      }
-    )
+      category: 'order',
+      tag: 'place',
+    })
     return clientId
 
     // @ts-ignore

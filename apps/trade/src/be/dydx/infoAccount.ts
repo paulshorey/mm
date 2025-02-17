@@ -37,9 +37,7 @@ export const infoAccount = async (): Promise<Output | undefined> => {
         throw new Error('updatePositionCheckMargin() !cashAvailable')
       }
       // Margin
-      output.account.current = numberOrZero(
-        Number(accountData.equity).toFixed(2)
-      )
+      output.account.current = numberOrZero(Number(accountData.equity).toFixed(2))
       // output.account.margin = numberOrZero(
       //   numberOrZero(accountData?.freeCollateral).toFixed(2)
       // )
@@ -52,18 +50,16 @@ export const infoAccount = async (): Promise<Output | undefined> => {
       // output.data.positions = positions
       // console.log('positions', positions)
       // Orders
-      const orders = ((await dydx.getOrders(undefined, true)) || []).map(
-        (order) => ({
-          triggerPrice: order.triggerPrice,
-          updatedAt: order.updatedAt,
-          postOnly: order.postOnly,
-          ticker: order.ticker,
-          size: order.size,
-          side: order.side,
-          type: order.type,
-          status: order.status,
-        })
-      )
+      const orders = ((await dydx.getOrders(undefined, true)) || []).map((order) => ({
+        triggerPrice: order.triggerPrice,
+        updatedAt: order.updatedAt,
+        postOnly: order.postOnly,
+        ticker: order.ticker,
+        size: order.size,
+        side: order.side,
+        type: order.type,
+        status: order.status,
+      }))
       output.data.orders = orders
       // Order per position
       for (let ticker in positions) {
@@ -91,15 +87,9 @@ export const infoAccount = async (): Promise<Output | undefined> => {
         // )
         // const entry = Math.round(numberOrZero(raw.size) * entryPrice)
         // position.raw = raw
-        position['pnl$'] = Number(
-          (
-            numberOrZero(raw.unrealizedPnl) + numberOrZero(raw.realizedPnl)
-          ).toFixed(2)
-        )
+        position['pnl$'] = Number((numberOrZero(raw.unrealizedPnl) + numberOrZero(raw.realizedPnl)).toFixed(2))
         position.entry = numberToFixed(numberOrZero(raw.entryPrice))
-        position['pnl%'] = Number(
-          ((position['pnl$'] / Math.abs(position.remaining)) * 100).toFixed(2)
-        )
+        position['pnl%'] = Number(((position['pnl$'] / Math.abs(position.remaining)) * 100).toFixed(2))
         position.price = numberToFixed(position.price)
         // Orders
         // position.orders = {}
@@ -110,17 +100,9 @@ export const infoAccount = async (): Promise<Output | undefined> => {
           if (ord.ticker === ticker) {
             let order = {} as Record<string, any>
             order.price = numberOrZero(ord.triggerPrice)
-            order.size =
-              Math.abs(numberOrZero(ord.size)) * (ord.side === 'LONG' ? 1 : -1)
+            order.size = Math.abs(numberOrZero(ord.size)) * (ord.side === 'LONG' ? 1 : -1)
             // OPEN ORDERS
-            if (
-              ord.status === 'UNTRIGGERED' ||
-              ord.status === 'CANCELLING' ||
-              ord.status === 'CANCELING' ||
-              ord.status === 'BEST_EFFORT_CANCELED' ||
-              ord.status === 'OPEN' ||
-              ord.status === 'UNFILLED'
-            ) {
+            if (ord.status === 'UNTRIGGERED' || ord.status === 'CANCELLING' || ord.status === 'CANCELING' || ord.status === 'BEST_EFFORT_CANCELED' || ord.status === 'OPEN' || ord.status === 'UNFILLED') {
               // position.orders[
               //   `${ord.type.toLowerCase()} ${
               //     ord.status === 'UNTRIGGERED' ? '' : ord.status
@@ -138,11 +120,7 @@ export const infoAccount = async (): Promise<Output | undefined> => {
               sl_size_total += order.size
             } else {
               // HISTORIC ORDERS
-              historic_orders[
-                `${ord.type.toLowerCase()} ${
-                  ord.status === 'UNTRIGGERED' ? '' : ord.status
-                }`
-              ] = order
+              historic_orders[`${ord.type.toLowerCase()} ${ord.status === 'UNTRIGGERED' ? '' : ord.status}`] = order
             }
           }
         }
@@ -199,16 +177,18 @@ export const infoAccount = async (): Promise<Output | undefined> => {
     // @ts-ignore
   } catch (err: Error) {
     // Error
-    const message =
-      'DYDX Error! in scout ' +
-      (typeof err?.message === 'string' ? err?.message : 'unknown')
+    const message = 'DYDX Error! in scout ' + (typeof err?.message === 'string' ? err?.message : 'unknown')
     // notify sms
     sendToMyselfSMS(message)
     // notify log
-    await logAdd('error', message, {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
+    await logAdd({
+      name: 'error',
+      message,
+      stack: {
+        name: err.name,
+        message: err.message,
+        stack: err.stack,
+      },
     })
   }
   return output

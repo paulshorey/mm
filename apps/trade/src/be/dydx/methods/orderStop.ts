@@ -1,12 +1,7 @@
-import {
-  OrderExecution,
-  OrderType,
-  OrderTimeInForce,
-  OrderSide,
-} from '@dydxprotocol/v4-client-js'
+import { OrderExecution, OrderType, OrderTimeInForce, OrderSide } from '@dydxprotocol/v4-client-js'
 import { DydxInterface } from '@src/be/dydx'
 import { defaults } from '../constants/defaults'
-import { cc } from '@my/be/cc'
+import { logAdd } from '@my/be/sql/log/add'
 import { orderAdd } from '@my/be/sql/order/add'
 import { catchError } from '@src/be/dydx/lib/catchError'
 
@@ -18,14 +13,10 @@ type Props = {
   sl?: number
 }
 
-export async function orderStop(
-  this: DydxInterface,
-  { ticker, side, coins, price, sl }: Props
-) {
+export async function orderStop(this: DydxInterface, { ticker, side, coins, price, sl }: Props) {
   try {
     coins = Math.abs(coins) // UNLIKE MARKET ORDER WHICH REQUIRES NEGATIVE FOR SHORT ORDERS, STOP LOSS SIZE IS ALWAYS ABSOLUTE
-    const slDefined =
-      sl || defaults?.[ticker]?.[side] || defaults?.default?.[side] || 0.33
+    const slDefined = sl || defaults?.[ticker]?.[side] || defaults?.default?.[side] || 0.33
     const compositeClient = await this.getCompositeClient()
     const slMultiplier = 1 + (side === 'SHORT' ? -slDefined : slDefined) / 100 // if shorting, trigger price is bellow market
     const triggerPrice = price * slMultiplier
@@ -44,32 +35,18 @@ export async function orderStop(
       type: 'STOP_MARKET',
       ticker,
       side,
-      size: coins,
+      amount: coins * price,
       price,
     })
 
     // place
-    await compositeClient.placeOrder(
-      this.subaccount,
-      ticker,
-      type,
-      side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY,
-      executionPrice,
-      coins,
-      clientId,
-      timeInForce,
-      goodTilTimeInSeconds,
-      execution,
-      postOnly,
-      reduceOnly,
-      triggerPrice
-    )
+    await compositeClient.placeOrder(this.subaccount, ticker, type, side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY, executionPrice, coins, clientId, timeInForce, goodTilTimeInSeconds, execution, postOnly, reduceOnly, triggerPrice)
 
     // notify
-    await cc.info(
-      `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}
-`,
-      {
+    await logAdd({
+      name: 'info',
+      message: `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}`,
+      stack: {
         order: {
           ticker,
           type,
@@ -91,11 +68,9 @@ export async function orderStop(
           slMultiplier,
         },
       },
-      {
-        category: 'order',
-        tag: 'stop',
-      }
-    )
+      category: 'order',
+      tag: 'stop',
+    })
     return clientId
 
     // @ts-ignore

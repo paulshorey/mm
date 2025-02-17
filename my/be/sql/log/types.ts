@@ -35,10 +35,12 @@ export type LogSchema = {
 //   tag: "",
 // };
 
-export type LogOptions = {
+export type LogRow = {
+  name: LogLevel;
+  message: string;
+  stack: Record<string, any>;
   type?: string;
   access_key?: string;
-  message?: string;
   title?: string;
   sms?: boolean;
   category?: string;

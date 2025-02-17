@@ -8,9 +8,7 @@ import { MarketOrderOutput, MarketOrderInput } from './types'
 import { validateInputsMarket } from '@src/be/dydx/lib/validateInputsMarket'
 import { cc } from '@my/be/cc'
 
-export const executeOrderMarket = async (
-  input: MarketOrderInput
-): Promise<MarketOrderOutput> => {
+export const executeOrderMarket = async (input: MarketOrderInput): Promise<MarketOrderOutput> => {
   'use server'
   const output = {} as unknown as MarketOrderOutput
   const timeStarted = Date.now()
@@ -48,8 +46,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
     async function updatePosition() {
       const positionData = (await dydx.getPositions(input.ticker, 'OPEN'))?.[0]
       // Minimum number of coins able to buy/sell. SUI=10. ETH=0.001. Etc.
-      output.precision =
-        defaults?.[input.ticker]?.precision || defaults?.default?.precision || 1
+      output.precision = defaults?.[input.ticker]?.precision || defaults?.default?.precision || 1
       cc.log('output.precision', output.precision)
       // Current position
       output.size_current = numberOrZero(positionData?.size)
@@ -57,11 +54,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       // Intended position
       if (output.size_original === undefined) {
         output.size_original = output.size_current
-        output.size_intended = roundToCustomDecimal(
-          input.position / output.price,
-          output.precision,
-          'down'
-        )
+        output.size_intended = roundToCustomDecimal(input.position / output.price, output.precision, 'down')
         cc.log('output.size_intended', output.size_intended)
       }
       // How much to add
@@ -70,11 +63,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
         output.order_is_filled = true
         output.message = `Position already at ${output.size_intended}`
       } else {
-        output.size_unfilled = roundToCustomDecimal(
-          output.size_intended - output.size_current,
-          output.precision,
-          'up'
-        )
+        output.size_unfilled = roundToCustomDecimal(output.size_intended - output.size_current, output.precision, 'up')
       }
       cc.log('output.size_unfilled', output.size_unfilled)
       // Side
@@ -85,8 +74,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       }
       // Filled to top
       const unfilled = Math.abs(output.size_unfilled)
-      output.order_is_filled =
-        unfilled < output.precision || unfilled * output.price < 15
+      output.order_is_filled = unfilled < output.precision || unfilled * output.price < 15
       cc.log('output.order_is_filled', output.order_is_filled)
     }
     async function updatePositionCheckMargin() {
@@ -268,14 +256,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
      * Is it filled successfully?
      */
     if (!output.order_is_filled) {
-      cc.warn(
-        `order could not be filled ${input.ticker} ${output.side} ${
-          output.size_original
-        }/${output.size_unfilled}/${output.size_intended} $:${
-          output.size_unfilled * output.price
-        } @:${output.price}`,
-        output
-      )
+      cc.warn(`order could not be filled ${input.ticker} ${output.side} ${output.size_original}/${output.size_unfilled}/${output.size_intended} $:${output.size_unfilled * output.price} @:${output.price}`, output)
     }
 
     /**
