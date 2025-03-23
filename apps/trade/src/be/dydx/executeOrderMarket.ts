@@ -89,11 +89,11 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       output.margin_available = Math.floor(cashAvailable * 9) // 90% of 10x
       output.margin_needed = Math.ceil(output.price * output.size_unfilled)
       // Not enough margin!
-      if (output.margin_available < output.margin_needed) {
-        output.error = `Not enough margin: ${output.margin_needed} > ${output.margin_available}`
-        output.order_is_filled = true // can not fill any more, stop everything!
-        return false
-      }
+      // if (output.margin_available < output.margin_needed) {
+      //   output.error = `Not enough margin: ${output.margin_needed} > ${output.margin_available}`
+      //   output.order_is_filled = true // can not fill any more, stop everything!
+      //   return false
+      // }
       // Enough, continue
       return true
     }
