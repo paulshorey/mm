@@ -133,3 +133,4 @@ dist
 .vercel
 
 yarn.lock 
+.vscode
