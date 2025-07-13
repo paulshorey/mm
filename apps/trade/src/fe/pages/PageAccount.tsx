@@ -3,8 +3,6 @@
 import { Data } from '@src/fe/blocks/Data'
 import classes from './PageAccount.module.scss'
 import { useState } from 'react'
-import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
-import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
 
 export const revalidate = 0
 
@@ -20,10 +18,10 @@ export function PageAccount(props: Props) {
     <div className={classes.container}>
       <form
         onSubmit={() => {
-          var orderObject = (parseOrdersText(orderText) || [])[0]
-          if (orderObject) {
-            executeOrderMarket(orderObject)
-          }
+          fetch('/api/v1/market?access_key=testkeyx&', {
+            method: 'POST',
+            body: orderText,
+          })
         }}
       >
         <input
