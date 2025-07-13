@@ -18,9 +18,9 @@ export const orderAdd = async function (row: OrderRow) {
   } catch (e: Error) {
     const error = {
       name: "Error order/add.ts catch",
-      message: e.message,
-      stack: e.stack,
+      message: e.message || "",
+      stack: e.stack || "",
     };
-    cc.error(error.name, error);
+    cc.error(`${error.name} ${e.message} ${e.stack?.substring(0, e.stack.indexOf(/\n/))}`, error);
   }
 };
