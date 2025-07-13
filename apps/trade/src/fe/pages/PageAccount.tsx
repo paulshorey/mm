@@ -18,8 +18,10 @@ export function PageAccount(props: Props) {
     <div className={classes.container}>
       <form
         onSubmit={() => {
-          // send POST body orderText as plain text to this URL:
-          // fetch('/api/v1/market?access_key=testkeyx&')
+          fetch('/api/v1/market?access_key=testkeyx&', {
+            method: 'POST',
+            body: orderText,
+          })
         }}
       >
         <input
