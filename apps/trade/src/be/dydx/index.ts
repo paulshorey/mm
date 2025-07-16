@@ -54,6 +54,7 @@ export class Dydx implements DydxInterface {
 
   constructor() {
     this.network = Network.mainnet()
+    // this.init() // Can not call asynchronous function in constructor synchronously using await
   }
 
   async init() {

@@ -33,7 +33,13 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
      * Connection
      */
     const dydx = new Dydx()
-    await dydx.init()
+    // await dydx.init() // Calling this here outside of constructor does not work for some reason.
+    // dydx.init is async, takes a bit of time
+    await new Promise((resolve) =>
+      setTimeout(async () => {
+        resolve(true)
+      }, 250)
+    )
 
     /*
      * Helpers
