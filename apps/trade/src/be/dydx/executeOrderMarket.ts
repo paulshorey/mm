@@ -33,12 +33,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
      * Connection
      */
     const dydx = new Dydx()
-    // dydx.init is async, takes a bit of time
-    await new Promise((resolve) =>
-      setTimeout(async () => {
-        resolve(true)
-      }, 250)
-    )
+    await dydx.init()
 
     /*
      * Helpers
@@ -340,8 +335,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
     // }
 
     timer()
-    // @ts-ignore
-  } catch (err: Error) {
+  } catch (err: any) {
     catchError(err, { file: 'executeOrderMarket' })
   }
   timer()
