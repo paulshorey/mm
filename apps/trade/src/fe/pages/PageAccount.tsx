@@ -2,26 +2,27 @@
 
 import { Data } from '@src/fe/blocks/Data'
 import classes from './PageAccount.module.scss'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getAccountData } from '@src/fe/utils/getAccountData'
+import { postOrder } from '@src/fe/utils/postOrder'
 
 export const revalidate = 0
 
-type Props = {
-  data: Record<string, unknown>
-  expandUntil?: number
-}
-
-export function PageAccount(props: Props) {
+export function PageAccount() {
   const [orderText, setOrderText] = useState('')
+  const [accountData, setAccountData] = useState<Record<string, unknown>>({})
+
+  useEffect(() => {
+    getAccountData().then((data) => {
+      setAccountData(data)
+    })
+  }, [])
 
   return (
     <div className={classes.container}>
       <form
         onSubmit={() => {
-          fetch('/api/v1/market?access_key=testkeyx&', {
-            method: 'POST',
-            body: orderText,
-          })
+          postOrder(orderText)
         }}
       >
         <input
@@ -37,7 +38,7 @@ export function PageAccount(props: Props) {
         </button>
       </form>
 
-      <Data data={props.data} expandUntil={props.expandUntil || 5} />
+      <Data data={accountData} expandUntil={5} />
     </div>
   )
 }

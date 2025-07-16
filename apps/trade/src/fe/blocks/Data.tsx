@@ -7,14 +7,8 @@ import { Collapsed } from '@my/fe/src/components/blocks/Collapsed'
 // import Badge from '@my/fe/src/components/inline/Badge'
 // import Link from 'next/link'
 
-export function Data({
-  data,
-  expandUntil,
-}: {
-  data: Record<string, any>
-  expandUntil: number
-}) {
-  const sections = Object.entries(data).map(([key, obj]: any, i: number) => {
+export function Data({ data, expandUntil }: { data: Record<string, unknown>; expandUntil: number }) {
+  const sections = Object.entries(data).map(([key, obj], i: number) => {
     let heading = key
     let dataParsed = obj
     if (!expandUntil) expandUntil || (key === 'orders' ? 1 : 2)
@@ -59,7 +53,7 @@ export function Data({
         isClickToToggle
         className="relative px-4 pt-3 pb-3 border-b border-gray-600 "
       >
-        <Json data={dataParsed} expandUntil={expandUntil} />
+        <Json data={dataParsed as Record<string, unknown>} expandUntil={expandUntil} />
       </Collapsed>
     )
   })

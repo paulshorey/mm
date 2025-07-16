@@ -1,12 +1,4 @@
-import {
-  BECH32_PREFIX,
-  LocalWallet,
-  SubaccountClient,
-  CompositeClient,
-  ValidatorClient,
-  Network,
-  IndexerClient,
-} from '@dydxprotocol/v4-client-js'
+import { BECH32_PREFIX, LocalWallet, SubaccountClient, CompositeClient, ValidatorClient, Network, IndexerClient } from '@dydxprotocol/v4-client-js'
 import { getOrders } from './methods/getOrders'
 import { getPositions } from '@src/be/dydx/methods/getPositions'
 import { orderStop } from '@src/be/dydx/methods/orderStop'
@@ -62,14 +54,10 @@ export class Dydx implements DydxInterface {
 
   constructor() {
     this.network = Network.mainnet()
-    this.init()
   }
 
   async init() {
-    this.wallet = await LocalWallet.fromMnemonic(
-      process.env.DYDX_MNEMONIC || '',
-      BECH32_PREFIX
-    )
+    this.wallet = await LocalWallet.fromMnemonic(process.env.DYDX_MNEMONIC || '', BECH32_PREFIX)
     this.address = this.wallet?.address as string
     this.subaccount = new SubaccountClient(this.wallet!, 0)
     this.subaccountNumber = this.subaccount?.subaccountNumber
@@ -91,9 +79,7 @@ export class Dydx implements DydxInterface {
 
   async getValidatorClient() {
     if (!this.validatorClient) {
-      this.validatorClient = await ValidatorClient.connect(
-        this.network.validatorConfig
-      )
+      this.validatorClient = await ValidatorClient.connect(this.network.validatorConfig)
     }
     return this.validatorClient
   }
