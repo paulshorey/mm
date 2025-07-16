@@ -53,7 +53,7 @@ describe('/api/v1/market', () => {
       description: 'closing an existing position',
       bodyText: 'sui:0',
       position: 0,
-      currentPositionSize: '66.6',
+      currentPositionSize: '100',
       expected: {
         ticker: 'SUI-USD',
         side: 'SHORT',
