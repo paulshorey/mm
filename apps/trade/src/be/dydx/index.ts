@@ -19,7 +19,6 @@ export interface DydxInterface {
   address: string
   subaccount: SubaccountClient
   subaccountNumber: number
-  init: () => Promise<void>
   getIndexerClient: () => Promise<IndexerClient>
   getCompositeClient: () => Promise<CompositeClient>
   getValidatorClient: () => Promise<ValidatorClient>
@@ -43,25 +42,46 @@ export class Dydx implements DydxInterface {
   indexerClient?: IndexerClient
   compositeClient?: CompositeClient
   validatorClient?: ValidatorClient
-  // @ts-ignore
-  wallet: LocalWallet
-  // @ts-ignore
-  address: string
-  // @ts-ignore
-  subaccount: SubaccountClient
-  // @ts-ignore
-  subaccountNumber: number
+  wallet!: LocalWallet
+  address!: string
+  subaccount!: SubaccountClient
+  subaccountNumber!: number
+
+  getPerpetualMarket: typeof getPerpetualMarket
+  getAsksAndBids: typeof getAsksAndBids
+  getSparklines: typeof getSparklines
+  getAccount: typeof getAccount
+  getCandles: typeof getCandles
+  getOrders: typeof getOrders
+  getPositions: typeof getPositions
+  orderStop: typeof orderStop
+  orderMarket: typeof orderMarket
+  orderLimit: typeof orderLimit
+  orderCancel: typeof orderCancel
 
   constructor() {
     this.network = Network.mainnet()
-    // this.init() // Can not call asynchronous function in constructor synchronously using await
+    this.getPerpetualMarket = getPerpetualMarket.bind(this)
+    this.getAsksAndBids = getAsksAndBids.bind(this)
+    this.getSparklines = getSparklines.bind(this)
+    this.getAccount = getAccount.bind(this)
+    this.getCandles = getCandles.bind(this)
+    this.getOrders = getOrders.bind(this)
+    this.getPositions = getPositions.bind(this)
+    this.orderStop = orderStop.bind(this)
+    this.orderMarket = orderMarket.bind(this)
+    this.orderLimit = orderLimit.bind(this)
+    this.orderCancel = orderCancel.bind(this)
   }
 
   async init() {
     this.wallet = await LocalWallet.fromMnemonic(process.env.DYDX_MNEMONIC || '', BECH32_PREFIX)
-    this.address = this.wallet?.address as string
-    this.subaccount = new SubaccountClient(this.wallet!, 0)
-    this.subaccountNumber = this.subaccount?.subaccountNumber
+    if (!this.wallet?.address) {
+      throw new Error('Could not initialize wallet. Check DYDX_MNEMONIC environment variable.')
+    }
+    this.address = this.wallet.address
+    this.subaccount = new SubaccountClient(this.wallet, 0)
+    this.subaccountNumber = this.subaccount.subaccountNumber
   }
 
   async getIndexerClient() {
@@ -84,17 +104,5 @@ export class Dydx implements DydxInterface {
     }
     return this.validatorClient
   }
-
-  getPerpetualMarket = getPerpetualMarket
-  getAsksAndBids = getAsksAndBids
-  getSparklines = getSparklines
-  getAccount = getAccount
-  getCandles = getCandles
-  getOrders = getOrders
-  getPositions = getPositions
-  orderStop = orderStop
-  orderMarket = orderMarket
-  orderLimit = orderLimit
-  orderCancel = orderCancel
 }
 export default Dydx

@@ -26,7 +26,9 @@ export const infoAccount = async (): Promise<Output | undefined> => {
      * Connection
      */
     const dydx = new Dydx()
+    await dydx.init()
     await sleep(300)
+
     /*
      * Account
      */
