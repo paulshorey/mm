@@ -1,5 +1,5 @@
 {
-  "extends": "@my/config/ts/nextjs.json",
+  "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
     "plugins": [
@@ -8,12 +8,9 @@
       }
     ],
     "paths": {
-      "@src/*": [
-        "src/*"
-      ],
-      "@my/be/*": [
-        "../../my/be/*"
-      ]
+      "@src/*": ["src/*"],
+      "@my/fe/*": ["../../my/fe/*"],
+      "@my/be/*": ["../../my/be/*"]
     }
   },
   "include": [
@@ -23,8 +20,5 @@
     "next.config.mjs",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    ".next"
-  ]
+  "exclude": ["node_modules", ".next"]
 }

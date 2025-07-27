@@ -1,3 +1,4 @@
+import '../../global.css'
 import { Providers } from '@my/fe/src/components/wrappers/Providers'
 // import dynamic from 'next/dynamic'
 // const Providers = dynamic(

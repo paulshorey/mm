@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start the dev server in the background
-next dev &
+next dev --port 3000 --turbopack &
 
 # Get the process ID of the dev server
 DEV_PID=$!

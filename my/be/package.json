@@ -6,19 +6,15 @@
     "lint": "eslint . --max-warnings 0"
   },
   "devDependencies": {
-    "@my/config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
     "@turbo/gen": "^1.12.4",
-    "@types/eslint": "^8.56.5",
     "@types/node": "^20.11.24",
     "@types/pg": "^8.11.10",
-    "@types/react": "^18.2.61",
-    "@types/react-dom": "^18.2.19",
-    "eslint": "^8.57.0",
-    "typescript": "^5.3.3"
+    "eslint": "^9.31.0",
+    "typescript": "5.8.2"
   },
   "dependencies": {
-    "next": "14.0.1",
-    "pg": "^8.13.0",
-    "react": "^18.2.0"
+    "pg": "^8.13.0"
   }
 }

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  relative: true,
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     '../../my/fe/src/**/*.{js,ts,jsx,tsx,mdx}',
