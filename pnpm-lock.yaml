@@ -453,9 +453,6 @@ importers:
         specifier: ^5.3.3
         version: 5.8.3
     devDependencies:
-      '@my/be':
-        specifier: workspace:*
-        version: link:../be
       '@my/config':
         specifier: workspace:*
         version: link:../config

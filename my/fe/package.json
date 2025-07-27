@@ -7,7 +7,6 @@
   },
   "peerDependencies": {
     "@tabler/icons-react": "^2.47.0",
-    
     "base64-js": "^1.5.1",
     "html-entities": "^2.5.2",
     "@types/node": "^20.11.24",
@@ -18,12 +17,10 @@
     "react-dom": "18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-json-view-lite": "^1.5.0",
-    
     "sass": "^1.79.5",
     "autoprefixer": "^10.4.20"
   },
   "devDependencies": {
-    "@my/be": "workspace:*",
     "@my/config": "workspace:*",
     "@types/eslint": "^8.56.5",
     "eslint": "^8.57.0"

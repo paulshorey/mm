@@ -2,6 +2,7 @@
   "name": "log",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@7.5.1",
   "scripts": {
     "dev": "next dev -- --port=3333",
     "build": "next build",
