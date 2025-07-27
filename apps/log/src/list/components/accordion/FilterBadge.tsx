@@ -1,7 +1,7 @@
 'use client'
 
 import { Badge } from '@my/fe/src/components/inline/Badge'
-import { subtleColorGray, subtleColorGreen } from '@src/constants/ui'
+import { colors } from '@src/constants/ui'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 
@@ -30,12 +30,13 @@ export function FilterBadge({
   const displayValue =
     typeof value === 'boolean' ? (value ? 'dev' : 'pro') : value
   return (
-    <Badge className="font-bold pr-2">
+    <Badge className="pr-2">
       <Link
         key="edit"
         href={`${pathname}?${newParams.toString()}`}
         style={{
-          color: isActive ? subtleColorGray : subtleColorGreen,
+          color: isActive ? colors.gray : colors.green,
+          // textDecoration: isActive ? 'none' : 'underline',
         }}
       >
         {' '}

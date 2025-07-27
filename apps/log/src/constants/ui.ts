@@ -1,3 +1,6 @@
-export const subtleColorRed = 'hsla(10, 50%, 50%, 0.5)'
-export const subtleColorGreen = 'hsla(130, 60%, 30%, 0.5)'
-export const subtleColorGray = 'hsla(0, 0%, 40%, 0.5)'
+export const colors = {
+  red: 'hsla(10, 50%, 40%, 0.5)',
+  green: 'hsla(130, 60%, 32%, 0.5)',
+  gray: 'hsla(0, 0%, 40%, 0.5)',
+  blue: 'hsla(210, 60%, 50%, 0.5)',
+}

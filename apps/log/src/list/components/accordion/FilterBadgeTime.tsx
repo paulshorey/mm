@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { getDayRange } from '@my/fe/src/lib/time'
 import { LocalShortTime } from '@my/fe/src/components/inline/LocalShortTime'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { subtleColorGreen, subtleColorGray } from '@src/constants/ui'
+import { colors } from '@src/constants/ui'
 
 export function FilterBadgeTime({ time }: { time: number }) {
   const pathname = usePathname()
@@ -31,11 +31,11 @@ export function FilterBadgeTime({ time }: { time: number }) {
   }
 
   return (
-    <Badge className="font-bold pr-2">
+    <Badge className="">
       <span
         className="mr-1"
         style={{
-          color: subtleColorGray,
+          color: colors.gray,
         }}
       >
         {localTime}
@@ -44,7 +44,8 @@ export function FilterBadgeTime({ time }: { time: number }) {
         key="edit"
         href={`${pathname}?${newParams.toString()}`}
         style={{
-          color: isActive ? subtleColorGray : subtleColorGreen,
+          color: isActive ? colors.gray : colors.green,
+          // textDecoration: isActive ? 'none' : 'underline',
         }}
       >
         {localDate}

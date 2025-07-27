@@ -1,6 +1,6 @@
 import { OrderRowGet } from '@my/be/sql/order/types'
 import { orderGets } from '@my/be/sql/order/gets'
-import { OrdersWrapper } from '@src/fe/blocks/OrdersWrapper'
+import { OrdersWrapper } from '@src/list/components/accordion/OrdersWrapper'
 
 export const revalidate = 0
 

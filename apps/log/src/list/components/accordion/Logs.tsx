@@ -1,14 +1,14 @@
 'use client'
 
 import { Json } from '@my/fe/src/components/blocks/Json'
-import Link from 'next/link'
-import { Copy } from '../../../../../my/fe/src/components/buttons/Copy'
+import { Copy } from '@my/fe/src/components/buttons/Copy'
 import { FilterBadge } from './FilterBadge'
 import React from 'react'
-import { AccordionItem } from '@src/fe/components/AccordionItem'
+import { AccordionItem } from '@src/list/components/accordion/AccordionItem'
 import { FilterBadgeTime } from './FilterBadgeTime'
 import { LogRowGet } from '@my/be/sql/log/types'
-import { subtleColorRed } from '@src/constants/ui'
+import { Header } from '../nav/Header'
+import { Where } from '@my/be/sql/types'
 
 export function Logs({
   logs,
@@ -17,7 +17,7 @@ export function Logs({
   setOpenIndex,
 }: {
   logs: LogRowGet[]
-  where: any
+  where: Where
   openIndex: number | null
   setOpenIndex: (index: number | null) => void
 }) {
@@ -57,7 +57,7 @@ export function Logs({
         ]}
         open={openIndex === i}
         onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-        className="relative px-4 pt-3 pb-3 border-b border-gray-600 "
+        className="relative pl-3 pr-0 pt-3 pb-3 border-b border-gray-600 "
       >
         <Json data={dataParsed} />
       </AccordionItem>
@@ -66,18 +66,7 @@ export function Logs({
 
   return (
     <div>
-      {Object.keys(where).length > 0 && (
-        <div>
-          <Link
-            href="/"
-            style={{
-              color: subtleColorRed,
-            }}
-          >
-            ◀ clear
-          </Link>
-        </div>
-      )}
+      <Header where={where} />
       <main>{sections}</main>
     </div>
   )

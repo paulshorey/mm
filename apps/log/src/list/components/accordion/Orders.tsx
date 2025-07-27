@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { Copy } from '@my/fe/src/components/buttons/Copy'
 import { FilterBadge } from './FilterBadge'
 import React from 'react'
-import { AccordionItem } from '@src/fe/components/AccordionItem'
+import { AccordionItem } from '@src/list/components/accordion/AccordionItem'
 import { OrderRowGet } from '@my/be/sql/order/types'
 import { FilterBadgeTime } from './FilterBadgeTime'
+import { Where } from '@my/be/sql/types'
+import { Header } from '../nav/Header'
 
 export function Orders({
   orders,
@@ -16,7 +18,7 @@ export function Orders({
   setOpenIndex,
 }: {
   orders: OrderRowGet[]
-  where: any
+  where: Where
   openIndex: number | null
   setOpenIndex: (index: number | null) => void
 }) {
@@ -52,7 +54,7 @@ export function Orders({
         ]}
         open={openIndex === i}
         onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-        className="relative px-4 pt-3 pb-3 border-b border-gray-600 "
+        className="relative pl-3 pr-1 pt-3 pb-3 border-b border-gray-600 "
       >
         <Json data={order} />
       </AccordionItem>
@@ -61,11 +63,7 @@ export function Orders({
 
   return (
     <div>
-      {Object.keys(where).length > 0 && (
-        <div>
-          <Link href="/orders">◀ clear</Link>
-        </div>
-      )}
+      <Header where={where} />
       <main>{sections}</main>
     </div>
   )
