@@ -4,10 +4,8 @@ import { LogsWrapper } from '@src/list/components/data/LogsWrapper'
 export const revalidate = 0
 
 export default async function Page({
-  params,
   searchParams,
 }: {
-  params: {}
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   const where: Record<string, any> = {}
@@ -30,6 +28,7 @@ export default async function Page({
   try {
     const { error, result } = await logGets({ where })
     if (error) {
+      console.error(error)
       throw error
     }
     let logs = result?.rows || []

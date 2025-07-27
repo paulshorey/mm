@@ -3,16 +3,17 @@ import Page from './page'
 import { logGets } from '@my/be/sql/log/gets'
 import { LogsWrapper } from '@src/list/components/data/LogsWrapper'
 
-// Mock dependencies
 jest.mock('@my/be/sql/log/gets', () => ({
   __esModule: true,
   logGets: jest.fn(),
 }))
 
-jest.mock('@src/list/components/data/LogsWrapper', () => ({
-  __esModule: true,
-  LogsWrapper: jest.fn(() => null),
-}))
+jest.mock('@src/list/components/data/LogsWrapper', () => {
+  return {
+    __esModule: true,
+    LogsWrapper: jest.fn(() => <div>Mocked LogsWrapper</div>),
+  }
+})
 
 const mockedLogGets = logGets as jest.Mock
 const MockedLogsWrapper = LogsWrapper as jest.Mock
@@ -41,16 +42,15 @@ describe('Page component', () => {
     mockedLogGets.mockResolvedValue({ result: { rows: [mockLog] } })
     const searchParams = { category: 'test' }
 
-    const PageComponent = await Page({ searchParams, params: {} })
+    const PageComponent = await Page({ searchParams })
     render(PageComponent)
 
-    expect(MockedLogsWrapper).toHaveBeenCalledWith(
-      {
-        logs: [mockLog],
-        where: { category: 'test' },
-      },
-      {}
-    )
+    expect(MockedLogsWrapper).toHaveBeenCalledTimes(1)
+    const calls = MockedLogsWrapper.mock.calls
+    expect(calls[0][0]).toEqual({
+      logs: [mockLog],
+      where: { category: 'test' },
+    })
   })
 
   test('should filter out logs with tag "place"', async () => {
@@ -60,25 +60,22 @@ describe('Page component', () => {
     })
     const searchParams = {}
 
-    const PageComponent = await Page({ searchParams, params: {} })
+    const PageComponent = await Page({ searchParams })
     render(PageComponent)
 
-    expect(MockedLogsWrapper).toHaveBeenCalledWith(
-      {
-        logs: [mockLog],
-        where: {},
-      },
-      {}
-    )
+    expect(MockedLogsWrapper).toHaveBeenCalledTimes(1)
+    const calls = MockedLogsWrapper.mock.calls
+    expect(calls[0][0]).toEqual({
+      logs: [mockLog],
+      where: {},
+    })
   })
 
   test('should throw an error on fetch failure', async () => {
     const dbError = new Error('Database error')
     mockedLogGets.mockRejectedValue(dbError)
 
-    await expect(Page({ searchParams: {}, params: {} })).rejects.toThrow(
-      'Database error'
-    )
+    await expect(Page({ searchParams: {} })).rejects.toThrow('Database error')
 
     expect(console.error).toHaveBeenCalledWith(dbError)
     expect(MockedLogsWrapper).not.toHaveBeenCalled()

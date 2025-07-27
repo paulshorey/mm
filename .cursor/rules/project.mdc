@@ -27,4 +27,4 @@ If you need to run `npm i` or `npm install`, run `pnpm i` instead.
 
 Most important:
 
-This is a mono-repo of multiple projects. When running any terminal command including pnpm, please make sure to be in the correct folder. If editing the "Logs" project then `cd ./apps/log`. If editing the "Trade" project then `cd ./apps/trade`.
+This is a mono-repo of multiple projects. When running any terminal command including pnpm, please make sure to be in the correct folder. If in the root of the project and editing the "Logs" project then `cd ./apps/log`. If editing the "Trade" project then `cd ./apps/trade`. If `cd` command fails, that probably means you're already in the correct app folder and not in the root.
