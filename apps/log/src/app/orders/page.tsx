@@ -1,12 +1,23 @@
+import { OrderRowGet } from '@my/be/sql/order/types'
 import { orderGets } from '@my/be/sql/order/gets'
 import { OrdersWrapper } from '@src/fe/blocks/OrdersWrapper'
-import { Order } from '@src/types'
 
 export const revalidate = 0
 
-export default async function Page({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const where: Record<string, any> = {}
-  const validFilters = ['type', 'ticker', 'side', 'app_name', 'server_name', 'dev']
+  const validFilters = [
+    'type',
+    'ticker',
+    'side',
+    'app_name',
+    'server_name',
+    'dev',
+  ]
 
   for (const key of validFilters) {
     if (searchParams[key] !== undefined) {
@@ -23,7 +34,7 @@ export default async function Page({ searchParams }: { searchParams: { [key: str
     if (error) {
       throw error
     }
-    const orders = (result?.rows as Order[]) || []
+    const orders = (result?.rows as OrderRowGet[]) || []
     return <OrdersWrapper orders={orders} where={where} />
   } catch (error) {
     console.error(error)

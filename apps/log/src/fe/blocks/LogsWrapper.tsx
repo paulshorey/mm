@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Logs } from './Logs'
-import { Log } from '@src/types'
+import { LogRowGet } from '@my/be/sql/log/types'
 
 export function LogsWrapper({
   logs: initialLogs,
   where: initialWhere,
 }: {
-  logs: Log[]
+  logs: LogRowGet[]
   where: any
 }) {
   const [logs, setLogs] = useState(initialLogs)

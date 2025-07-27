@@ -2,9 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Orders } from './Orders'
-import { Order } from '@src/types'
+import { OrderRowGet } from '@my/be/sql/order/types'
 
-export function OrdersWrapper({ orders: initialOrders, where: initialWhere }: { orders: Order[]; where: any }) {
+export function OrdersWrapper({
+  orders: initialOrders,
+  where: initialWhere,
+}: {
+  orders: OrderRowGet[]
+  where: any
+}) {
   const [orders, setOrders] = useState(initialOrders)
   const [where, setWhere] = useState(initialWhere)
   const whereString = useMemo(() => JSON.stringify(where), [where])
@@ -20,5 +26,12 @@ export function OrdersWrapper({ orders: initialOrders, where: initialWhere }: { 
     setWhere(initialWhere)
   }, [initialOrders, initialWhere])
 
-  return <Orders orders={orders} where={where} openIndex={openIndex} setOpenIndex={setOpenIndex} />
+  return (
+    <Orders
+      orders={orders}
+      where={where}
+      openIndex={openIndex}
+      setOpenIndex={setOpenIndex}
+    />
+  )
 }

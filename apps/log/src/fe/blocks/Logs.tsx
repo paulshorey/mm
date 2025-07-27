@@ -1,15 +1,13 @@
 'use client'
 
 import { Json } from '@my/fe/src/components/blocks/Json'
-import { LocalShortTime } from '@my/fe/src/components/inline/LocalShortTime'
-import { Badge } from '@my/fe/src/components/inline/Badge'
 import Link from 'next/link'
 import { Copy } from '../../../../../my/fe/src/components/buttons/Copy'
 import { FilterBadge } from './FilterBadge'
-import { Log } from '@src/types'
 import React from 'react'
 import { AccordionItem } from '@src/fe/components/AccordionItem'
 import { FilterBadgeTime } from './FilterBadgeTime'
+import { LogRowGet } from '@my/be/sql/log/types'
 
 export function Logs({
   logs,
@@ -17,12 +15,12 @@ export function Logs({
   openIndex,
   setOpenIndex,
 }: {
-  logs: Log[]
+  logs: LogRowGet[]
   where: any
   openIndex: number | null
   setOpenIndex: (index: number | null) => void
 }) {
-  const sections = logs.map((log: Log, i: number) => {
+  const sections = logs.map((log: LogRowGet, i: number) => {
     let message = log.message
     let dataParsed
     try {

@@ -1,6 +1,5 @@
 import { logGets } from '@my/be/sql/log/gets'
 import { LogsWrapper } from '@src/fe/blocks/LogsWrapper'
-import { Log } from '@src/types'
 
 export const revalidate = 0
 
