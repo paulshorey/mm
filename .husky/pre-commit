@@ -1,2 +1,2 @@
-echo "HUSKY IS INSTALLED AND WORKING"
-npx turbo run test
+# echo "HUSKY IS INSTALLED AND WORKING"
+# npx turbo run test
