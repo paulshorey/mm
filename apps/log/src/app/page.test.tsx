@@ -3,7 +3,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import Page from './page'
 import { logGets } from '@my/be/sql/log/gets'
-import { LogsWrapper } from '@src/list/components/accordion/LogsWrapper'
+import { LogsWrapper } from '@src/list/components/data/LogsWrapper'
 
 // Mock dependencies
 jest.mock('@my/be/sql/log/gets', () => ({

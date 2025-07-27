@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation'
 export const Header = ({ where }: { where: Where }) => {
   const pathname = usePathname()
   return (
-    <div className="flex justify-between pt-1 px-2">
+    <div className="flex justify-between pt-2 px-3">
       <div>
         {Object.keys(where).length > 0 && (
           <Link

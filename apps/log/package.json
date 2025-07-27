@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@7.5.1",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port=3333",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
     "start": "next start",

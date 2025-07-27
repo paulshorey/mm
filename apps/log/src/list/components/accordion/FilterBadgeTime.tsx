@@ -33,7 +33,7 @@ export function FilterBadgeTime({ time }: { time: number }) {
   return (
     <Badge className="">
       <span
-        className="mr-1"
+        className="mr-2"
         style={{
           color: colors.gray,
         }}
@@ -41,6 +41,7 @@ export function FilterBadgeTime({ time }: { time: number }) {
         {localTime}
       </span>
       <Link
+        className="font-bold mr-2"
         key="edit"
         href={`${pathname}?${newParams.toString()}`}
         style={{

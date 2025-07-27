@@ -1,24 +1,23 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import React from 'react'
-import { LogRowGet } from '@my/be/sql/log/types'
+import React, { useState, useEffect, useMemo } from 'react'
+import { OrderRowGet } from '@my/be/sql/order/types'
 import { Where } from '@my/be/sql/types'
 import { Json } from '@my/fe/src/components/blocks/Json'
 import { Copy } from '@my/fe/src/components/buttons/Copy'
 import { AccordionItem } from '@src/list/components/accordion/AccordionItem'
 import { Header } from '../nav/Header'
-import { FilterBadge } from './FilterBadge'
-import { FilterBadgeTime } from './FilterBadgeTime'
+import { FilterBadge } from '../accordion/FilterBadge'
+import { FilterBadgeTime } from '../accordion/FilterBadgeTime'
 
-export function LogsWrapper({
-  logs: initialLogs,
+export function OrdersWrapper({
+  orders: initialOrders,
   where: initialWhere,
 }: {
-  logs: LogRowGet[]
+  orders: OrderRowGet[]
   where: Where
 }) {
-  const [logs, setLogs] = useState(initialLogs)
+  const [orders, setOrders] = useState(initialOrders)
   const [where, setWhere] = useState(initialWhere)
   const whereString = useMemo(() => JSON.stringify(where), [where])
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -29,25 +28,18 @@ export function LogsWrapper({
   }, [whereString])
 
   useEffect(() => {
-    setLogs(initialLogs)
+    setOrders(initialOrders)
     setWhere(initialWhere)
-  }, [initialLogs, initialWhere])
+  }, [initialOrders, initialWhere])
 
-  const sections = logs.map((log: LogRowGet, i: number) => {
-    let message = log.message
-    let dataParsed
-    try {
-      dataParsed = log.stack ? JSON.parse(log.stack) : null
-    } catch (e) {
-      dataParsed = `Could not serialize log.stack=${log.stack}`
-    }
-
+  const sections = orders.map((order: OrderRowGet, i: number) => {
+    const message = `${order.side} ${order.amount} ${order.ticker} @ ${order.price}`
     return (
       <AccordionItem
         classNames={{
           content: 'rounded-md bg-gray-800 mt-3 p-4',
         }}
-        key={log.id}
+        key={order.client_id || i}
         title={message}
         buttonsRight={[
           <Copy
@@ -55,23 +47,26 @@ export function LogsWrapper({
             text={message}
             className="align-middle self-center"
           />,
-          <FilterBadge key="category" field="category" value={log.category} />,
-          <FilterBadge key="tag" field="tag" value={log.tag} />,
-          <FilterBadge key="name" field="name" value={log.name} />,
-          <FilterBadge key="app_name" field="app_name" value={log.app_name} />,
+          <FilterBadge key="type" field="type" value={order.type} />,
+          <FilterBadge key="ticker" field="ticker" value={order.ticker} />,
+          <FilterBadge key="side" field="side" value={order.side} />,
+          <FilterBadge
+            key="app_name"
+            field="app_name"
+            value={order.app_name || ''}
+          />,
           <FilterBadge
             key="server_name"
             field="server_name"
-            value={log.server_name}
+            value={order.server_name || ''}
           />,
-          <FilterBadge key="dev" field="dev" value={log.dev} />,
-          <FilterBadgeTime key="time" time={log.time} />,
+          <FilterBadgeTime key="time" time={order.time || 0} />,
         ]}
         open={openIndex === i}
         onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-        className="relative pl-3 pr-0 pt-3 pb-3 border-b border-gray-600 "
+        className="relative pl-3 pr-1 pt-3 pb-3 border-b border-gray-600 "
       >
-        <Json data={dataParsed} />
+        <Json data={order} />
       </AccordionItem>
     )
   })
