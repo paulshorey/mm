@@ -1,4 +1,6 @@
-export type LogSchema = {
+export type LogRowGet = {
+  id: number;
+  dev: boolean;
   name: string;
   message: string;
   stack: string;
@@ -8,19 +10,26 @@ export type LogSchema = {
   server_name: string;
   app_name: string;
   node_env: string;
-  time?: EpochTimeStamp;
+  time: EpochTimeStamp;
 };
 
-export type LogRow = {
+export type LogRowAdd = {
+  // core, received in arguments
   name: LogLevel;
   message: string;
   stack: Record<string, any>;
-  type?: string;
   access_key?: string;
-  title?: string;
-  sms?: boolean;
   category?: string;
   tag?: string;
+  // only in logic, not sent to database
+  type?: string;
+  title?: string;
+  sms?: boolean;
+  // automatically added
+  server_name?: string;
+  app_name?: string;
+  node_env?: string;
+  time?: EpochTimeStamp;
 };
 
 export type LogLevel =

@@ -1,4 +1,4 @@
-import { orderGets } from '@my/be/sql/order/get'
+import { orderGets } from '@my/be/sql/order/gets'
 import { OrdersWrapper } from '@src/fe/blocks/OrdersWrapper'
 import { Order } from '@src/types'
 

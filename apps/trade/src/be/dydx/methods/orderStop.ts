@@ -1,7 +1,7 @@
 import { OrderExecution, OrderType, OrderTimeInForce, OrderSide } from '@dydxprotocol/v4-client-js'
 import { DydxInterface } from '@src/be/dydx'
 import { defaults } from '../constants/defaults'
-import { logAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@my/be/sql/log/add'
 import { orderAdd } from '@my/be/sql/order/add'
 import { catchError } from '@src/be/dydx/lib/catchError'
 
@@ -43,7 +43,7 @@ export async function orderStop(this: DydxInterface, { ticker, side, coins, pric
     await compositeClient.placeOrder(this.subaccount, ticker, type, side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY, executionPrice, coins, clientId, timeInForce, goodTilTimeInSeconds, execution, postOnly, reduceOnly, triggerPrice)
 
     // notify
-    await logAdd({
+    await sqlLogAdd({
       name: 'info',
       message: `order Stop ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker}`,
       stack: {

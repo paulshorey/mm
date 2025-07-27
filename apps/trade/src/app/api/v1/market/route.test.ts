@@ -25,7 +25,7 @@ jest.mock('@src/be/dydx/lib/parseOrdersText', () => ({
 }))
 
 jest.mock('@my/be/sql/log/add', () => ({
-  logAdd: jest.fn(),
+  sqlLogAdd: jest.fn(),
 }))
 
 jest.mock('@my/be/twillio/sendToMyselfSMS')

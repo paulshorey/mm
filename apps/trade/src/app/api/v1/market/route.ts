@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { formatResponse } from '@my/be/api/formatResponse'
 import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
 import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
-import { logAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@my/be/sql/log/add'
 import { MarketOrderOutput } from '../../../../be/dydx/types'
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
 
@@ -30,7 +30,7 @@ const handler = async (request: NextRequest) => {
       const parsedOrders = parseOrdersText(bodyText)
       if (!parsedOrders[0]) {
         sendToMyselfSMS(bodyText)
-        await logAdd({
+        await sqlLogAdd({
           name: 'warn',
           message: `parseOrdersText failed`,
           stack: {
@@ -74,7 +74,7 @@ const handler = async (request: NextRequest) => {
 
       // @ts-ignore
     } catch (error: Error) {
-      await logAdd({
+      await sqlLogAdd({
         name: 'error',
         message: `${bodyText} failed with error: ${error.message}`,
         stack: {
@@ -88,7 +88,7 @@ const handler = async (request: NextRequest) => {
 
     // @ts-ignore
   } catch (error: Error) {
-    await logAdd({ name: 'error', message: error.message, stack: error.stack })
+    await sqlLogAdd({ name: 'error', message: error.message, stack: error.stack })
     return formatResponse({ error: error.message }, 500)
   }
 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 //   const message = `Uncaught Exception: ${err?.message ? err.message : err.toString()}`
 //   console.error(message, err)
 //   sendToMyselfSMS(message)
-//   await logAdd({
+//   await sqlLogAdd({
 //     name: 'error',
 //     message,
 //     stack: {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 //   const message = `Unhandled Rejection: ${reason ? reason : promise.toString()}`
 //   console.error(message, promise, 'reason:', reason)
 //   sendToMyselfSMS(message)
-//   await logAdd({
+//   await sqlLogAdd({
 //     name: 'error',
 //     message,
 //     stack: {

@@ -1,5 +1,5 @@
 import { OrderExecution, OrderType, OrderTimeInForce, OrderSide } from '@dydxprotocol/v4-client-js'
-import { logAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@my/be/sql/log/add'
 import { orderAdd } from '@my/be/sql/order/add'
 import { DydxInterface } from '@src/be/dydx'
 import { catchError } from '@src/be/dydx/lib/catchError'
@@ -38,7 +38,7 @@ export async function orderMarket(this: DydxInterface, { clientId, ticker, side,
     compositeClient.placeOrder(this.subaccount, ticker, type, side === 'SHORT' ? OrderSide.SELL : OrderSide.BUY, executionPrice, coins, clientId, timeInForce, goodTilTimeInSeconds, execution, postOnly, reduceOnly)
 
     // notify
-    await logAdd({
+    await sqlLogAdd({
       name: 'warn',
       message: `order Market ${side === 'LONG' ? 'Buy' : 'Sell'} ${ticker} ${reduceOnly ? 'reduce' : ''}
       $:${(coins * price).toString().substring(0, 7)} 

@@ -1,4 +1,4 @@
-import { logGets } from '@my/be/sql/log/get'
+import { logGets } from '@my/be/sql/log/gets'
 import { LogsWrapper } from '@src/fe/blocks/LogsWrapper'
 import { Log } from '@src/types'
 
@@ -41,7 +41,7 @@ export default async function Page({
     if (error) {
       throw error
     }
-    let logs = (result?.rows as Log[]) || []
+    let logs = result?.rows || []
     logs = logs.filter((log) => log.tag !== 'place')
     return <LogsWrapper logs={logs} where={where} />
   } catch (error) {

@@ -1,6 +1,6 @@
 "use server";
 
-import { OrderRow } from "./types";
+import { OrderRowAdd } from "./types";
 import { sqlQuery } from "../sqlQuery";
 import { pool } from "../pool/orders";
 import { cc } from "../../cc";
@@ -22,7 +22,7 @@ import { cc } from "../../cc";
  * @param row - An `OrderRow` object containing the order details.
  * @returns The result of the SQL query, which includes the newly inserted row.
  */
-export const orderAdd = async function (row: OrderRow) {
+export const orderAdd = async function (row: OrderRowAdd) {
   "use server";
   const server_name = process.env.SERVER_NAME || "";
   const app_name = process.env.APP_NAME || "";

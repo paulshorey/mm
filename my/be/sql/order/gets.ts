@@ -2,12 +2,13 @@
 
 import { headers } from "next/headers";
 import { sqlQuery } from "../sqlQuery";
-import { pool } from "../pool/events";
+import { pool } from "../pool/orders";
 import { cc } from "../../cc";
+import { OrderRowGet } from "./types";
 
 type Output = {
   ip?: string;
-  result?: any;
+  result?: Record<string, any> & { rows: OrderRowGet[] };
   error?: {
     name: string;
     message: string;
@@ -16,10 +17,10 @@ type Output = {
 };
 
 type Props = {
-  where?: Record<string, any>;
+  where?: Record<string, string | string[]>;
 };
 
-export const logGets = async function ({ where }: Props = {}): Promise<Output> {
+export const orderGets = async function ({ where }: Props = {}): Promise<Output> {
   "use server";
 
   const output = {} as Output;
@@ -31,11 +32,6 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
     let whereArr = [];
     if (where) {
       for (let key in where) {
-        if (key === "time" && where.time.start && where.time.end) {
-          whereArr.push(`time >= ${where.time.start}`);
-          whereArr.push(`time <= ${where.time.end}`);
-          continue;
-        }
         let val = where[key];
         if (Array.isArray(val)) {
           whereArr.push(`${key} IN ('${val.join("','")}')`);
@@ -47,7 +43,7 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
     if (whereArr.length) {
       whereSQL = "WHERE " + whereArr.join(" AND ");
     }
-    const result = await sqlQuery(pool, `SELECT * FROM logs_v1 ${whereSQL} ORDER BY time DESC LIMIT 100`);
+    const result = await sqlQuery(pool, `SELECT * FROM orders_v1 ${whereSQL} ORDER BY time DESC LIMIT 100`);
     output.ip = ip;
     output.result = result;
     //@ts-ignore
@@ -55,17 +51,18 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
     try {
       const dev = process.env.NODE_ENV === "development";
       const error = {
-        name: "Error lib/sql/logsGet.ts catch",
+        name: "Error lib/sql/ordersGet.ts catch",
         message: e.message,
         stack: e.stack,
       };
       output.error = error;
-      cc.error("@my/be/sql/log/get Error", error);
+      cc.error("@my/be/sql/order/gets Error", error);
       //@ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (e: Error) {
       console.error(output.error);
     }
   }
+  console.log("output", output);
   return output;
 };

@@ -1,6 +1,6 @@
 "use server";
 
-import { LogRow } from "./types";
+import { LogRowAdd } from "./types";
 import { sqlQuery } from "../../sql/sqlQuery";
 import { getCurrentIpAddress } from "../../nextjs/getCurrentIpAddress";
 import { pool } from "../../sql/pool/events";
@@ -22,7 +22,7 @@ import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
  *
  * @param row - A `LogRow` object containing the log details.
  */
-export const logAdd = async function (row: LogRow) {
+export const sqlLogAdd = async function (row: LogRowAdd) {
   "use server";
 
   // SMS
@@ -61,12 +61,12 @@ export const logAdd = async function (row: LogRow) {
         null,
         " "
       );
-      const message = "Error in try logAdd.ts";
+      const message = "Error in try sqlLogAdd.ts";
       await sqlQuery(pool, sql, ["Error", message, stack, access_key, server_name, app_name, node_env]);
       //@ts-ignore
     } catch (err: Error) {
       // Error sending
-      console.error("Error in catch logAdd.ts", row, err);
+      console.error("Error in catch sqlLogAdd.ts", row, err);
     }
     return null;
   }

@@ -1,4 +1,4 @@
-import { logAdd } from "../sql/log/add";
+import { sqlLogAdd } from "../sql/log/add";
 import { consoleAction } from "./lib/consoleAction";
 
 /**
@@ -6,7 +6,7 @@ import { consoleAction } from "./lib/consoleAction";
  *
  * The `cc` object (short for "cloud console") provides a set of methods for
  * logging messages at different levels (log, info, warn, error). It wraps
- * the `consoleAction` for immediate feedback in the console and `logAdd`
+ * the `consoleAction` for immediate feedback in the console and `sqlLogAdd`
  * to persist logs to the database.
  *
  * The `warn` and `error` levels are configured to trigger an SMS notification
@@ -18,7 +18,7 @@ export const cc = {
   log: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
       consoleAction("log", message, data);
-      // await logAdd("log", message, data);
+      // await sqlLogAdd("log", message, data);
     } catch (e) {
       console.error(e);
     }
@@ -26,7 +26,7 @@ export const cc = {
   info: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
       consoleAction("info", message, data);
-      await logAdd({ name: "info", message, stack: data, ...options });
+      await sqlLogAdd({ name: "info", message, stack: data, ...options });
     } catch (e) {
       console.error(e);
     }
@@ -34,7 +34,7 @@ export const cc = {
   warn: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
       consoleAction("warn", message, data);
-      await logAdd({ name: "warn", message, stack: data, sms: true, ...options });
+      await sqlLogAdd({ name: "warn", message, stack: data, sms: true, ...options });
     } catch (e) {
       console.error(e);
     }
@@ -42,7 +42,7 @@ export const cc = {
   error: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
       consoleAction("error", message, data);
-      await logAdd({ name: "error", message, stack: data, sms: true, ...options });
+      await sqlLogAdd({ name: "error", message, stack: data, sms: true, ...options });
     } catch (e) {
       console.error(e);
     }

@@ -6,14 +6,17 @@ This project is a monorepo of multiple apps. I use Vercel's TurboRepo to manage 
 
 Apps are in the ./apps folder. All apps are full-stack using NextJS, having both back-end and front-end files. Log app in ./apps/log logs server and user events to the database and visualizes the data in a dashboard. Trade (day trading) app is in ./apps/trade to execute orders and positions and visualize the user's account in the dashboard.
 
-Shared utility packages are in the ./my folder. Most are for server-side javascript execution in NextJS API routes and server actions. Functions for interacting with the database are in ./my/be/sql. Functions for logging and error handling are in ./my/be/cc (cc stands for cloud console because it intercepts, filters, and saves and console logs to the remote database). A front-end library of components is in ./my/fe/src (it includes ./components, ./styles, and ./ui (for user-interface components and functions).
+Shared utility packages are in the ./my folder. Most are for server-side javascript execution in NextJS API routes and server actions. Functions for interacting with the database are in ./my/be/sql. Functions for logging and error handling are in ./my/be/cc (cc stands for cloud console because it intercepts, filters, and saves and console logs to the remote database). For front-end apps, a library of common components and functions is in ./my/fe/src
 
 Directory:
 
 ./turbo.json - to manage TurboRepo automations and settings
 ./apps/log - NextJS dashboard for logging and error reporting
 ./apps/trade - NextJS dashboard for executing market trades and managing positions
-./my/fe - NextJS React components, hooks, and utility functions
+
+./my/fe - NextJS React components, hooks, and utility functions. Please organize any client-side scripts used more than once into this folder.
+./my/be - Back-end utility functions and settings. It is a work in progress. Please refactor all files and folders here as needed.
+
+./my/be/sql - interacting with databases
 ./my/be/cc - error logging and reporting
-./my/be/sql - interacting with the remote database
 ./my/be/... - miscellaneous back-end functions and files, but they are not finished and most are not used

@@ -1,7 +1,7 @@
 'use server'
 
 import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
-import { logAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@my/be/sql/log/add'
 import Dydx from '@src/be/dydx'
 import { numberOrZero, numberToFixed } from '@src/lib/numbers'
 // import { Order } from '@src/be/dydx/methods/getOrders'
@@ -183,7 +183,7 @@ export const infoAccount = async (): Promise<Output | undefined> => {
     // notify sms
     sendToMyselfSMS(message)
     // notify log
-    await logAdd({
+    await sqlLogAdd({
       name: 'error',
       message,
       stack: {

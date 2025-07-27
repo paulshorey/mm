@@ -1,6 +1,6 @@
 import { DydxInterface } from '@src/be/dydx'
 import { numberOrZero } from '../../../lib/numbers'
-import { logAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@my/be/sql/log/add'
 // import { catchError } from '@src/be/dydx/lib/catchError'
 
 type Props = {
@@ -30,7 +30,7 @@ export async function orderCancel(this: DydxInterface, input: Props) {
       await compositeClient.cancelOrder(this.subaccount, clientId, 32, input.ticker, 0, 60 * 60 * 24 * 7)
     }
     // notify
-    await logAdd({
+    await sqlLogAdd({
       name: 'warn',
       message: `order Cancel`,
       stack: {
