@@ -3,12 +3,12 @@ import { LogsWrapper } from '@src/list/components/accordion/LogsWrapper'
 
 export const revalidate = 0
 
-interface PageProps {
-  params: { [key: string]: string | string[] | undefined }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
+// interface PageProps {
+//   params: { [key: string]: string | string[] | undefined }
+//   searchParams: { [key: string]: string | string[] | undefined }
+// }
 
-export default async function Page({ searchParams }: PageProps) {
+export default async function Page({ searchParams }: Record<string, any>) {
   const where: Record<string, any> = {}
   const validFilters = [
     'name',
