@@ -8,7 +8,7 @@ export const revalidate = 0
 //   searchParams: { [key: string]: string | string[] | undefined }
 // }
 
-export default async function Page({ searchParams }: Record<string, any>) {
+export default async function Page({ searchParams }: any) {
   const where: Record<string, any> = {}
   const validFilters = [
     'name',
