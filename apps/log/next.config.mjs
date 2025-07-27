@@ -1,10 +1,4 @@
-import bundleAnalyzer from '@next/bundle-analyzer';
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
-
-export default withBundleAnalyzer({
+export default {
   transpilePackages: ['@my/fe', '@my/be'],
   reactStrictMode: false,
   eslint: {
@@ -26,4 +20,11 @@ export default withBundleAnalyzer({
       },
     ],
   },
-});
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  },
+}

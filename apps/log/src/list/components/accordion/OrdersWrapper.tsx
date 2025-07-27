@@ -1,15 +1,21 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Orders } from './Orders'
 import { OrderRowGet } from '@my/be/sql/order/types'
+import { Where } from '@my/be/sql/types'
+import { Json } from '@my/fe/src/components/blocks/Json'
+import { Copy } from '@my/fe/src/components/buttons/Copy'
+import { AccordionItem } from '@src/list/components/accordion/AccordionItem'
+import { Header } from '../nav/Header'
+import { FilterBadge } from './FilterBadge'
+import { FilterBadgeTime } from './FilterBadgeTime'
 
 export function OrdersWrapper({
   orders: initialOrders,
   where: initialWhere,
 }: {
   orders: OrderRowGet[]
-  where: any
+  where: Where
 }) {
   const [orders, setOrders] = useState(initialOrders)
   const [where, setWhere] = useState(initialWhere)
@@ -26,12 +32,49 @@ export function OrdersWrapper({
     setWhere(initialWhere)
   }, [initialOrders, initialWhere])
 
+  const sections = orders.map((order: OrderRowGet, i: number) => {
+    const message = `${order.side} ${order.amount} ${order.ticker} @ ${order.price}`
+    return (
+      <AccordionItem
+        classNames={{
+          content: 'rounded-md bg-gray-800 mt-3 p-4',
+        }}
+        key={order.client_id || i}
+        title={message}
+        buttonsRight={[
+          <Copy
+            key="copy"
+            text={message}
+            className="align-middle self-center"
+          />,
+          <FilterBadge key="type" field="type" value={order.type} />,
+          <FilterBadge key="ticker" field="ticker" value={order.ticker} />,
+          <FilterBadge key="side" field="side" value={order.side} />,
+          <FilterBadge
+            key="app_name"
+            field="app_name"
+            value={order.app_name || ''}
+          />,
+          <FilterBadge
+            key="server_name"
+            field="server_name"
+            value={order.server_name || ''}
+          />,
+          <FilterBadgeTime key="time" time={order.time || 0} />,
+        ]}
+        open={openIndex === i}
+        onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+        className="relative pl-3 pr-1 pt-3 pb-3 border-b border-gray-600 "
+      >
+        <Json data={order} />
+      </AccordionItem>
+    )
+  })
+
   return (
-    <Orders
-      orders={orders}
-      where={where}
-      openIndex={openIndex}
-      setOpenIndex={setOpenIndex}
-    />
+    <div>
+      <Header where={where} />
+      <main>{sections}</main>
+    </div>
   )
 }
