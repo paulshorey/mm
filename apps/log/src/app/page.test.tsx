@@ -11,7 +11,7 @@ jest.mock('@my/be/sql/log/gets', () => ({
   logGets: jest.fn(),
 }))
 
-jest.mock('@src/fe/blocks/LogsWrapper', () => ({
+jest.mock('@src/list/components/accordion/LogsWrapper', () => ({
   __esModule: true,
   LogsWrapper: jest.fn(() => null),
 }))
