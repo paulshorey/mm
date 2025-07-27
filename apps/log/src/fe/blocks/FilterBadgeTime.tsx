@@ -3,7 +3,7 @@
 import { Badge } from '@my/fe/src/components/inline/Badge'
 import Link from 'next/link'
 import { getDayRange } from '@my/fe/src/lib/time'
-// import { LocalShortTime } from '@my/fe/src/components/inline/LocalShortTime'
+import { LocalShortTime } from '@my/fe/src/components/inline/LocalShortTime'
 
 export function FilterBadgeTime({ time }: { time: number }) {
   if (!time) {
@@ -15,9 +15,7 @@ export function FilterBadgeTime({ time }: { time: number }) {
   return (
     <Badge className="font-bold pr-2">
       <Link key="edit" href={`/?time_start=${startOfDay}&time_end=${endOfDay}`}>
-        {/* Temporarily for debugging, show the unformatted database value */}
-        {time}
-        {/* <LocalShortTime epoch={time} /> */}
+        <LocalShortTime epoch={time} />
       </Link>
     </Badge>
   )

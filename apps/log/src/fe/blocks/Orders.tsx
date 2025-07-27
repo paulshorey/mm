@@ -48,7 +48,7 @@ export function Orders({
             field="server_name"
             value={order.server_name || ''}
           />,
-          <FilterBadgeTime time={order.time} key="time" />,
+          <FilterBadgeTime key="time" time={order.time || 0} />,
         ]}
         open={openIndex === i}
         onToggle={() => setOpenIndex(openIndex === i ? null : i)}
