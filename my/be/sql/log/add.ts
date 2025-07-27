@@ -6,6 +6,22 @@ import { getCurrentIpAddress } from "../../nextjs/getCurrentIpAddress";
 import { pool } from "../../sql/pool/events";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
+/**
+ * Inserts a log entry into the `logs_v1` table and sends an SMS for critical logs.
+ *
+ * This function is responsible for persisting log data. It takes a `LogRow` object
+ * and inserts it into the database. It also includes logic to send an SMS notification
+ * via `sendToMyselfSMS` if the log level is "error", "warn", or if the `sms` flag
+ * is explicitly set in the `LogRow`.
+ *
+ * The function enriches the log data with the current IP address, server name, app
+ * name, and Node.js environment before insertion.
+ *
+ * It includes a try-catch block to handle errors during the logging process itself.
+ * If `sqlQuery` fails, it attempts to log the failure as a new error record.
+ *
+ * @param row - A `LogRow` object containing the log details.
+ */
 export const logAdd = async function (row: LogRow) {
   "use server";
 

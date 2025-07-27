@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { sqlQuery } from "../sqlQuery";
-import { pool } from "../pool/events";
+import { pool } from "../pool/orders";
 import { cc } from "../../cc";
 
 type Output = {
@@ -19,7 +19,7 @@ type Props = {
   where?: Record<string, string | string[]>;
 };
 
-export const orderGet = async function ({ where }: Props = {}): Promise<Output> {
+export const orderGets = async function ({ where }: Props = {}): Promise<Output> {
   "use server";
 
   const output = {} as Output;
@@ -47,12 +47,20 @@ export const orderGet = async function ({ where }: Props = {}): Promise<Output> 
     output.result = result;
     //@ts-ignore
   } catch (e: Error) {
-    const error = {
-      name: "Error order/get.ts catch",
-      message: e.message,
-      stack: e.stack,
-    };
-    cc.error(error.name, error);
+    try {
+      const dev = process.env.NODE_ENV === "development";
+      const error = {
+        name: "Error lib/sql/ordersGet.ts catch",
+        message: e.message,
+        stack: e.stack,
+      };
+      output.error = error;
+      cc.error("@my/be/sql/order/get Error", error);
+      //@ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+    } catch (e: Error) {
+      console.error(output.error);
+    }
   }
   return output;
 };

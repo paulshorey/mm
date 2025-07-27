@@ -1,6 +1,17 @@
 import { logAdd } from "../sql/log/add";
 import { consoleAction } from "./lib/consoleAction";
 
+/**
+ * A logging utility for both server-side and client-side operations.
+ *
+ * The `cc` object (short for "cloud console") provides a set of methods for
+ * logging messages at different levels (log, info, warn, error). It wraps
+ * the `consoleAction` for immediate feedback in the console and `logAdd`
+ * to persist logs to the database.
+ *
+ * The `warn` and `error` levels are configured to trigger an SMS notification
+ * in addition to database logging, providing immediate alerts for critical issues.
+ */
 export const cc = {
   // @ts-ignore
   no: async function (message: string, data?: any, options: Record<string, any> = {}) {},

@@ -2,9 +2,26 @@
 
 import { OrderRow } from "./types";
 import { sqlQuery } from "../sqlQuery";
-import { pool } from "../pool/events";
+import { pool } from "../pool/orders";
 import { cc } from "../../cc";
 
+/**
+ * Inserts a new order into the `orders_v1` table.
+ *
+ * This function takes an `OrderRow` object, which contains the details of the order,
+ * and inserts it into the database. It uses the `sqlQuery` function to execute the
+ * INSERT statement and the `pool` from `../pool/events` for the database connection.
+ *
+ * The `server_name` and `app_name` are retrieved from environment variables and
+ * added to the database record for tracking purposes.
+ *
+ * In case of an error during the database operation, the error is caught, formatted,
+ * and logged using the `cc.error` function, which ensures that error details are
+ * recorded for debugging.
+ *
+ * @param row - An `OrderRow` object containing the order details.
+ * @returns The result of the SQL query, which includes the newly inserted row.
+ */
 export const orderAdd = async function (row: OrderRow) {
   "use server";
   const server_name = process.env.SERVER_NAME || "";

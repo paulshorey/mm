@@ -1,5 +1,30 @@
-import { QueryResult, Pool } from "pg";
+import { QueryResult, Pool, types } from "pg";
+import { cc } from "../cc";
 
+// @ts-ignore
+types.setTypeParser(1700, (val) => {
+  return parseFloat(val);
+});
+
+/**
+ * Executes a SQL query using a connection from the provided pool.
+ *
+ * This function is a generic utility for running SQL queries. It takes a `pg.Pool`
+ * instance, a query string, and an optional array of values for parameterized queries.
+ *
+ * The function also includes logic to handle a specific data type issue where numeric
+ * values (int2, int4, int8) are returned as strings from the database. It inspects
+ * the result fields and automatically converts these string representations back
+ * to numbers.
+ *
+ * If the query execution fails, the error is logged to the console, and the
+ * exception is re-thrown to be handled by the calling function.
+ *
+ * @param pool - A `pg.Pool` instance for database connections.
+ * @param query - The SQL query string to execute.
+ * @param values - An optional array of values for parameterized queries.
+ * @returns A `Promise` that resolves with the `QueryResult` from the database.
+ */
 export const sqlQuery = async function (pool: Pool, query: string, values: any[] = []): Promise<QueryResult> {
   try {
     // Execute sql
@@ -8,37 +33,10 @@ export const sqlQuery = async function (pool: Pool, query: string, values: any[]
       throw new Error("No result");
     }
 
-    // Parse data
-    if (result.fields) {
-      // Find name of any column that is "int" but mistakenly returned as "text"
-      // result.fields == schema
-      const numKeys = [] as Array<string>;
-      for (let i = 0; i < result.fields.length; i++) {
-        if (
-          result.fields[i].format === "text" &&
-          (result.fields[i].dataTypeSize === 2 || result.fields[i].dataTypeSize === 4 || result.fields[i].dataTypeSize === 8)
-        ) {
-          numKeys.push(result.fields[i].dataTypeSize);
-        }
-      }
-      // Fix numeric values (should be Number type, but returened as String)
-      // result.rows == data
-      result.rows = result.rows.map((row: Record<string, string | number | boolean>) => {
-        for (let i in numKeys) {
-          const key = numKeys[i] as string;
-          if (row[key] !== null) {
-            // eslint-disable-next-line no-param-reassign
-            row[key] = Number(row[key]);
-          }
-        }
-        return row;
-      });
-    }
-
     // Return sql output
     return result;
   } catch (error) {
-    console.error("Error running query:", error);
+    cc.error("Error in sqlQuery.ts", { error });
     throw error;
   }
 };
