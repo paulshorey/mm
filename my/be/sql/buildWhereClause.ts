@@ -30,11 +30,11 @@ export function buildWhereClause(where?: Where): BuildWhereClauseResult {
     const value = where[key];
 
     if (key === "time_start" && value) {
-      whereArr.push(`time >= to_timestamp($${paramIndex++})`);
-      params.push((value as number) / 1000);
+      whereArr.push(`time >= $${paramIndex++}`);
+      params.push(value);
     } else if (key === "time_end" && value) {
-      whereArr.push(`time <= to_timestamp($${paramIndex++})`);
-      params.push((value as number) / 1000);
+      whereArr.push(`time <= $${paramIndex++}`);
+      params.push(value);
     } else if (key === "search" && value) {
       whereArr.push(`(message ILIKE $${paramIndex++} OR stack ILIKE $${paramIndex++})`);
       params.push(`%${value}%`, `%${value}%`);

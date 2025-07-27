@@ -27,7 +27,9 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
 
   // SMS
   if (row.sms || row.name === "error" || row.name === "warn") {
-    await sendToMyselfSMS(row.message);
+    if (process.env.NODE_ENV !== "development") {
+      await sendToMyselfSMS(row.message);
+    }
   }
 
   // DB

@@ -10,7 +10,7 @@ export type LogRowGet = {
   server_name: string;
   app_name: string;
   node_env: string;
-  time: EpochTimeStamp;
+  time: number;
 };
 
 export type LogRowAdd = {
@@ -29,7 +29,7 @@ export type LogRowAdd = {
   server_name?: string;
   app_name?: string;
   node_env?: string;
-  time?: EpochTimeStamp;
+  time?: number;
 };
 
 export type LogLevel =

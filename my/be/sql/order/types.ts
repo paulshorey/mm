@@ -10,7 +10,7 @@ export type OrderRowGet = {
   server_name: string;
   app_name: string;
   node_env: string;
-  time: EpochTimeStamp;
+  time: number;
 };
 export type OrderRowAdd = {
   client_id: number;
@@ -22,5 +22,5 @@ export type OrderRowAdd = {
   server_name?: string;
   app_name?: string;
   node_env?: string;
-  time?: EpochTimeStamp;
+  time?: number;
 };
