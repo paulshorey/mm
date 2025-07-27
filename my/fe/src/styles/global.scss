@@ -42,6 +42,7 @@ html {
 a {
   color: var(--color-primary);
   text-decoration: underline;
+  text-decoration-style: dotted;
   &:hover {
     text-decoration: none;
   }

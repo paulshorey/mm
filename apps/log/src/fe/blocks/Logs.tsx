@@ -8,6 +8,7 @@ import React from 'react'
 import { AccordionItem } from '@src/fe/components/AccordionItem'
 import { FilterBadgeTime } from './FilterBadgeTime'
 import { LogRowGet } from '@my/be/sql/log/types'
+import { subtleColorRed } from '@src/constants/ui'
 
 export function Logs({
   logs,
@@ -67,7 +68,14 @@ export function Logs({
     <div>
       {Object.keys(where).length > 0 && (
         <div>
-          <Link href="/">◀ clear</Link>
+          <Link
+            href="/"
+            style={{
+              color: subtleColorRed,
+            }}
+          >
+            ◀ clear
+          </Link>
         </div>
       )}
       <main>{sections}</main>
