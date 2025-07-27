@@ -4,11 +4,10 @@ import { OrdersWrapper } from '@src/list/components/accordion/OrdersWrapper'
 
 export const revalidate = 0
 
-export default async function Page({
-  searchParams,
-}: {
+export default async function Page(props: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
+  const { searchParams } = props
   const where: Record<string, any> = {}
   const validFilters = [
     'type',
