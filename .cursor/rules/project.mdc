@@ -2,29 +2,24 @@
 alwaysApply: true
 ---
 
-This project is a monorepo of multiple apps. I use Vercel's TurboRepo to manage the build/test/publish/deploy commands. Not all the project's files are useful or up to date. The few in active development are described below. This entire project is very new, unfinished, and experimental. Please help me to refactor, improve, finish, and optimize it.
+This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo to build, test, and publish. Browse the folders to find the relevant files. Please help me organize this repository by placing reusable scripts away into a common folder.
 
-Apps are in the ./apps folder. All apps are full-stack using NextJS, having both back-end and front-end files. Log app in ./apps/log logs server and user events to the database and visualizes the data in a dashboard. Trade (day trading) app is in ./apps/trade to execute orders and positions and visualize the user's account in the dashboard.
+- ./apps/log - logging and observability app
+- ./apps/trade - day trading and investment positions management
 
-Shared utility packages are in the ./my folder. Most are for server-side javascript execution in NextJS API routes and server actions. Functions for interacting with the database are in@apps/common/sql. Functions for logging and error handling are in@apps/common/cc (cc stands for cloud console because it intercepts, filters, and saves and console logs to the remote database). For front-end apps, a library of common components and functions is in@apps/common/src
+- ./apps/common/\* - common files imported by other apps
+  - ./apps/common/src - src - client-side React components, hooks, and utility functions
+  - ./apps/common/sql - sql - functions, types, and interfaces for interacting with databases
+  - ./apps/common/cc - cc - saves console logs to the cloud after printing them in the terminal
 
-Directory:
-
-./turbo.json - to manage TurboRepo automations and settings
-./apps/log - NextJS dashboard for logging and error reporting
-./apps/trade - NextJS dashboard for executing market trades and managing positions
-
-./my/fe - NextJS React components, hooks, and utility functions. Please organize any client-side scripts used more than once into this folder.
-./my/be - Back-end utility functions and settings. It is a work in progress. Please refactor all files and folders here as needed.
-
-./my/be/sql - interacting with databases
-./my/be/cc - error logging and reporting
-./my/be/... - miscellaneous back-end functions and files, but they are not finished and most are not used
-
-Use pnpm:
+PNPM instead of NPM:
 
 If you need to run `npm i` or `npm install`, run `pnpm i` instead.
 
-Most important:
+Important note about navigating these project folders:
 
-This is a mono-repo of multiple projects. When running any terminal command including pnpm, please make sure to be in the correct folder. If in the root of the project and editing the "Logs" project then `cd ./apps/log`. If editing the "Trade" project then `cd ./apps/trade`. If `cd` command fails, that probably means you're already in the correct app folder and not in the root.
+Before running any terminal command including pnpm, please make sure to be in the correct folder. If currently in the root of the project, but editing the "Logs" app, first `cd ./apps/log`. If editing the "Trade" app then `cd ./apps/trade`. If `cd` command fails, then you're probably already in the correct folder.
+
+./apps/log and ./apps/trade use project-relative import paths starting with `@src/path/to/file`
+They can also reference the root of the common app with path `@apps/common/path/to/file`.
+However, ./apps/common is only a collection of common files, so it can not reference itself with `@src` or other apps with `@apps`.

@@ -52,6 +52,7 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
       row.category,
       row.tag,
     ])
+    // @ts-ignore
   } catch (e: Error) {
     try {
       const stack = JSON.stringify(
