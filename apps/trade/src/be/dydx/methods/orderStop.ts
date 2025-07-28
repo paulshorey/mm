@@ -1,8 +1,8 @@
 import { OrderExecution, OrderType, OrderTimeInForce, OrderSide } from '@dydxprotocol/v4-client-js'
 import { DydxInterface } from '@src/be/dydx'
 import { defaults } from '../constants/defaults'
-import { sqlLogAdd } from '@my/be/sql/log/add'
-import { orderAdd } from '@my/be/sql/order/add'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
+import { orderAdd } from '@apps/common/sql/order/add'
 import { catchError } from '@src/be/dydx/lib/catchError'
 
 type Props = {

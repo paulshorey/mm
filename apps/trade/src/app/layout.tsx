@@ -1,9 +1,9 @@
-import { ErrorBoundary } from '@my/fe/src/components/wrappers/ErrorBoundary'
-import { Providers } from '@my/fe/src/components/wrappers/Providers'
+import { ErrorBoundary } from '@apps/common/src/components/wrappers/ErrorBoundary'
+import { Providers } from '@apps/common/src/components/wrappers/Providers'
 // import dynamic from 'next/dynamic'
 // const Providers = dynamic(
 //   () =>
-//     import('@my/fe/src/components/wrappers/Providers').then(
+//     import('@apps/common/src/components/wrappers/Providers').then(
 //       (mod) => mod.Providers
 //     ),
 //   {
@@ -20,17 +20,10 @@ export const metadata = {
 export default async function RootLayout({ children }: { children: any }) {
   const defaultColorScheme = 'dark'
   return (
-    <html
-      lang="en"
-      data-mantine-color-scheme={defaultColorScheme}
-      suppressHydrationWarning
-    >
+    <html lang="en" data-mantine-color-scheme={defaultColorScheme} suppressHydrationWarning>
       <head>
         <link rel="shortcut icon" href="/favicon.svg" />
-        <meta
-          name="viewport"
-          content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
-        />
+        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no" />
       </head>
       <body>
         <Providers defaultColorScheme={defaultColorScheme}>

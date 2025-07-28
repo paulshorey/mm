@@ -1,4 +1,4 @@
-import { sqlLogAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 
 export const catchError = async (error: Error, options: Record<string, any> = {}) => {
   // error

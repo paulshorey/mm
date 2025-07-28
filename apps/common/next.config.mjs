@@ -1,17 +1,8 @@
-import bundleAnalyzer from '@next/bundle-analyzer'
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-})
-
-export default withBundleAnalyzer({
-  transpilePackages: ['@apps/common'],
+export default {
+  transpilePackages: [],
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  experimental: {
-    optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
   },
   images: {
     remotePatterns: [
@@ -29,4 +20,4 @@ export default withBundleAnalyzer({
       },
     ],
   },
-})
+}

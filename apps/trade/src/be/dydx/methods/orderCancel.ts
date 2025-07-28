@@ -1,6 +1,6 @@
 import { DydxInterface } from '@src/be/dydx'
 import { numberOrZero } from '../../../lib/numbers'
-import { sqlLogAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 // import { catchError } from '@src/be/dydx/lib/catchError'
 
 type Props = {

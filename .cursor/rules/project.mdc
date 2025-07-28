@@ -6,7 +6,7 @@ This project is a monorepo of multiple apps. I use Vercel's TurboRepo to manage 
 
 Apps are in the ./apps folder. All apps are full-stack using NextJS, having both back-end and front-end files. Log app in ./apps/log logs server and user events to the database and visualizes the data in a dashboard. Trade (day trading) app is in ./apps/trade to execute orders and positions and visualize the user's account in the dashboard.
 
-Shared utility packages are in the ./my folder. Most are for server-side javascript execution in NextJS API routes and server actions. Functions for interacting with the database are in ./my/be/sql. Functions for logging and error handling are in ./my/be/cc (cc stands for cloud console because it intercepts, filters, and saves and console logs to the remote database). For front-end apps, a library of common components and functions is in ./my/fe/src
+Shared utility packages are in the ./my folder. Most are for server-side javascript execution in NextJS API routes and server actions. Functions for interacting with the database are in@apps/common/sql. Functions for logging and error handling are in@apps/common/cc (cc stands for cloud console because it intercepts, filters, and saves and console logs to the remote database). For front-end apps, a library of common components and functions is in@apps/common/src
 
 Directory:
 

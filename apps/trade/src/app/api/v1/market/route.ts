@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server'
-import { formatResponse } from '@my/be/api/formatResponse'
+import { formatResponse } from '@apps/common/api/formatResponse'
 import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
 import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
-import { sqlLogAdd } from '@my/be/sql/log/add'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 import { MarketOrderOutput } from '../../../../be/dydx/types'
-import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
+import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
 
 export const maxDuration = 60
 

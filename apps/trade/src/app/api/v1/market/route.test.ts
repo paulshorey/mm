@@ -5,7 +5,7 @@ import { POST } from '@src/app/api/v1/market/route'
 import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
 import { NextRequest } from 'next/server'
 import Dydx from '@src/be/dydx'
-import { sendToMyselfSMS } from '@my/be/twillio/sendToMyselfSMS'
+import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
 
 const mockOrderMarket = jest.fn()
 const mockGetPositions = jest.fn()
@@ -24,11 +24,11 @@ jest.mock('@src/be/dydx/lib/parseOrdersText', () => ({
   parseOrdersText: jest.fn(),
 }))
 
-jest.mock('@my/be/sql/log/add', () => ({
+jest.mock('@apps/common/sql/log/add', () => ({
   sqlLogAdd: jest.fn(),
 }))
 
-jest.mock('@my/be/twillio/sendToMyselfSMS')
+jest.mock('@apps/common/twillio/sendToMyselfSMS')
 
 describe('/api/v1/market', () => {
   beforeEach(() => {

@@ -7,11 +7,14 @@
         "name": "next"
       }
     ],
-    "paths": {
-      "@src/*": ["src/*"],
-      "@apps/common/*": ["@apps/common/*"]
-    }
+    "paths": {}
   },
-  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "next.config.mjs", ".next/types/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    "next.config.mjs",
+    ".next/types/**/*.ts"
+  ],
   "exclude": ["node_modules", ".next"]
 }

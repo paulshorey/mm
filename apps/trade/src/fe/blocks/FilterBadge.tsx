@@ -1,6 +1,6 @@
 'use client'
 
-import { Badge } from '@my/fe/src/components/inline/Badge'
+import { Badge } from '@apps/common/src/components/inline/Badge'
 import Link from 'next/link'
 
 export function FilterBadge({ field, value }: { field: string; value: string | boolean }) {
