@@ -1,9 +1,11 @@
-export default {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   transpilePackages: ['@apps/common'],
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
+  optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
   images: {
     remotePatterns: [
       {
@@ -21,3 +23,5 @@ export default {
     ],
   },
 }
+
+module.exports = nextConfig

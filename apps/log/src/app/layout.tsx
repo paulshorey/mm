@@ -1,17 +1,5 @@
 import { Providers } from '@apps/common/src/components/wrappers/Providers'
-// import dynamic from 'next/dynamic'
-// const Providers = dynamic(
-//   () =>
-//     import('@apps/common/src/components/wrappers/Providers').then(
-//       (mod) => mod.Providers
-//     ),
-//   {
-//     ssr: false,
-//   }
-// )
 
-// export const revalidate = 0
-// export const fetchCache = 'force-no-store'
 export const metadata = {
   title: 'Log',
 }
