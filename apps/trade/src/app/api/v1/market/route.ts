@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { formatResponse } from '@apps/common/next/lib/formatResponse'
 import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
 import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
@@ -8,7 +8,7 @@ import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
 
 export const maxDuration = 60
 
-const handler = async (request: NextRequest) => {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     let bodyData
     let bodyText = ''
@@ -91,10 +91,6 @@ const handler = async (request: NextRequest) => {
     await sqlLogAdd({ name: 'error', message: error.message, stack: error.stack })
     return formatResponse({ error: error.message }, 500)
   }
-}
-
-export async function POST(request: NextRequest) {
-  return handler(request)
 }
 
 // process.on('uncaughtException', async (err) => {

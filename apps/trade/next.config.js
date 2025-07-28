@@ -1,18 +1,11 @@
-import bundleAnalyzer from '@next/bundle-analyzer'
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-})
-
-export default withBundleAnalyzer({
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   transpilePackages: ['@apps/common'],
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
-  },
+  optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
   images: {
     remotePatterns: [
       {
@@ -29,4 +22,6 @@ export default withBundleAnalyzer({
       },
     ],
   },
-})
+}
+
+module.exports = nextConfig
