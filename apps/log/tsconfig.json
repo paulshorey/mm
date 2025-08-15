@@ -5,7 +5,8 @@
     "paths": {
       "@src/*": ["src/*"],
       "@apps/common/*": ["../common/*"]
-    }
+    },
+    "skipLibCheck": true
   },
   "include": [
     "**/*.ts",

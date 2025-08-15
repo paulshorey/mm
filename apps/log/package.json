@@ -3,7 +3,6 @@
   "version": "1.0.1",
   "private": true,
   "scripts": {
-    "postinstall": "npx prisma generate --no-engine",
     "dev": "next dev --port 3333",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
@@ -50,8 +49,8 @@
     "@repo/tailwind-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.30",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.31.0",
     "postcss": "^8.5.3",

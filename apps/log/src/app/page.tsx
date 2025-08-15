@@ -1,10 +1,6 @@
 import dynamic from 'next/dynamic'
-const ListData = dynamic(
-  () =>
-    import('@src/list/components/data/ListData').then((mod) => mod.ListData),
-  {
-    ssr: false,
-  }
+const ListData = dynamic(() =>
+  import('@src/list/components/data/ListData').then((mod) => mod.ListData)
 )
 
 export const revalidate = 0

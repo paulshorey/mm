@@ -19,5 +19,11 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.11"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.11",
+      "@types/react-dom": "^18.3.1"
+    }
   }
 }
