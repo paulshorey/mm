@@ -1,4 +1,5 @@
-import { PrismaClient } from "@/prisma/..prisma/client";
+// This file will be used by other apps, so DO NOT use absolute paths starting with @/
+import { PrismaClient } from "../prisma/..prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 

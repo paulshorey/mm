@@ -1,11 +1,11 @@
-import { SignIn, SignOut } from "@/components/auth-components";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { signIn, signOut } from "@/lib/auth";
 
 const Page = async () => {
   const session = await auth();
 
-  const user = session?.user?.id 
+  const user = session?.user?.id
     ? await prisma.user.findUnique({
         where: {
           id: session.user.id,
@@ -16,11 +16,17 @@ const Page = async () => {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="bg-neutral-800 rounded-lg p-6 max-w-xl w-full">
-        <h1 className="text-white text-xl mb-4 text-center">Auth.js + Prisma</h1>
-
         {!session ? (
           <div className="text-center">
-            <SignIn provider="github" />
+            <button
+              onClick={async () => {
+                "use server";
+                await signIn("github");
+              }}
+              className="bg-neutral-700 text-white p-2 rounded-md cursor-pointer"
+            >
+              Sign In with GitHub
+            </button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -34,13 +40,19 @@ const Page = async () => {
             </div>
 
             <div className="bg-neutral-900 rounded p-3">
-              <pre className="text-xs text-gray-300">
-                {JSON.stringify(user, null, 2)}
-              </pre>
+              <pre className="text-xs text-gray-300">{JSON.stringify(user, null, 2)}</pre>
             </div>
 
             <div className="text-center">
-              <SignOut />
+              <button
+                onClick={async () => {
+                  "use server";
+                  await signOut();
+                }}
+                className="bg-neutral-700 text-white p-2 rounded-md cursor-alias"
+              >
+                Sign Out
+              </button>
             </div>
           </div>
         )}

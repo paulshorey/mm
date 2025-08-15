@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { formatResponse } from '@apps/common/next/lib/formatResponse'
 import { executeOrderMarket } from '@src/be/dydx/executeOrderMarket'
 import { parseOrdersText } from '@src/be/dydx/lib/parseOrdersText'
-import { sqlLogAdd } from '@apps/common/sql/log/add'
+import { sqlLogAdd } from '@apps/data/log/add'
 import { MarketOrderOutput } from '@src/be/dydx/types'
 import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
 

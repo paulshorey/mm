@@ -6,7 +6,7 @@ import { numberOrZero, ohlc4, roundToCustomDecimal } from '@src/lib/numbers'
 import Dydx from '.'
 import { MarketOrderOutput, MarketOrderInput } from './types'
 import { validateInputsMarket } from '@src/be/dydx/lib/validateInputsMarket'
-import { cc } from '@apps/common/cc'
+import { cc } from '@apps/data/cc'
 
 export const executeOrderMarket = async (input: MarketOrderInput): Promise<MarketOrderOutput> => {
   'use server'

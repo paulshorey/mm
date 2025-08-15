@@ -22,51 +22,11 @@ importers:
         specifier: 5.8.3
         version: 5.8.3
 
-  apps/auth:
-    dependencies:
-      '@auth/prisma-adapter':
-        specifier: ^2.10.0
-        version: 2.10.0(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.8.3))(typescript@5.8.3))
-      '@prisma/client':
-        specifier: ^6.13.0
-        version: 6.14.0(prisma@6.14.0(typescript@5.8.3))(typescript@5.8.3)
-      next:
-        specifier: 15.4.5
-        version: 15.4.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2)
-      next-auth:
-        specifier: ^5.0.0-beta.29
-        version: 5.0.0-beta.29(next@15.4.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(react@19.1.0)
-      react:
-        specifier: 19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: 19.1.0
-        version: 19.1.0(react@19.1.0)
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.1.11
-      '@types/node':
-        specifier: ^20
-        version: 20.19.11
-      '@types/react':
-        specifier: ^19
-        version: 19.1.10
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.1.7(@types/react@19.1.10)
-      prisma:
-        specifier: ^6.13.0
-        version: 6.14.0(typescript@5.8.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.1.11
-      typescript:
-        specifier: ^5
-        version: 5.8.3
-
   apps/common:
     dependencies:
+      '@apps/data':
+        specifier: workspace:*
+        version: link:../data
       '@mantine/code-highlight':
         specifier: ^7.17.8
         version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@7.17.8(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -228,11 +188,57 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  apps/data:
+    dependencies:
+      '@auth/prisma-adapter':
+        specifier: ^2.10.0
+        version: 2.10.0(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.8.3))(typescript@5.8.3))
+      '@prisma/client':
+        specifier: ^6.13.0
+        version: 6.14.0(prisma@6.14.0(typescript@5.8.3))(typescript@5.8.3)
+      next:
+        specifier: 15.4.5
+        version: 15.4.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2)
+      next-auth:
+        specifier: ^5.0.0-beta.29
+        version: 5.0.0-beta.29(next@15.4.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(react@19.1.0)
+      react:
+        specifier: 19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: 19.1.0
+        version: 19.1.0(react@19.1.0)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.11
+      '@types/node':
+        specifier: ^20
+        version: 20.19.11
+      '@types/react':
+        specifier: ^19
+        version: 19.1.10
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.1.7(@types/react@19.1.10)
+      prisma:
+        specifier: ^6.13.0
+        version: 6.14.0(typescript@5.8.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.11
+      typescript:
+        specifier: ^5
+        version: 5.8.3
+
   apps/log:
     dependencies:
       '@apps/common':
         specifier: workspace:*
         version: link:../common
+      '@apps/data':
+        specifier: workspace:*
+        version: link:../data
       '@mantine/code-highlight':
         specifier: ^7.17.8
         version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@7.17.8(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -399,6 +405,9 @@ importers:
       '@apps/common':
         specifier: workspace:*
         version: link:../common
+      '@apps/data':
+        specifier: workspace:*
+        version: link:../data
       '@dydxprotocol/v4-client-js':
         specifier: 1.21.1
         version: 1.21.1
