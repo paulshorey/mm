@@ -1,5 +1,5 @@
-import { sqlLogAdd } from '@apps/data/log/add'
-import { consoleAction } from './lib/consoleAction'
+import { sqlLogAdd } from "../sql/log/add";
+import { consoleAction } from "./lib/consoleAction";
 
 /**
  * A logging utility for both server-side and client-side operations.
@@ -14,69 +14,49 @@ import { consoleAction } from './lib/consoleAction'
  */
 export const cc = {
   // @ts-ignore
-  no: async function (
-    message: string,
-    data?: any,
-    options: Record<string, any> = {}
-  ) {},
-  log: async function (
-    message: string,
-    data?: any,
-    options: Record<string, any> = {}
-  ) {
+  no: async function (message: string, data?: any, options: Record<string, any> = {}) {},
+  log: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
-      consoleAction('log', message, data)
+      consoleAction("log", message, data);
       // await sqlLogAdd("log", message, data);
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   },
-  info: async function (
-    message: string,
-    data?: any,
-    options: Record<string, any> = {}
-  ) {
+  info: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
-      consoleAction('info', message, data)
-      await sqlLogAdd({ name: 'info', message, stack: data, ...options })
+      consoleAction("info", message, data);
+      await sqlLogAdd({ name: "info", message, stack: data, ...options });
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   },
-  warn: async function (
-    message: string,
-    data?: any,
-    options: Record<string, any> = {}
-  ) {
+  warn: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
-      consoleAction('warn', message, data)
+      consoleAction("warn", message, data);
       await sqlLogAdd({
-        name: 'warn',
+        name: "warn",
         message,
         stack: data,
         sms: true,
         ...options,
-      })
+      });
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   },
-  error: async function (
-    message: string,
-    data?: any,
-    options: Record<string, any> = {}
-  ) {
+  error: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
-      consoleAction('error', message, data)
+      consoleAction("error", message, data);
       await sqlLogAdd({
-        name: 'error',
+        name: "error",
         message,
         stack: data,
         sms: true,
         ...options,
-      })
+      });
     } catch (e) {
-      console.error(e)
+      console.error(e);
     }
   },
-}
+};

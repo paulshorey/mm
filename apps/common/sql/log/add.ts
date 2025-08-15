@@ -1,10 +1,9 @@
-'use server'
+"use server";
 
-import { LogRowAdd } from './types'
-import { sqlQuery } from '../sqlQuery'
-import { getCurrentIpAddress } from '../../next/lib/getCurrentIpAddress'
-import { pool } from '../pool/events'
-import { sendToMyselfSMS } from '../../twillio/sendToMyselfSMS'
+import { LogRowAdd } from "./types";
+import { prisma } from "../../lib/prisma";
+import { getCurrentIpAddress } from "../../next/lib/getCurrentIpAddress";
+import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
 /**
  * Inserts a log entry into the `logs_v1` table and sends an SMS for critical logs.
@@ -23,62 +22,63 @@ import { sendToMyselfSMS } from '../../twillio/sendToMyselfSMS'
  * @param row - A `LogRow` object containing the log details.
  */
 export const sqlLogAdd = async function (row: LogRowAdd) {
-  'use server'
+  "use server";
 
   // SMS
-  if (row.sms || row.name === 'error' || row.name === 'warn') {
-    if (process.env.NODE_ENV !== 'development') {
-      await sendToMyselfSMS(row.message)
+  if (row.sms || row.name === "error" || row.name === "warn") {
+    if (process.env.NODE_ENV !== "development") {
+      await sendToMyselfSMS(row.message);
     }
   }
 
   // DB
-  const access_key = row.access_key
-  const node_env = process.env.NODE_ENV || ''
-  const server_name = process.env.SERVER_NAME || ''
-  const app_name = process.env.APP_NAME || ''
-  const addr = (await getCurrentIpAddress()) || {}
-  const sql =
-    'INSERT INTO logs_v1 (name, message, stack, access_key, server_name, app_name, node_env, category, tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *'
+  const access_key = row.access_key;
+  const node_env = process.env.NODE_ENV || "";
+  const server_name = process.env.SERVER_NAME || "";
+  const app_name = process.env.APP_NAME || "";
+  const addr = (await getCurrentIpAddress()) || {};
+
   try {
-    await sqlQuery(pool, sql, [
-      row.name.toLowerCase(),
-      row.message,
-      { ...row.stack, ...addr },
-      access_key,
-      server_name,
-      app_name,
-      node_env,
-      row.category,
-      row.tag,
-    ])
-    // @ts-ignore
-  } catch (e: Error) {
-    try {
-      const stack = JSON.stringify(
-        {
-          name: 'Error',
-          message: e?.message,
-          stack: e?.stack,
-        },
-        null,
-        ' '
-      )
-      const message = 'Error in try sqlLogAdd.ts'
-      await sqlQuery(pool, sql, [
-        'Error',
-        message,
-        stack,
+    await prisma.log.create({
+      data: {
+        name: row.name.toLowerCase(),
+        message: row.message,
+        stack: { ...row.stack, ...addr },
         access_key,
         server_name,
         app_name,
         node_env,
-      ])
+        category: row.category,
+        tag: row.tag,
+      },
+    });
+    // @ts-ignore
+  } catch (e: Error) {
+    try {
+      const errorStack = {
+        name: "Error",
+        message: e?.message,
+        stack: e?.stack,
+      };
+      const message = "Error in try sqlLogAdd.ts";
+      await prisma.log.create({
+        data: {
+          name: "error",
+          message,
+          stack: errorStack,
+          access_key,
+          server_name,
+          app_name,
+          node_env,
+          category: row.category,
+          tag: row.tag,
+        },
+      });
       //@ts-ignore
     } catch (err: Error) {
       // Error sending
-      console.error('Error in catch sqlLogAdd.ts', row, err)
+      console.error("Error in catch sqlLogAdd.ts", row, err);
     }
-    return null
+    return null;
   }
-}
+};

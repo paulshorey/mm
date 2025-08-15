@@ -1,7 +1,7 @@
 // Example usage of the new Prisma-based log functions
 // This file demonstrates how to use the migrated log functionality
 
-import { sqlLogAdd, logGets } from "./";
+import { sqlLogAdd, logGets } from ".";
 import type { LogRowAdd } from "./types";
 
 // Example: Adding a log entry
@@ -42,4 +42,4 @@ export async function testLogGet() {
 // import { logGets } from '@apps/common/sql/log/gets'
 
 // NEW WAY (from ./apps/data/log):
-// import { sqlLogAdd, logGets } from '@apps/data/log'
+// import { sqlLogAdd, logGets } from '@apps/common/sql/log'

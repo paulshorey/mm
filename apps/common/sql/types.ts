@@ -1,1 +1,1 @@
-export type Where = Record<string, any>;
+export type Where = Record<string, string | number | boolean>;

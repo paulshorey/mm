@@ -22,172 +22,6 @@ importers:
         specifier: 5.8.3
         version: 5.8.3
 
-  apps/common:
-    dependencies:
-      '@apps/data':
-        specifier: workspace:*
-        version: link:../data
-      '@mantine/code-highlight':
-        specifier: ^7.17.8
-        version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@7.17.8(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@mantine/core':
-        specifier: 7.17.8
-        version: 7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@mantine/hooks':
-        specifier: 7.17.8
-        version: 7.17.8(react@18.3.1)
-      '@mantine/notifications':
-        specifier: ^7.17.8
-        version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@7.17.8(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tabler/icons-react':
-        specifier: ^2.47.0
-        version: 2.47.0(react@18.3.1)
-      base64-js:
-        specifier: ^1.5.1
-        version: 1.5.1
-      colorful-console-logger:
-        specifier: ^1.1.0
-        version: 1.1.0
-      html-entities:
-        specifier: ^2.5.2
-        version: 2.6.0
-      iron-session:
-        specifier: ^8.0.3
-        version: 8.0.4
-      next:
-        specifier: ^14.2.5
-        version: 14.2.30(@babel/core@7.28.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.89.2)
-      openai:
-        specifier: ^4.67.3
-        version: 4.104.0(ws@8.18.3)
-      pg:
-        specifier: ^8.16.3
-        version: 8.16.3
-      react:
-        specifier: ^18
-        version: 18.3.1
-      react-dom:
-        specifier: ^18
-        version: 18.3.1(react@18.3.1)
-      react-hot-toast:
-        specifier: ^2.4.1
-        version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-json-view-lite:
-        specifier: ^1.5.0
-        version: 1.5.0(react@18.3.1)
-      sass:
-        specifier: ^1.89.2
-        version: 1.89.2
-      stytch:
-        specifier: ^10.20.0
-        version: 10.20.0
-      swr:
-        specifier: ^2.2.5
-        version: 2.3.4(react@18.3.1)
-    devDependencies:
-      '@next/eslint-plugin-next':
-        specifier: ^14.2.5
-        version: 14.2.30
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../../repo/eslint-config
-      '@repo/tailwind-config':
-        specifier: workspace:*
-        version: link:../../repo/tailwind-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../repo/typescript-config
-      '@testing-library/jest-dom':
-        specifier: ^6.6.4
-        version: 6.6.4
-      '@testing-library/react':
-        specifier: ^16.3.0
-        version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@testing-library/user-event':
-        specifier: ^14.5.2
-        version: 14.6.1(@testing-library/dom@9.3.4)
-      '@types/jest':
-        specifier: ^29.5.13
-        version: 29.5.14
-      '@types/node':
-        specifier: ^22.15.30
-        version: 22.16.5
-      '@types/pg':
-        specifier: ^8.11.10
-        version: 8.15.4
-      '@types/react':
-        specifier: ^18
-        version: 18.3.23
-      '@types/react-dom':
-        specifier: ^18
-        version: 18.3.7(@types/react@18.3.23)
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^6.21.0
-        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2)
-      '@typescript-eslint/parser':
-        specifier: ^6.21.0
-        version: 6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2)
-      autoprefixer:
-        specifier: ^10.4.20
-        version: 10.4.21(postcss@8.5.6)
-      eslint:
-        specifier: ^9.31.0
-        version: 9.32.0(jiti@2.5.1)
-      eslint-config-airbnb:
-        specifier: 19.0.4
-        version: 19.0.4(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1)))(eslint-plugin-jsx-a11y@6.10.2(eslint@9.32.0(jiti@2.5.1)))(eslint-plugin-react-hooks@4.6.2(eslint@9.32.0(jiti@2.5.1)))(eslint-plugin-react@7.37.5(eslint@9.32.0(jiti@2.5.1)))(eslint@9.32.0(jiti@2.5.1))
-      eslint-config-airbnb-typescript:
-        specifier: ^17.1.0
-        version: 17.1.0(@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1)))(eslint@9.32.0(jiti@2.5.1))
-      eslint-config-mantine:
-        specifier: 3.0.0
-        version: 3.0.0(hxen35lpa6vl6ymr2qxdi3qcwq)
-      eslint-plugin-import:
-        specifier: ^2.31.0
-        version: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1))
-      eslint-plugin-jest:
-        specifier: ^27.9.0
-        version: 27.9.0(@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.32.0(jiti@2.5.1))(jest@30.0.5(@types/node@22.16.5)(ts-node@10.9.2(@types/node@22.16.5)(typescript@5.8.2)))(typescript@5.8.2)
-      eslint-plugin-jsx-a11y:
-        specifier: ^6.10.0
-        version: 6.10.2(eslint@9.32.0(jiti@2.5.1))
-      eslint-plugin-react:
-        specifier: ^7.37.1
-        version: 7.37.5(eslint@9.32.0(jiti@2.5.1))
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.2
-        version: 4.6.2(eslint@9.32.0(jiti@2.5.1))
-      eslint-plugin-testing-library:
-        specifier: ^6.3.0
-        version: 6.5.0(eslint@9.32.0(jiti@2.5.1))(typescript@5.8.2)
-      husky:
-        specifier: ^9.1.6
-        version: 9.1.7
-      jest:
-        specifier: ^30.0.5
-        version: 30.0.5(@types/node@22.16.5)(ts-node@10.9.2(@types/node@22.16.5)(typescript@5.8.2))
-      jest-environment-jsdom:
-        specifier: ^30.0.5
-        version: 30.0.5
-      postcss:
-        specifier: ^8.5.3
-        version: 8.5.6
-      postcss-preset-mantine:
-        specifier: ^1.18.0
-        version: 1.18.0(postcss@8.5.6)
-      prettier:
-        specifier: 3.1.1
-        version: 3.1.1
-      stylelint-config-standard-scss:
-        specifier: ^13.1.0
-        version: 13.1.0(postcss@8.5.6)(stylelint@16.22.0(typescript@5.8.2))
-      tailwindcss:
-        specifier: ^3.4.10
-        version: 3.4.17(ts-node@10.9.2(@types/node@22.16.5)(typescript@5.8.2))
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
   apps/data:
     dependencies:
       '@auth/prisma-adapter':
@@ -233,9 +67,6 @@ importers:
 
   apps/log:
     dependencies:
-      '@apps/common':
-        specifier: workspace:*
-        version: link:../common
       '@apps/data':
         specifier: workspace:*
         version: link:../data
@@ -402,9 +233,6 @@ importers:
 
   apps/trade:
     dependencies:
-      '@apps/common':
-        specifier: workspace:*
-        version: link:../common
       '@apps/data':
         specifier: workspace:*
         version: link:../data

@@ -7,7 +7,7 @@ import { AccordionItem } from '@src/list/components/accordion/AccordionItem'
 import { Header } from '../nav/Header'
 import { FilterBadge } from '../accordion/FilterBadge'
 import { FilterBadgeTime } from '../accordion/FilterBadgeTime'
-import { logGets } from '@apps/data/log/gets'
+import { logGets } from '@apps/common/sql/log/gets'
 
 type RowGet = Record<string, any>
 

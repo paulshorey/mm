@@ -30,7 +30,6 @@
     "@mantine/hooks": "7.17.8",
     "@mantine/notifications": "^7.17.8",
     "@apps/common": "workspace:*",
-    "@apps/data": "workspace:*",
     "@next/bundle-analyzer": "^14.2.15",
     "@tabler/icons-react": "^2.47.0",
     "base64-js": "^1.5.1",
