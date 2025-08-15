@@ -3,6 +3,7 @@
   "version": "1.0.1",
   "private": true,
   "scripts": {
+    "postinstall": "npx prisma generate --no-engine",
     "dev": "scripts/dev-timed.sh",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
