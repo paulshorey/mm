@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { prisma } from "../../lib/prisma";
-import { cc } from "@apps/common/cc";
+import { cc } from "../../cc";
 import { OrderRowGet } from "./types";
 
 type Output = {
