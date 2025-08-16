@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { orderGets } from '@apps/data/sql/order/gets'
-import { Json } from '@apps/data/src/components/blocks/Json'
+import { Json } from '@apps/data/fe/components/blocks/Json'
 import { AccordionItem } from '@/list/components/accordion/AccordionItem'
 import { Header } from '../nav/Header'
 import { FilterBadge } from '../accordion/FilterBadge'

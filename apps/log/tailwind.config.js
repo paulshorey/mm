@@ -2,7 +2,7 @@
 module.exports = {
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
-    '../data/src/**/*.{js,ts,jsx,tsx,mdx}',
+    '../data/fe/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

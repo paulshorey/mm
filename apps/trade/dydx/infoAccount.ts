@@ -4,8 +4,6 @@ import { sendToMyselfSMS } from '@apps/data/twillio/sendToMyselfSMS'
 import { sqlLogAdd } from '@apps/data/sql/log/add'
 import Dydx from '@/dydx'
 import { numberOrZero, numberToFixed } from '@/lib/numbers'
-// import { Order } from '@/src/be/dydx/methods/getOrders'
-// import { getCandles } from '@/src/be/dydx/methods/getCandles'
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))

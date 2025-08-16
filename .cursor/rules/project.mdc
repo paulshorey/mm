@@ -14,7 +14,7 @@ Before running any terminal command including pnpm, make sure to be in the corre
 
 - ./apps/data/sql - functions, types, and interfaces for interacting with databases
 - ./apps/data/twillio - integration with Twillio to send logs and alerts via SMS message
-- ./apps/data/src - client-side React components, hooks, and utility functions
+- ./apps/data/fe - client-side React components, hooks, and utility functions
 - ./apps/data/cc - saves console logs to the cloud after printing them in the terminal
 
 ### PNPM instead of NPM:
@@ -23,6 +23,10 @@ If you need to run `npm i` or `npm install`, run `pnpm install` instead.
 
 ### Import paths:
 
-./apps/log and ./apps/trade use project-relative import paths to reference their own root project directory, like `@/src/path/to/file`
+./apps/log and ./apps/trade use project-relative import paths to reference their own root project directory, like `@/path/to/file`
 
 ./apps/data is used as common library of utilities, so it must always use relative import paths like `../../`, because this will work when imported by any other app
+
+DO NOT optimize any existing import paths, unless the files have been moved and need to be updated. There are multiple folders in the project with the same name such as `@/lib` vs `@/dydx/lib` vs `@apps/data/lib` vs `@apps/data/fe/lib`. All existing import paths are correct exactly as they are.
+
+Note: "fe" means "front end", and "be" means "back end". Several apps have this naming convention to separate client-side from server-side files.

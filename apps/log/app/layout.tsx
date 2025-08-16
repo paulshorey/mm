@@ -1,4 +1,4 @@
-import { Providers } from '@apps/data/src/components/wrappers/Providers'
+import { Providers } from '@apps/data/fe/components/wrappers/Providers'
 
 export const metadata = {
   title: 'Log',

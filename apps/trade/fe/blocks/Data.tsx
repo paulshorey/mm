@@ -1,8 +1,8 @@
 'use client'
 
 import classes from './Data.module.scss'
-import { Json } from '@apps/data/src/components/blocks/Json'
-import { Collapsed } from '@apps/data/src/components/blocks/Collapsed'
+import { Json } from '@apps/data/fe/components/blocks/Json'
+import { Collapsed } from '@apps/data/fe/components/blocks/Collapsed'
 
 type Props = {
   data: Record<string, unknown>

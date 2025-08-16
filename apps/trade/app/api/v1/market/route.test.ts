@@ -10,7 +10,7 @@ import { sendToMyselfSMS } from '@apps/data/twillio/sendToMyselfSMS'
 const mockOrderMarket = jest.fn()
 const mockGetPositions = jest.fn()
 
-jest.mock('@/src/be/dydx', () => {
+jest.mock('@/dydx', () => {
   return jest.fn().mockImplementation(() => ({
     init: jest.fn().mockResolvedValue(true),
     getPositions: mockGetPositions,
@@ -20,7 +20,7 @@ jest.mock('@/src/be/dydx', () => {
   }))
 })
 
-jest.mock('@/src/be/dydx/lib/parseOrdersText', () => ({
+jest.mock('@/dydx/lib/parseOrdersText', () => ({
   parseOrdersText: jest.fn(),
 }))
 
