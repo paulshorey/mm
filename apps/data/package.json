@@ -7,14 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate:dev": "node scripts/prisma-generate.js dev",
-    "prisma:generate:prod": "node scripts/prisma-generate.js prod",
-    "prisma:migrate:dev": "dotenv -e .env.local -- npx prisma migrate dev",
-    "prisma:migrate:prod": "dotenv -e .env.production.local -- npx prisma migrate deploy",
-    "prisma:push:dev": "dotenv -e .env.local -- npx prisma db push",
-    "prisma:push:prod": "dotenv -e .env.production.local -- npx prisma db push",
-    "prisma:studio:dev": "dotenv -e .env.local -- npx prisma studio",
-    "prisma:studio:prod": "dotenv -e .env.production.local -- npx prisma studio"
+    "local:prisma:generate:dev": "node scripts/local-prisma-generate.js dev",
+    "local:prisma:generate:prod": "node scripts/local-prisma-generate.js prod",
+    "local:prisma:migrate:dev": "dotenv -e .env.local -- npx prisma migrate dev",
+    "local:prisma:migrate:prod": "dotenv -e .env.production.local -- npx prisma migrate deploy",
+    "local:prisma:push:dev": "dotenv -e .env.local -- npx prisma db push",
+    "local:prisma:push:prod": "dotenv -e .env.production.local -- npx prisma db push",
+    "local:prisma:studio:dev": "dotenv -e .env.local -- npx prisma studio",
+    "local:prisma:studio:prod": "dotenv -e .env.production.local -- npx prisma studio"
   },
   "dependencies": {
     "@mantine/code-highlight": "^7.17.8",

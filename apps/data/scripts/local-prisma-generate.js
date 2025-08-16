@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Script to generate Prisma client with environment-specific DATABASE_URL
+ * For local development: generate Prisma client with environment-specific DATABASE_URL
  * Usage:
- *   node scripts/prisma-generate.js dev
- *   node scripts/prisma-generate.js prod
+ *   pnpm prisma:generate:dev
+ *   pnpm prisma:generate:prod
  */
 
 const { execSync } = require("child_process");
@@ -15,10 +15,10 @@ const fs = require("fs");
 const env = process.argv[2];
 
 if (!env || !["dev", "prod"].includes(env)) {
-  console.error("Usage: node scripts/prisma-generate.js <dev|prod>");
+  console.error("Usage: pnpm prisma:generate:<dev|prod>");
   console.error("Examples:");
-  console.error("  node scripts/prisma-generate.js dev");
-  console.error("  node scripts/prisma-generate.js prod");
+  console.error("  pnpm prisma:generate:dev");
+  console.error("  pnpm prisma:generate:prod");
   process.exit(1);
 }
 

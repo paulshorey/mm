@@ -17,7 +17,8 @@
     "prettier:write": "prettier --write \"**/*.{ts,tsx}\"",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "./scripts/post-install.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",

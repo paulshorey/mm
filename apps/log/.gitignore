@@ -133,3 +133,5 @@ dist
 .vercel
 
 yarn.lock 
+
+prisma/

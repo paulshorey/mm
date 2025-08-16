@@ -18,7 +18,8 @@
     "test": "npm run typecheck && npm run jest",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "./scripts/post-install.sh"
   },
   "dependencies": {
     "@apps/data": "workspace:*",
