@@ -5,10 +5,10 @@
 
 
 echo ""
-echo "🔐 Managing AUTH_SECRET in .env.local..."
+echo "🔐 Managing AUTH_SECRET in .env..."
 
 # Define the .env.local file path
-ENV_FILE=".env.local"
+ENV_FILE=".env"
 
 # Generate a new AUTH_SECRET
 NEW_AUTH_SECRET=$(openssl rand -base64 32)
