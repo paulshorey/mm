@@ -43,6 +43,11 @@ export type Log = $Result.DefaultSelection<Prisma.$LogPayload>
  * 
  */
 export type Order = $Result.DefaultSelection<Prisma.$OrderPayload>
+/**
+ * Model Momentum
+ * 
+ */
+export type Momentum = $Result.DefaultSelection<Prisma.$MomentumPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -221,6 +226,16 @@ export class PrismaClient<
     * ```
     */
   get order(): Prisma.OrderDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.momentum`: Exposes CRUD operations for the **Momentum** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Momentums
+    * const momentums = await prisma.momentum.findMany()
+    * ```
+    */
+  get momentum(): Prisma.MomentumDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -666,7 +681,8 @@ export namespace Prisma {
     User: 'User',
     VerificationToken: 'VerificationToken',
     Log: 'Log',
-    Order: 'Order'
+    Order: 'Order',
+    Momentum: 'Momentum'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -685,7 +701,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "account" | "session" | "user" | "verificationToken" | "log" | "order"
+      modelProps: "account" | "session" | "user" | "verificationToken" | "log" | "order" | "momentum"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1133,6 +1149,80 @@ export namespace Prisma {
           }
         }
       }
+      Momentum: {
+        payload: Prisma.$MomentumPayload<ExtArgs>
+        fields: Prisma.MomentumFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.MomentumFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.MomentumFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          findFirst: {
+            args: Prisma.MomentumFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.MomentumFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          findMany: {
+            args: Prisma.MomentumFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>[]
+          }
+          create: {
+            args: Prisma.MomentumCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          createMany: {
+            args: Prisma.MomentumCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.MomentumCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>[]
+          }
+          delete: {
+            args: Prisma.MomentumDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          update: {
+            args: Prisma.MomentumUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          deleteMany: {
+            args: Prisma.MomentumDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.MomentumUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.MomentumUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>[]
+          }
+          upsert: {
+            args: Prisma.MomentumUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MomentumPayload>
+          }
+          aggregate: {
+            args: Prisma.MomentumAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateMomentum>
+          }
+          groupBy: {
+            args: Prisma.MomentumGroupByArgs<ExtArgs>
+            result: $Utils.Optional<MomentumGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.MomentumCountArgs<ExtArgs>
+            result: $Utils.Optional<MomentumCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1231,6 +1321,7 @@ export namespace Prisma {
     verificationToken?: VerificationTokenOmit
     log?: LogOmit
     order?: OrderOmit
+    momentum?: MomentumOmit
   }
 
   /* Types for Logging */
@@ -7894,6 +7985,1142 @@ export namespace Prisma {
 
 
   /**
+   * Model Momentum
+   */
+
+  export type AggregateMomentum = {
+    _count: MomentumCountAggregateOutputType | null
+    _avg: MomentumAvgAggregateOutputType | null
+    _sum: MomentumSumAggregateOutputType | null
+    _min: MomentumMinAggregateOutputType | null
+    _max: MomentumMaxAggregateOutputType | null
+  }
+
+  export type MomentumAvgAggregateOutputType = {
+    id: number | null
+    interval: number | null
+    volumeStrength: Decimal | null
+    priceMovement: Decimal | null
+    priceMovementMa: Decimal | null
+  }
+
+  export type MomentumSumAggregateOutputType = {
+    id: number | null
+    interval: number | null
+    volumeStrength: Decimal | null
+    priceMovement: Decimal | null
+    priceMovementMa: Decimal | null
+  }
+
+  export type MomentumMinAggregateOutputType = {
+    id: number | null
+    ticker: string | null
+    interval: number | null
+    time: Date | null
+    timenow: Date | null
+    volumeStrength: Decimal | null
+    priceMovement: Decimal | null
+    priceMovementMa: Decimal | null
+    server_name: string | null
+    app_name: string | null
+    node_env: string | null
+    created_at: Date | null
+  }
+
+  export type MomentumMaxAggregateOutputType = {
+    id: number | null
+    ticker: string | null
+    interval: number | null
+    time: Date | null
+    timenow: Date | null
+    volumeStrength: Decimal | null
+    priceMovement: Decimal | null
+    priceMovementMa: Decimal | null
+    server_name: string | null
+    app_name: string | null
+    node_env: string | null
+    created_at: Date | null
+  }
+
+  export type MomentumCountAggregateOutputType = {
+    id: number
+    ticker: number
+    interval: number
+    time: number
+    timenow: number
+    volumeStrength: number
+    priceMovement: number
+    priceMovementMa: number
+    server_name: number
+    app_name: number
+    node_env: number
+    created_at: number
+    _all: number
+  }
+
+
+  export type MomentumAvgAggregateInputType = {
+    id?: true
+    interval?: true
+    volumeStrength?: true
+    priceMovement?: true
+    priceMovementMa?: true
+  }
+
+  export type MomentumSumAggregateInputType = {
+    id?: true
+    interval?: true
+    volumeStrength?: true
+    priceMovement?: true
+    priceMovementMa?: true
+  }
+
+  export type MomentumMinAggregateInputType = {
+    id?: true
+    ticker?: true
+    interval?: true
+    time?: true
+    timenow?: true
+    volumeStrength?: true
+    priceMovement?: true
+    priceMovementMa?: true
+    server_name?: true
+    app_name?: true
+    node_env?: true
+    created_at?: true
+  }
+
+  export type MomentumMaxAggregateInputType = {
+    id?: true
+    ticker?: true
+    interval?: true
+    time?: true
+    timenow?: true
+    volumeStrength?: true
+    priceMovement?: true
+    priceMovementMa?: true
+    server_name?: true
+    app_name?: true
+    node_env?: true
+    created_at?: true
+  }
+
+  export type MomentumCountAggregateInputType = {
+    id?: true
+    ticker?: true
+    interval?: true
+    time?: true
+    timenow?: true
+    volumeStrength?: true
+    priceMovement?: true
+    priceMovementMa?: true
+    server_name?: true
+    app_name?: true
+    node_env?: true
+    created_at?: true
+    _all?: true
+  }
+
+  export type MomentumAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Momentum to aggregate.
+     */
+    where?: MomentumWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Momentums to fetch.
+     */
+    orderBy?: MomentumOrderByWithRelationInput | MomentumOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: MomentumWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Momentums from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Momentums.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Momentums
+    **/
+    _count?: true | MomentumCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: MomentumAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: MomentumSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: MomentumMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: MomentumMaxAggregateInputType
+  }
+
+  export type GetMomentumAggregateType<T extends MomentumAggregateArgs> = {
+        [P in keyof T & keyof AggregateMomentum]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateMomentum[P]>
+      : GetScalarType<T[P], AggregateMomentum[P]>
+  }
+
+
+
+
+  export type MomentumGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MomentumWhereInput
+    orderBy?: MomentumOrderByWithAggregationInput | MomentumOrderByWithAggregationInput[]
+    by: MomentumScalarFieldEnum[] | MomentumScalarFieldEnum
+    having?: MomentumScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: MomentumCountAggregateInputType | true
+    _avg?: MomentumAvgAggregateInputType
+    _sum?: MomentumSumAggregateInputType
+    _min?: MomentumMinAggregateInputType
+    _max?: MomentumMaxAggregateInputType
+  }
+
+  export type MomentumGroupByOutputType = {
+    id: number
+    ticker: string
+    interval: number
+    time: Date
+    timenow: Date
+    volumeStrength: Decimal
+    priceMovement: Decimal
+    priceMovementMa: Decimal
+    server_name: string | null
+    app_name: string | null
+    node_env: string | null
+    created_at: Date
+    _count: MomentumCountAggregateOutputType | null
+    _avg: MomentumAvgAggregateOutputType | null
+    _sum: MomentumSumAggregateOutputType | null
+    _min: MomentumMinAggregateOutputType | null
+    _max: MomentumMaxAggregateOutputType | null
+  }
+
+  type GetMomentumGroupByPayload<T extends MomentumGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<MomentumGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof MomentumGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MomentumGroupByOutputType[P]>
+            : GetScalarType<T[P], MomentumGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type MomentumSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticker?: boolean
+    interval?: boolean
+    time?: boolean
+    timenow?: boolean
+    volumeStrength?: boolean
+    priceMovement?: boolean
+    priceMovementMa?: boolean
+    server_name?: boolean
+    app_name?: boolean
+    node_env?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["momentum"]>
+
+  export type MomentumSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticker?: boolean
+    interval?: boolean
+    time?: boolean
+    timenow?: boolean
+    volumeStrength?: boolean
+    priceMovement?: boolean
+    priceMovementMa?: boolean
+    server_name?: boolean
+    app_name?: boolean
+    node_env?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["momentum"]>
+
+  export type MomentumSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticker?: boolean
+    interval?: boolean
+    time?: boolean
+    timenow?: boolean
+    volumeStrength?: boolean
+    priceMovement?: boolean
+    priceMovementMa?: boolean
+    server_name?: boolean
+    app_name?: boolean
+    node_env?: boolean
+    created_at?: boolean
+  }, ExtArgs["result"]["momentum"]>
+
+  export type MomentumSelectScalar = {
+    id?: boolean
+    ticker?: boolean
+    interval?: boolean
+    time?: boolean
+    timenow?: boolean
+    volumeStrength?: boolean
+    priceMovement?: boolean
+    priceMovementMa?: boolean
+    server_name?: boolean
+    app_name?: boolean
+    node_env?: boolean
+    created_at?: boolean
+  }
+
+  export type MomentumOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ticker" | "interval" | "time" | "timenow" | "volumeStrength" | "priceMovement" | "priceMovementMa" | "server_name" | "app_name" | "node_env" | "created_at", ExtArgs["result"]["momentum"]>
+
+  export type $MomentumPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Momentum"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      ticker: string
+      interval: number
+      time: Date
+      timenow: Date
+      volumeStrength: Prisma.Decimal
+      priceMovement: Prisma.Decimal
+      priceMovementMa: Prisma.Decimal
+      server_name: string | null
+      app_name: string | null
+      node_env: string | null
+      created_at: Date
+    }, ExtArgs["result"]["momentum"]>
+    composites: {}
+  }
+
+  type MomentumGetPayload<S extends boolean | null | undefined | MomentumDefaultArgs> = $Result.GetResult<Prisma.$MomentumPayload, S>
+
+  type MomentumCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<MomentumFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: MomentumCountAggregateInputType | true
+    }
+
+  export interface MomentumDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Momentum'], meta: { name: 'Momentum' } }
+    /**
+     * Find zero or one Momentum that matches the filter.
+     * @param {MomentumFindUniqueArgs} args - Arguments to find a Momentum
+     * @example
+     * // Get one Momentum
+     * const momentum = await prisma.momentum.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends MomentumFindUniqueArgs>(args: SelectSubset<T, MomentumFindUniqueArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Momentum that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {MomentumFindUniqueOrThrowArgs} args - Arguments to find a Momentum
+     * @example
+     * // Get one Momentum
+     * const momentum = await prisma.momentum.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends MomentumFindUniqueOrThrowArgs>(args: SelectSubset<T, MomentumFindUniqueOrThrowArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Momentum that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumFindFirstArgs} args - Arguments to find a Momentum
+     * @example
+     * // Get one Momentum
+     * const momentum = await prisma.momentum.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends MomentumFindFirstArgs>(args?: SelectSubset<T, MomentumFindFirstArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Momentum that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumFindFirstOrThrowArgs} args - Arguments to find a Momentum
+     * @example
+     * // Get one Momentum
+     * const momentum = await prisma.momentum.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends MomentumFindFirstOrThrowArgs>(args?: SelectSubset<T, MomentumFindFirstOrThrowArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Momentums that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Momentums
+     * const momentums = await prisma.momentum.findMany()
+     * 
+     * // Get first 10 Momentums
+     * const momentums = await prisma.momentum.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const momentumWithIdOnly = await prisma.momentum.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends MomentumFindManyArgs>(args?: SelectSubset<T, MomentumFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Momentum.
+     * @param {MomentumCreateArgs} args - Arguments to create a Momentum.
+     * @example
+     * // Create one Momentum
+     * const Momentum = await prisma.momentum.create({
+     *   data: {
+     *     // ... data to create a Momentum
+     *   }
+     * })
+     * 
+     */
+    create<T extends MomentumCreateArgs>(args: SelectSubset<T, MomentumCreateArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Momentums.
+     * @param {MomentumCreateManyArgs} args - Arguments to create many Momentums.
+     * @example
+     * // Create many Momentums
+     * const momentum = await prisma.momentum.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends MomentumCreateManyArgs>(args?: SelectSubset<T, MomentumCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Momentums and returns the data saved in the database.
+     * @param {MomentumCreateManyAndReturnArgs} args - Arguments to create many Momentums.
+     * @example
+     * // Create many Momentums
+     * const momentum = await prisma.momentum.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Momentums and only return the `id`
+     * const momentumWithIdOnly = await prisma.momentum.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends MomentumCreateManyAndReturnArgs>(args?: SelectSubset<T, MomentumCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Momentum.
+     * @param {MomentumDeleteArgs} args - Arguments to delete one Momentum.
+     * @example
+     * // Delete one Momentum
+     * const Momentum = await prisma.momentum.delete({
+     *   where: {
+     *     // ... filter to delete one Momentum
+     *   }
+     * })
+     * 
+     */
+    delete<T extends MomentumDeleteArgs>(args: SelectSubset<T, MomentumDeleteArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Momentum.
+     * @param {MomentumUpdateArgs} args - Arguments to update one Momentum.
+     * @example
+     * // Update one Momentum
+     * const momentum = await prisma.momentum.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends MomentumUpdateArgs>(args: SelectSubset<T, MomentumUpdateArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Momentums.
+     * @param {MomentumDeleteManyArgs} args - Arguments to filter Momentums to delete.
+     * @example
+     * // Delete a few Momentums
+     * const { count } = await prisma.momentum.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends MomentumDeleteManyArgs>(args?: SelectSubset<T, MomentumDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Momentums.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Momentums
+     * const momentum = await prisma.momentum.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends MomentumUpdateManyArgs>(args: SelectSubset<T, MomentumUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Momentums and returns the data updated in the database.
+     * @param {MomentumUpdateManyAndReturnArgs} args - Arguments to update many Momentums.
+     * @example
+     * // Update many Momentums
+     * const momentum = await prisma.momentum.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Momentums and only return the `id`
+     * const momentumWithIdOnly = await prisma.momentum.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends MomentumUpdateManyAndReturnArgs>(args: SelectSubset<T, MomentumUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Momentum.
+     * @param {MomentumUpsertArgs} args - Arguments to update or create a Momentum.
+     * @example
+     * // Update or create a Momentum
+     * const momentum = await prisma.momentum.upsert({
+     *   create: {
+     *     // ... data to create a Momentum
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Momentum we want to update
+     *   }
+     * })
+     */
+    upsert<T extends MomentumUpsertArgs>(args: SelectSubset<T, MomentumUpsertArgs<ExtArgs>>): Prisma__MomentumClient<$Result.GetResult<Prisma.$MomentumPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Momentums.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumCountArgs} args - Arguments to filter Momentums to count.
+     * @example
+     * // Count the number of Momentums
+     * const count = await prisma.momentum.count({
+     *   where: {
+     *     // ... the filter for the Momentums we want to count
+     *   }
+     * })
+    **/
+    count<T extends MomentumCountArgs>(
+      args?: Subset<T, MomentumCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], MomentumCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Momentum.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends MomentumAggregateArgs>(args: Subset<T, MomentumAggregateArgs>): Prisma.PrismaPromise<GetMomentumAggregateType<T>>
+
+    /**
+     * Group by Momentum.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MomentumGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends MomentumGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: MomentumGroupByArgs['orderBy'] }
+        : { orderBy?: MomentumGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, MomentumGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMomentumGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Momentum model
+   */
+  readonly fields: MomentumFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Momentum.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__MomentumClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Momentum model
+   */
+  interface MomentumFieldRefs {
+    readonly id: FieldRef<"Momentum", 'Int'>
+    readonly ticker: FieldRef<"Momentum", 'String'>
+    readonly interval: FieldRef<"Momentum", 'Int'>
+    readonly time: FieldRef<"Momentum", 'DateTime'>
+    readonly timenow: FieldRef<"Momentum", 'DateTime'>
+    readonly volumeStrength: FieldRef<"Momentum", 'Decimal'>
+    readonly priceMovement: FieldRef<"Momentum", 'Decimal'>
+    readonly priceMovementMa: FieldRef<"Momentum", 'Decimal'>
+    readonly server_name: FieldRef<"Momentum", 'String'>
+    readonly app_name: FieldRef<"Momentum", 'String'>
+    readonly node_env: FieldRef<"Momentum", 'String'>
+    readonly created_at: FieldRef<"Momentum", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Momentum findUnique
+   */
+  export type MomentumFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter, which Momentum to fetch.
+     */
+    where: MomentumWhereUniqueInput
+  }
+
+  /**
+   * Momentum findUniqueOrThrow
+   */
+  export type MomentumFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter, which Momentum to fetch.
+     */
+    where: MomentumWhereUniqueInput
+  }
+
+  /**
+   * Momentum findFirst
+   */
+  export type MomentumFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter, which Momentum to fetch.
+     */
+    where?: MomentumWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Momentums to fetch.
+     */
+    orderBy?: MomentumOrderByWithRelationInput | MomentumOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Momentums.
+     */
+    cursor?: MomentumWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Momentums from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Momentums.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Momentums.
+     */
+    distinct?: MomentumScalarFieldEnum | MomentumScalarFieldEnum[]
+  }
+
+  /**
+   * Momentum findFirstOrThrow
+   */
+  export type MomentumFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter, which Momentum to fetch.
+     */
+    where?: MomentumWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Momentums to fetch.
+     */
+    orderBy?: MomentumOrderByWithRelationInput | MomentumOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Momentums.
+     */
+    cursor?: MomentumWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Momentums from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Momentums.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Momentums.
+     */
+    distinct?: MomentumScalarFieldEnum | MomentumScalarFieldEnum[]
+  }
+
+  /**
+   * Momentum findMany
+   */
+  export type MomentumFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter, which Momentums to fetch.
+     */
+    where?: MomentumWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Momentums to fetch.
+     */
+    orderBy?: MomentumOrderByWithRelationInput | MomentumOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Momentums.
+     */
+    cursor?: MomentumWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Momentums from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Momentums.
+     */
+    skip?: number
+    distinct?: MomentumScalarFieldEnum | MomentumScalarFieldEnum[]
+  }
+
+  /**
+   * Momentum create
+   */
+  export type MomentumCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * The data needed to create a Momentum.
+     */
+    data: XOR<MomentumCreateInput, MomentumUncheckedCreateInput>
+  }
+
+  /**
+   * Momentum createMany
+   */
+  export type MomentumCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Momentums.
+     */
+    data: MomentumCreateManyInput | MomentumCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Momentum createManyAndReturn
+   */
+  export type MomentumCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * The data used to create many Momentums.
+     */
+    data: MomentumCreateManyInput | MomentumCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Momentum update
+   */
+  export type MomentumUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * The data needed to update a Momentum.
+     */
+    data: XOR<MomentumUpdateInput, MomentumUncheckedUpdateInput>
+    /**
+     * Choose, which Momentum to update.
+     */
+    where: MomentumWhereUniqueInput
+  }
+
+  /**
+   * Momentum updateMany
+   */
+  export type MomentumUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Momentums.
+     */
+    data: XOR<MomentumUpdateManyMutationInput, MomentumUncheckedUpdateManyInput>
+    /**
+     * Filter which Momentums to update
+     */
+    where?: MomentumWhereInput
+    /**
+     * Limit how many Momentums to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Momentum updateManyAndReturn
+   */
+  export type MomentumUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * The data used to update Momentums.
+     */
+    data: XOR<MomentumUpdateManyMutationInput, MomentumUncheckedUpdateManyInput>
+    /**
+     * Filter which Momentums to update
+     */
+    where?: MomentumWhereInput
+    /**
+     * Limit how many Momentums to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Momentum upsert
+   */
+  export type MomentumUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * The filter to search for the Momentum to update in case it exists.
+     */
+    where: MomentumWhereUniqueInput
+    /**
+     * In case the Momentum found by the `where` argument doesn't exist, create a new Momentum with this data.
+     */
+    create: XOR<MomentumCreateInput, MomentumUncheckedCreateInput>
+    /**
+     * In case the Momentum was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<MomentumUpdateInput, MomentumUncheckedUpdateInput>
+  }
+
+  /**
+   * Momentum delete
+   */
+  export type MomentumDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+    /**
+     * Filter which Momentum to delete.
+     */
+    where: MomentumWhereUniqueInput
+  }
+
+  /**
+   * Momentum deleteMany
+   */
+  export type MomentumDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Momentums to delete
+     */
+    where?: MomentumWhereInput
+    /**
+     * Limit how many Momentums to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Momentum without action
+   */
+  export type MomentumDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Momentum
+     */
+    select?: MomentumSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Momentum
+     */
+    omit?: MomentumOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -7989,6 +9216,24 @@ export namespace Prisma {
   };
 
   export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+  export const MomentumScalarFieldEnum: {
+    id: 'id',
+    ticker: 'ticker',
+    interval: 'interval',
+    time: 'time',
+    timenow: 'timenow',
+    volumeStrength: 'volumeStrength',
+    priceMovement: 'priceMovement',
+    priceMovementMa: 'priceMovementMa',
+    server_name: 'server_name',
+    app_name: 'app_name',
+    node_env: 'node_env',
+    created_at: 'created_at'
+  };
+
+  export type MomentumScalarFieldEnum = (typeof MomentumScalarFieldEnum)[keyof typeof MomentumScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -8546,6 +9791,95 @@ export namespace Prisma {
     time?: DateTimeWithAggregatesFilter<"Order"> | Date | string
   }
 
+  export type MomentumWhereInput = {
+    AND?: MomentumWhereInput | MomentumWhereInput[]
+    OR?: MomentumWhereInput[]
+    NOT?: MomentumWhereInput | MomentumWhereInput[]
+    id?: IntFilter<"Momentum"> | number
+    ticker?: StringFilter<"Momentum"> | string
+    interval?: IntFilter<"Momentum"> | number
+    time?: DateTimeFilter<"Momentum"> | Date | string
+    timenow?: DateTimeFilter<"Momentum"> | Date | string
+    volumeStrength?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    server_name?: StringNullableFilter<"Momentum"> | string | null
+    app_name?: StringNullableFilter<"Momentum"> | string | null
+    node_env?: StringNullableFilter<"Momentum"> | string | null
+    created_at?: DateTimeFilter<"Momentum"> | Date | string
+  }
+
+  export type MomentumOrderByWithRelationInput = {
+    id?: SortOrder
+    ticker?: SortOrder
+    interval?: SortOrder
+    time?: SortOrder
+    timenow?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+    server_name?: SortOrderInput | SortOrder
+    app_name?: SortOrderInput | SortOrder
+    node_env?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+  }
+
+  export type MomentumWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: MomentumWhereInput | MomentumWhereInput[]
+    OR?: MomentumWhereInput[]
+    NOT?: MomentumWhereInput | MomentumWhereInput[]
+    ticker?: StringFilter<"Momentum"> | string
+    interval?: IntFilter<"Momentum"> | number
+    time?: DateTimeFilter<"Momentum"> | Date | string
+    timenow?: DateTimeFilter<"Momentum"> | Date | string
+    volumeStrength?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    server_name?: StringNullableFilter<"Momentum"> | string | null
+    app_name?: StringNullableFilter<"Momentum"> | string | null
+    node_env?: StringNullableFilter<"Momentum"> | string | null
+    created_at?: DateTimeFilter<"Momentum"> | Date | string
+  }, "id">
+
+  export type MomentumOrderByWithAggregationInput = {
+    id?: SortOrder
+    ticker?: SortOrder
+    interval?: SortOrder
+    time?: SortOrder
+    timenow?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+    server_name?: SortOrderInput | SortOrder
+    app_name?: SortOrderInput | SortOrder
+    node_env?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    _count?: MomentumCountOrderByAggregateInput
+    _avg?: MomentumAvgOrderByAggregateInput
+    _max?: MomentumMaxOrderByAggregateInput
+    _min?: MomentumMinOrderByAggregateInput
+    _sum?: MomentumSumOrderByAggregateInput
+  }
+
+  export type MomentumScalarWhereWithAggregatesInput = {
+    AND?: MomentumScalarWhereWithAggregatesInput | MomentumScalarWhereWithAggregatesInput[]
+    OR?: MomentumScalarWhereWithAggregatesInput[]
+    NOT?: MomentumScalarWhereWithAggregatesInput | MomentumScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"Momentum"> | number
+    ticker?: StringWithAggregatesFilter<"Momentum"> | string
+    interval?: IntWithAggregatesFilter<"Momentum"> | number
+    time?: DateTimeWithAggregatesFilter<"Momentum"> | Date | string
+    timenow?: DateTimeWithAggregatesFilter<"Momentum"> | Date | string
+    volumeStrength?: DecimalWithAggregatesFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalWithAggregatesFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalWithAggregatesFilter<"Momentum"> | Decimal | DecimalJsLike | number | string
+    server_name?: StringNullableWithAggregatesFilter<"Momentum"> | string | null
+    app_name?: StringNullableWithAggregatesFilter<"Momentum"> | string | null
+    node_env?: StringNullableWithAggregatesFilter<"Momentum"> | string | null
+    created_at?: DateTimeWithAggregatesFilter<"Momentum"> | Date | string
+  }
+
   export type AccountCreateInput = {
     id?: string
     type: string
@@ -9006,6 +10340,108 @@ export namespace Prisma {
     app_name?: NullableStringFieldUpdateOperationsInput | string | null
     node_env?: NullableStringFieldUpdateOperationsInput | string | null
     time?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MomentumCreateInput = {
+    ticker: string
+    interval: number
+    time: Date | string
+    timenow: Date | string
+    volumeStrength: Decimal | DecimalJsLike | number | string
+    priceMovement: Decimal | DecimalJsLike | number | string
+    priceMovementMa: Decimal | DecimalJsLike | number | string
+    server_name?: string | null
+    app_name?: string | null
+    node_env?: string | null
+    created_at?: Date | string
+  }
+
+  export type MomentumUncheckedCreateInput = {
+    id?: number
+    ticker: string
+    interval: number
+    time: Date | string
+    timenow: Date | string
+    volumeStrength: Decimal | DecimalJsLike | number | string
+    priceMovement: Decimal | DecimalJsLike | number | string
+    priceMovementMa: Decimal | DecimalJsLike | number | string
+    server_name?: string | null
+    app_name?: string | null
+    node_env?: string | null
+    created_at?: Date | string
+  }
+
+  export type MomentumUpdateInput = {
+    ticker?: StringFieldUpdateOperationsInput | string
+    interval?: IntFieldUpdateOperationsInput | number
+    time?: DateTimeFieldUpdateOperationsInput | Date | string
+    timenow?: DateTimeFieldUpdateOperationsInput | Date | string
+    volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    server_name?: NullableStringFieldUpdateOperationsInput | string | null
+    app_name?: NullableStringFieldUpdateOperationsInput | string | null
+    node_env?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MomentumUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    ticker?: StringFieldUpdateOperationsInput | string
+    interval?: IntFieldUpdateOperationsInput | number
+    time?: DateTimeFieldUpdateOperationsInput | Date | string
+    timenow?: DateTimeFieldUpdateOperationsInput | Date | string
+    volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    server_name?: NullableStringFieldUpdateOperationsInput | string | null
+    app_name?: NullableStringFieldUpdateOperationsInput | string | null
+    node_env?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MomentumCreateManyInput = {
+    id?: number
+    ticker: string
+    interval: number
+    time: Date | string
+    timenow: Date | string
+    volumeStrength: Decimal | DecimalJsLike | number | string
+    priceMovement: Decimal | DecimalJsLike | number | string
+    priceMovementMa: Decimal | DecimalJsLike | number | string
+    server_name?: string | null
+    app_name?: string | null
+    node_env?: string | null
+    created_at?: Date | string
+  }
+
+  export type MomentumUpdateManyMutationInput = {
+    ticker?: StringFieldUpdateOperationsInput | string
+    interval?: IntFieldUpdateOperationsInput | number
+    time?: DateTimeFieldUpdateOperationsInput | Date | string
+    timenow?: DateTimeFieldUpdateOperationsInput | Date | string
+    volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    server_name?: NullableStringFieldUpdateOperationsInput | string | null
+    app_name?: NullableStringFieldUpdateOperationsInput | string | null
+    node_env?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MomentumUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    ticker?: StringFieldUpdateOperationsInput | string
+    interval?: IntFieldUpdateOperationsInput | number
+    time?: DateTimeFieldUpdateOperationsInput | Date | string
+    timenow?: DateTimeFieldUpdateOperationsInput | Date | string
+    volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovement?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    priceMovementMa?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    server_name?: NullableStringFieldUpdateOperationsInput | string | null
+    app_name?: NullableStringFieldUpdateOperationsInput | string | null
+    node_env?: NullableStringFieldUpdateOperationsInput | string | null
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -9518,6 +10954,67 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type MomentumCountOrderByAggregateInput = {
+    id?: SortOrder
+    ticker?: SortOrder
+    interval?: SortOrder
+    time?: SortOrder
+    timenow?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+    server_name?: SortOrder
+    app_name?: SortOrder
+    node_env?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type MomentumAvgOrderByAggregateInput = {
+    id?: SortOrder
+    interval?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+  }
+
+  export type MomentumMaxOrderByAggregateInput = {
+    id?: SortOrder
+    ticker?: SortOrder
+    interval?: SortOrder
+    time?: SortOrder
+    timenow?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+    server_name?: SortOrder
+    app_name?: SortOrder
+    node_env?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type MomentumMinOrderByAggregateInput = {
+    id?: SortOrder
+    ticker?: SortOrder
+    interval?: SortOrder
+    time?: SortOrder
+    timenow?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
+    server_name?: SortOrder
+    app_name?: SortOrder
+    node_env?: SortOrder
+    created_at?: SortOrder
+  }
+
+  export type MomentumSumOrderByAggregateInput = {
+    id?: SortOrder
+    interval?: SortOrder
+    volumeStrength?: SortOrder
+    priceMovement?: SortOrder
+    priceMovementMa?: SortOrder
   }
 
   export type UserCreateNestedOneWithoutAccountsInput = {

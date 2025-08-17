@@ -92,3 +92,20 @@ model Order {
 
   @@map("orders_v1")
 }
+
+model Momentum {
+  id              Int      @id @default(autoincrement())
+  ticker          String
+  interval        Int
+  time            DateTime
+  timenow         DateTime
+  volumeStrength  Decimal
+  priceMovement   Decimal
+  priceMovementMa Decimal
+  server_name     String?
+  app_name        String?
+  node_env        String?
+  created_at      DateTime @default(now())
+
+  @@map("momentum_v1")
+}

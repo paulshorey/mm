@@ -12,6 +12,7 @@ Before running any terminal command including pnpm, make sure to be in the corre
 - ./apps/trade - day trading and investment positions management
 - ./apps/data - common files imported by other apps, mostly helping with user and database management, but also containing useful utilities, functions, components, and server actions to accomplish various tasks and integrate with 3rd party services
 
+- ./apps/data/prisma/schema.prisma - source of truth for database tables, columns, indexes (synced to the cloud using commands like `npx prisma migrate` or `npx prisma push`)
 - ./apps/data/sql - functions, types, and interfaces for interacting with databases
 - ./apps/data/twillio - integration with Twillio to send logs and alerts via SMS message
 - ./apps/data/fe - client-side React components, hooks, and utility functions
