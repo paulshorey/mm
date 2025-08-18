@@ -70,7 +70,7 @@ export default function FractalChartControlled({
   const [timeRange, setTimeRange] = useState<{ from: Time; to: Time } | null>(
     null
   )
-  const [zoomLevel, setZoomLevel] = useState<number>(1) // Percentage
+  const [hoursBack, setHoursBack] = useState<number>(6) // Hours to look back from latest data
 
   // Synchronized cursor position
   const [cursorTime, setCursorTime] = useState<Time | null>(null)
@@ -98,7 +98,7 @@ export default function FractalChartControlled({
     })
   }
 
-  // Helper function to calculate time range based on zoom level
+  // Helper function to calculate time range based on hours back from latest data
   // Always keeps the end of data on the right edge
   const calculateVisibleRange = (data: FractalData[]) => {
     if (data.length === 0) return null
@@ -109,18 +109,14 @@ export default function FractalChartControlled({
 
     const firstTime = new Date(firstItem.time).getTime() / 1000
     const lastTime = new Date(lastItem.time).getTime() / 1000
-    const totalDuration = lastTime - firstTime
 
-    // Calculate visible duration based on zoom level
-    const visibleDuration = (totalDuration * 100) / zoomLevel
-
-    // Always align to the right edge (end of data)
-    const endTime = lastTime
-    const startTime = endTime - visibleDuration
+    // Calculate start time based on hours back from latest data
+    const hoursBackInSeconds = hoursBack * 60 * 60 // Convert hours to seconds
+    const startTime = lastTime - hoursBackInSeconds
 
     return {
       from: Math.max(firstTime, startTime) as Time, // Don't go before data starts
-      to: endTime as Time,
+      to: lastTime as Time,
     }
   }
 
@@ -402,14 +398,14 @@ export default function FractalChartControlled({
     }
   }, [timeRange])
 
-  // Update time range when zoom level changes
+  // Update time range when hours back changes
   useEffect(() => {
     const firstDataset = allChartsData.find((data) => data !== null)
     if (firstDataset) {
       const newRange = calculateVisibleRange(firstDataset)
       setTimeRange(newRange)
     }
-  }, [zoomLevel, allChartsData])
+  }, [hoursBack, allChartsData])
 
   // Apply cursor position changes to all charts
   useEffect(() => {
@@ -505,16 +501,24 @@ export default function FractalChartControlled({
 
       {/* Master Controls */}
       <div className="controls-panel mb-6">
+        <div className="mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Time Range: Past {hoursBack} hours
+          </label>
+        </div>
         <input
           type="range"
-          min="1"
-          max="1000"
-          step="10"
-          value={zoomLevel}
-          onChange={(e) => setZoomLevel(parseInt(e.target.value))}
+          min="6"
+          max="24"
+          step="1"
+          value={hoursBack}
+          onChange={(e) => setHoursBack(parseInt(e.target.value))}
           className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
         />
-        <b>{zoomLevel}</b>
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>6 hours</span>
+          <span>24 hours</span>
+        </div>
       </div>
     </div>
   )
