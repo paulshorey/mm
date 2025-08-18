@@ -6,6 +6,9 @@ import {
   IChartApi,
   LineData,
   LineSeries,
+  Time,
+  MouseEventParams,
+  ISeriesApi,
 } from 'lightweight-charts'
 import { FractalData, parseFractalCSV } from '../lib/parseFractalCSV'
 
@@ -15,18 +18,13 @@ interface ChartConfig {
   description: string
 }
 
-interface FractalChartProps {
+interface FractalChartControlledProps {
   width?: number
   height?: number
 }
 
 // Configuration for all CSV files
 const CHART_CONFIGS: ChartConfig[] = [
-  {
-    fileName: '/fractal/ETHUSD-15S.csv',
-    displayName: 'ETH/USD 15-Second Chart',
-    description: 'Ultra-short term fractal analysis',
-  },
   {
     fileName: '/fractal/ETHUSD-30S.csv',
     displayName: 'ETH/USD 30-Second Chart',
@@ -59,10 +57,10 @@ const CHART_CONFIGS: ChartConfig[] = [
   },
 ]
 
-export default function FractalChart({
+export default function FractalChartControlled({
   width = 800,
   height = 400,
-}: FractalChartProps) {
+}: FractalChartControlledProps) {
   const chartRefs = useRef<(IChartApi | null)[]>([])
   const chartContainerRefs = useRef<(HTMLDivElement | null)[]>([])
   const [loadingStates, setLoadingStates] = useState<boolean[]>(
@@ -75,10 +73,21 @@ export default function FractalChart({
     new Array(CHART_CONFIGS.length).fill(null)
   )
 
+  // Master time controls
+  const [timeRange, setTimeRange] = useState<{ from: Time; to: Time } | null>(
+    null
+  )
+  const [zoomLevel, setZoomLevel] = useState<number>(100) // Percentage
+
+  // Synchronized cursor position
+  const [cursorTime, setCursorTime] = useState<Time | null>(null)
+  const isUpdatingCursor = useRef(false) // Prevent infinite loops
+
   // Initialize refs arrays
   useEffect(() => {
     chartRefs.current = new Array(CHART_CONFIGS.length).fill(null)
     chartContainerRefs.current = new Array(CHART_CONFIGS.length).fill(null)
+    seriesRefs.current = new Array(CHART_CONFIGS.length).fill(null)
   }, [])
 
   // Helper function to convert fractal data to chart data
@@ -96,21 +105,92 @@ export default function FractalChart({
     })
   }
 
+  // Helper function to calculate time range based on zoom level
+  // Always keeps the end of data on the right edge
+  const calculateVisibleRange = (data: FractalData[]) => {
+    if (data.length === 0) return null
+
+    const firstItem = data[0]
+    const lastItem = data[data.length - 1]
+    if (!firstItem || !lastItem) return null
+
+    const firstTime = new Date(firstItem.time).getTime() / 1000
+    const lastTime = new Date(lastItem.time).getTime() / 1000
+    const totalDuration = lastTime - firstTime
+
+    // Calculate visible duration based on zoom level
+    const visibleDuration = (totalDuration * 100) / zoomLevel
+
+    // Always align to the right edge (end of data)
+    const endTime = lastTime
+    const startTime = endTime - visibleDuration
+
+    return {
+      from: Math.max(firstTime, startTime) as Time, // Don't go before data starts
+      to: endTime as Time,
+    }
+  }
+
+  // Apply time range to all charts
+  const applyTimeRangeToAllCharts = (
+    range: { from: Time; to: Time } | null
+  ) => {
+    if (!range) return
+
+    chartRefs.current.forEach((chart) => {
+      if (chart) {
+        try {
+          chart.timeScale().setVisibleRange(range)
+        } catch (error) {
+          console.warn('Failed to set visible range:', error)
+        }
+      }
+    })
+  }
+
+  // Store series references for crosshair synchronization
+  const seriesRefs = useRef<(ISeriesApi<'Line'> | null)[]>([])
+
+  // Apply cursor position to all charts
+  const applyCursorToAllCharts = (time: Time | null) => {
+    if (isUpdatingCursor.current) return
+    isUpdatingCursor.current = true
+
+    chartRefs.current.forEach((chart, index) => {
+      if (chart && seriesRefs.current[index]) {
+        try {
+          if (time !== null) {
+            chart.setCrosshairPosition(0, time, seriesRefs.current[index]!)
+          } else {
+            chart.clearCrosshairPosition()
+          }
+        } catch (error) {
+          console.warn('Failed to set crosshair position:', error)
+        }
+      }
+    })
+
+    setTimeout(() => {
+      isUpdatingCursor.current = false
+    }, 0)
+  }
+
   // Helper function to create a single chart
   const createSingleChart = (
     container: HTMLDivElement,
-    fractalData: FractalData[]
+    fractalData: FractalData[],
+    chartIndex: number
   ): IChartApi => {
     const chart = createChart(container, {
       width,
-      height,
+      height: height * 0.7, // Smaller height to leave room for controls
       layout: {
         background: { color: '#ffffff' },
         textColor: '#333',
       },
       grid: {
-        vertLines: { color: '#e1e1e1' },
-        horzLines: { color: '#e1e1e1' },
+        vertLines: { visible: false }, // Hide vertical grid lines to reduce clutter
+        horzLines: { color: '#f0f0f0' },
       },
       rightPriceScale: {
         borderColor: '#cccccc',
@@ -120,64 +200,100 @@ export default function FractalChart({
         timeVisible: true,
         secondsVisible: false,
       },
+      crosshair: {
+        mode: 1, // Normal crosshair mode for cursor synchronization
+        vertLine: {
+          visible: true,
+          color: '#758391',
+          width: 1,
+          style: 0, // Solid line
+        },
+        horzLine: {
+          visible: false, // Hide horizontal price line
+        },
+      },
+      // Disable zoom/scroll but allow crosshair interactions
+      handleScroll: false,
+      handleScale: false,
     })
 
     // Create line series for each metric
     const volumeStrengthSeries = chart.addSeries(LineSeries, {
-      color: '#2196F3',
+      color: '#4CAF50',
       lineWidth: 2,
-      title: 'Volume Strength',
+      crosshairMarkerVisible: false, // Hide cursor markers
     })
     volumeStrengthSeries.setData(
       convertToChartData(fractalData, 'volumeStrength')
     )
 
+    // Store the first series reference for crosshair synchronization
+    seriesRefs.current[chartIndex] = volumeStrengthSeries
+
     const volumeStrengthMaSeries = chart.addSeries(LineSeries, {
-      color: '#1976D2',
+      color: '#388E3C',
       lineWidth: 2,
-      title: 'Volume Strength MA',
+      crosshairMarkerVisible: false, // Hide cursor markers
     })
     volumeStrengthMaSeries.setData(
       convertToChartData(fractalData, 'volumeStrengthMa')
     )
 
-    const priceStrengthSeries = chart.addSeries(LineSeries, {
+    const priceVolumeStrengthSeries = chart.addSeries(LineSeries, {
       color: '#FF9800',
       lineWidth: 2,
-      title: 'Price Strength',
-    })
-    priceStrengthSeries.setData(
-      convertToChartData(fractalData, 'priceStrength')
-    )
-
-    const priceStrengthMaSeries = chart.addSeries(LineSeries, {
-      color: '#F57C00',
-      lineWidth: 2,
-      title: 'Price Strength MA',
-    })
-    priceStrengthMaSeries.setData(
-      convertToChartData(fractalData, 'priceStrengthMa')
-    )
-
-    const priceVolumeStrengthSeries = chart.addSeries(LineSeries, {
-      color: '#4CAF50',
-      lineWidth: 2,
-      title: 'Price Volume Strength',
+      crosshairMarkerVisible: false, // Hide cursor markers
     })
     priceVolumeStrengthSeries.setData(
       convertToChartData(fractalData, 'priceVolumeStrength')
     )
 
     const priceVolumeStrengthMaSeries = chart.addSeries(LineSeries, {
-      color: '#388E3C',
+      color: '#F57C00',
       lineWidth: 2,
-      title: 'Price Volume Strength MA',
+      crosshairMarkerVisible: false, // Hide cursor markers
     })
     priceVolumeStrengthMaSeries.setData(
       convertToChartData(fractalData, 'priceVolumeStrengthMa')
     )
 
-    // Fit the chart content
+    const priceStrengthSeries = chart.addSeries(LineSeries, {
+      color: '#2196F3',
+      lineWidth: 2,
+      crosshairMarkerVisible: false, // Hide cursor markers
+    })
+    priceStrengthSeries.setData(
+      convertToChartData(fractalData, 'priceStrength')
+    )
+
+    const priceStrengthMaSeries = chart.addSeries(LineSeries, {
+      color: '#1976D2',
+      lineWidth: 2,
+      crosshairMarkerVisible: false, // Hide cursor markers
+    })
+    priceStrengthMaSeries.setData(
+      convertToChartData(fractalData, 'priceStrengthMa')
+    )
+
+    // Add crosshair event handlers for cursor synchronization
+    chart.subscribeCrosshairMove((param: MouseEventParams) => {
+      if (isUpdatingCursor.current) return
+
+      if (param.time !== undefined && param.time !== null) {
+        setCursorTime(param.time)
+      }
+    })
+
+    // Handle cursor leaving the chart area
+    chart.subscribeCrosshairMove((param: MouseEventParams) => {
+      if (isUpdatingCursor.current) return
+
+      if (param.time === undefined) {
+        setCursorTime(null)
+      }
+    })
+
+    // Fit the chart content initially
     chart.timeScale().fitContent()
 
     return chart
@@ -220,6 +336,13 @@ export default function FractalChart({
         setAllChartsData(newData)
         setErrors(newErrors)
         setLoadingStates(newLoadingStates)
+
+        // Set initial time range based on first dataset
+        const firstDataset = newData.find((data) => data !== null)
+        if (firstDataset) {
+          const initialRange = calculateVisibleRange(firstDataset)
+          setTimeRange(initialRange)
+        }
       } catch (err) {
         console.error('Error loading chart data:', err)
         setErrors(new Array(CHART_CONFIGS.length).fill('Failed to load data'))
@@ -242,7 +365,8 @@ export default function FractalChart({
           try {
             const chart = createSingleChart(
               chartContainerRefs.current[index]!,
-              data
+              data,
+              index
             )
             chartRefs.current[index] = chart
           } catch (err) {
@@ -261,6 +385,27 @@ export default function FractalChart({
     const timer = setTimeout(createCharts, 100)
     return () => clearTimeout(timer)
   }, [allChartsData, width, height])
+
+  // Apply time range changes to all charts
+  useEffect(() => {
+    if (timeRange) {
+      applyTimeRangeToAllCharts(timeRange)
+    }
+  }, [timeRange])
+
+  // Update time range when zoom level changes
+  useEffect(() => {
+    const firstDataset = allChartsData.find((data) => data !== null)
+    if (firstDataset) {
+      const newRange = calculateVisibleRange(firstDataset)
+      setTimeRange(newRange)
+    }
+  }, [zoomLevel, allChartsData])
+
+  // Apply cursor position changes to all charts
+  useEffect(() => {
+    applyCursorToAllCharts(cursorTime)
+  }, [cursorTime])
 
   // Cleanup function
   useEffect(() => {
@@ -290,46 +435,20 @@ export default function FractalChart({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Legend component (shared across all charts)
-  // const Legend = () => (
-  //   <div className="mb-4 text-sm text-gray-600">
-  //     <div className="flex flex-wrap gap-4">
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-blue-500 mr-1"></span>
-  //         Volume Strength
-  //       </span>
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-blue-700 mr-1"></span>
-  //         Volume Strength MA
-  //       </span>
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-orange-500 mr-1"></span>
-  //         Price Strength
-  //       </span>
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-orange-700 mr-1"></span>
-  //         Price Strength MA
-  //       </span>
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-green-500 mr-1"></span>
-  //         Price Volume Strength
-  //       </span>
-  //       <span>
-  //         <span className="inline-block w-3 h-3 bg-green-700 mr-1"></span>
-  //         Price Volume Strength MA
-  //       </span>
-  //     </div>
-  //   </div>
-  // )
-
   return (
     <div className="fractal-charts">
-      <h1 className="text-3xl font-bold mb-6">
-        Fractal Analysis - ETH/USD Multi-Timeframe Charts
-      </h1>
-
-      {/* Global legend */}
-      {/* <Legend /> */}
+      {/* Master Controls */}
+      <div className="controls-panel mb-6">
+        <input
+          type="range"
+          min="10"
+          max="1000"
+          step="10"
+          value={zoomLevel}
+          onChange={(e) => setZoomLevel(parseInt(e.target.value))}
+          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+        />
+      </div>
 
       {/* Render all charts stacked vertically */}
       {CHART_CONFIGS.map((config, index) => {
@@ -338,30 +457,40 @@ export default function FractalChart({
         const hasData = allChartsData[index] !== null
 
         return (
-          <div key={config.fileName} className="fractal-chart mb-8">
-            <h3 className="text-xl font-semibold mb-2">{config.displayName}</h3>
-            <p className="text-sm text-gray-600 mb-4">{config.description}</p>
-
+          <div key={config.fileName} className="fractal-chart relative">
+            {/* Chart container */}
             <div
-              ref={(el) => (chartContainerRefs.current[index] = el)}
-              style={{ width, height }}
-              className="relative"
+              ref={(el) => {
+                chartContainerRefs.current[index] = el
+              }}
+              style={{ width, height: height * 0.7 }}
+              className="border border-gray-200 rounded relative z-10"
             >
               {isLoading && (
-                <div className="static inset-0 flex items-center justify-center bg-white border border-gray-200 rounded opacity-0">
+                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
                   <div className="text-lg">Loading {config.displayName}...</div>
                 </div>
               )}
               {error && (
-                <div className="static inset-0 flex items-center justify-center bg-white border border-gray-200 rounded opacity-0">
+                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
                   <div className="text-lg text-red-500">Error: {error}</div>
                 </div>
               )}
               {!isLoading && !error && !hasData && (
-                <div className="static inset-0 flex items-center justify-center bg-white border border-gray-200 rounded opacity-0">
+                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
                   <div className="text-lg text-gray-500">No data available</div>
                 </div>
               )}
+            </div>
+            {/* Chart title positioned above chart but overlapping */}
+            <div
+              style={{ zIndex: 1000, top: 0, left: 0 }}
+              className="absolute bg-gray-700 bg-opacity-90 px-2 py-1 rounded shadow-sm pointer-events-none"
+            >
+              <h3 className="text-sm font-semibold text-gray-800 leading-tight">
+                {config.displayName}
+              </h3>
+              <p className="text-xs text-gray-500">{config.description}</p>
             </div>
           </div>
         )
