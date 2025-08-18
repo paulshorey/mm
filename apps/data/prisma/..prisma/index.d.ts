@@ -7998,7 +7998,6 @@ export namespace Prisma {
 
   export type FractalAvgAggregateOutputType = {
     id: number | null
-    interval: number | null
     volumeStrength: Decimal | null
     priceStrength: Decimal | null
     priceVolumeStrength: Decimal | null
@@ -8009,7 +8008,6 @@ export namespace Prisma {
 
   export type FractalSumAggregateOutputType = {
     id: number | null
-    interval: number | null
     volumeStrength: Decimal | null
     priceStrength: Decimal | null
     priceVolumeStrength: Decimal | null
@@ -8021,7 +8019,7 @@ export namespace Prisma {
   export type FractalMinAggregateOutputType = {
     id: number | null
     ticker: string | null
-    interval: number | null
+    interval: string | null
     time: Date | null
     timenow: Date | null
     volumeStrength: Decimal | null
@@ -8039,7 +8037,7 @@ export namespace Prisma {
   export type FractalMaxAggregateOutputType = {
     id: number | null
     ticker: string | null
-    interval: number | null
+    interval: string | null
     time: Date | null
     timenow: Date | null
     volumeStrength: Decimal | null
@@ -8076,7 +8074,6 @@ export namespace Prisma {
 
   export type FractalAvgAggregateInputType = {
     id?: true
-    interval?: true
     volumeStrength?: true
     priceStrength?: true
     priceVolumeStrength?: true
@@ -8087,7 +8084,6 @@ export namespace Prisma {
 
   export type FractalSumAggregateInputType = {
     id?: true
-    interval?: true
     volumeStrength?: true
     priceStrength?: true
     priceVolumeStrength?: true
@@ -8240,7 +8236,7 @@ export namespace Prisma {
   export type FractalGroupByOutputType = {
     id: number
     ticker: string
-    interval: number
+    interval: string
     time: Date
     timenow: Date
     volumeStrength: Decimal
@@ -8354,7 +8350,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       ticker: string
-      interval: number
+      interval: string
       time: Date
       timenow: Date
       volumeStrength: Prisma.Decimal
@@ -8792,7 +8788,7 @@ export namespace Prisma {
   interface FractalFieldRefs {
     readonly id: FieldRef<"Fractal", 'Int'>
     readonly ticker: FieldRef<"Fractal", 'String'>
-    readonly interval: FieldRef<"Fractal", 'Int'>
+    readonly interval: FieldRef<"Fractal", 'String'>
     readonly time: FieldRef<"Fractal", 'DateTime'>
     readonly timenow: FieldRef<"Fractal", 'DateTime'>
     readonly volumeStrength: FieldRef<"Fractal", 'Decimal'>
@@ -9851,7 +9847,7 @@ export namespace Prisma {
     NOT?: FractalWhereInput | FractalWhereInput[]
     id?: IntFilter<"Fractal"> | number
     ticker?: StringFilter<"Fractal"> | string
-    interval?: IntFilter<"Fractal"> | number
+    interval?: StringFilter<"Fractal"> | string
     time?: DateTimeFilter<"Fractal"> | Date | string
     timenow?: DateTimeFilter<"Fractal"> | Date | string
     volumeStrength?: DecimalFilter<"Fractal"> | Decimal | DecimalJsLike | number | string
@@ -9890,7 +9886,7 @@ export namespace Prisma {
     OR?: FractalWhereInput[]
     NOT?: FractalWhereInput | FractalWhereInput[]
     ticker?: StringFilter<"Fractal"> | string
-    interval?: IntFilter<"Fractal"> | number
+    interval?: StringFilter<"Fractal"> | string
     time?: DateTimeFilter<"Fractal"> | Date | string
     timenow?: DateTimeFilter<"Fractal"> | Date | string
     volumeStrength?: DecimalFilter<"Fractal"> | Decimal | DecimalJsLike | number | string
@@ -9934,7 +9930,7 @@ export namespace Prisma {
     NOT?: FractalScalarWhereWithAggregatesInput | FractalScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Fractal"> | number
     ticker?: StringWithAggregatesFilter<"Fractal"> | string
-    interval?: IntWithAggregatesFilter<"Fractal"> | number
+    interval?: StringWithAggregatesFilter<"Fractal"> | string
     time?: DateTimeWithAggregatesFilter<"Fractal"> | Date | string
     timenow?: DateTimeWithAggregatesFilter<"Fractal"> | Date | string
     volumeStrength?: DecimalWithAggregatesFilter<"Fractal"> | Decimal | DecimalJsLike | number | string
@@ -10413,7 +10409,7 @@ export namespace Prisma {
 
   export type FractalCreateInput = {
     ticker: string
-    interval: number
+    interval: string
     time: Date | string
     timenow: Date | string
     volumeStrength: Decimal | DecimalJsLike | number | string
@@ -10431,7 +10427,7 @@ export namespace Prisma {
   export type FractalUncheckedCreateInput = {
     id?: number
     ticker: string
-    interval: number
+    interval: string
     time: Date | string
     timenow: Date | string
     volumeStrength: Decimal | DecimalJsLike | number | string
@@ -10448,7 +10444,7 @@ export namespace Prisma {
 
   export type FractalUpdateInput = {
     ticker?: StringFieldUpdateOperationsInput | string
-    interval?: IntFieldUpdateOperationsInput | number
+    interval?: StringFieldUpdateOperationsInput | string
     time?: DateTimeFieldUpdateOperationsInput | Date | string
     timenow?: DateTimeFieldUpdateOperationsInput | Date | string
     volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -10466,7 +10462,7 @@ export namespace Prisma {
   export type FractalUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     ticker?: StringFieldUpdateOperationsInput | string
-    interval?: IntFieldUpdateOperationsInput | number
+    interval?: StringFieldUpdateOperationsInput | string
     time?: DateTimeFieldUpdateOperationsInput | Date | string
     timenow?: DateTimeFieldUpdateOperationsInput | Date | string
     volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -10484,7 +10480,7 @@ export namespace Prisma {
   export type FractalCreateManyInput = {
     id?: number
     ticker: string
-    interval: number
+    interval: string
     time: Date | string
     timenow: Date | string
     volumeStrength: Decimal | DecimalJsLike | number | string
@@ -10501,7 +10497,7 @@ export namespace Prisma {
 
   export type FractalUpdateManyMutationInput = {
     ticker?: StringFieldUpdateOperationsInput | string
-    interval?: IntFieldUpdateOperationsInput | number
+    interval?: StringFieldUpdateOperationsInput | string
     time?: DateTimeFieldUpdateOperationsInput | Date | string
     timenow?: DateTimeFieldUpdateOperationsInput | Date | string
     volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -10519,7 +10515,7 @@ export namespace Prisma {
   export type FractalUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     ticker?: StringFieldUpdateOperationsInput | string
-    interval?: IntFieldUpdateOperationsInput | number
+    interval?: StringFieldUpdateOperationsInput | string
     time?: DateTimeFieldUpdateOperationsInput | Date | string
     timenow?: DateTimeFieldUpdateOperationsInput | Date | string
     volumeStrength?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -11066,7 +11062,6 @@ export namespace Prisma {
 
   export type FractalAvgOrderByAggregateInput = {
     id?: SortOrder
-    interval?: SortOrder
     volumeStrength?: SortOrder
     priceStrength?: SortOrder
     priceVolumeStrength?: SortOrder
@@ -11113,7 +11108,6 @@ export namespace Prisma {
 
   export type FractalSumOrderByAggregateInput = {
     id?: SortOrder
-    interval?: SortOrder
     volumeStrength?: SortOrder
     priceStrength?: SortOrder
     priceVolumeStrength?: SortOrder

@@ -96,7 +96,7 @@ model Order {
 model Fractal {
   id                    Int      @id @default(autoincrement())
   ticker                String
-  interval              Int
+  interval              String
   time                  DateTime
   timenow               DateTime
   volumeStrength        Decimal
