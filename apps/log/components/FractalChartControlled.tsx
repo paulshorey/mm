@@ -465,7 +465,17 @@ export default function FractalChartControlled({
               }}
               style={{ width, height: height * 0.7 }}
               className="border border-gray-200 rounded relative z-10"
+            ></div>
+            {/* Chart title positioned above chart but overlapping */}
+            <div
+              style={{ zIndex: 1000, top: 0, left: 0 }}
+              className="absolute bg-gray-700 bg-opacity-90 px-2 py-1 rounded shadow-sm pointer-events-none"
             >
+              <h3 className="text-sm font-semibold text-gray-800 leading-tight">
+                {config.displayName}
+              </h3>
+              <p className="text-xs text-gray-500">{config.description}</p>
+
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
                   <div className="text-lg">Loading {config.displayName}...</div>
@@ -481,16 +491,6 @@ export default function FractalChartControlled({
                   <div className="text-lg text-gray-500">No data available</div>
                 </div>
               )}
-            </div>
-            {/* Chart title positioned above chart but overlapping */}
-            <div
-              style={{ zIndex: 1000, top: 0, left: 0 }}
-              className="absolute bg-gray-700 bg-opacity-90 px-2 py-1 rounded shadow-sm pointer-events-none"
-            >
-              <h3 className="text-sm font-semibold text-gray-800 leading-tight">
-                {config.displayName}
-              </h3>
-              <p className="text-xs text-gray-500">{config.description}</p>
             </div>
           </div>
         )
