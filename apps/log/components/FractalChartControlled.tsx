@@ -15,7 +15,6 @@ import { FractalData, parseFractalCSV } from '../lib/parseFractalCSV'
 interface ChartConfig {
   fileName: string
   displayName: string
-  description: string
 }
 
 interface FractalChartControlledProps {
@@ -27,39 +26,33 @@ interface FractalChartControlledProps {
 const CHART_CONFIGS: ChartConfig[] = [
   {
     fileName: '/fractal/ETHUSD-30S.csv',
-    displayName: 'ETH/USD 30-Second Chart',
-    description: 'Very short term fractal analysis',
+    displayName: 'ETHUSD-30S',
   },
   {
     fileName: '/fractal/ETHUSD-2.csv',
-    displayName: 'ETH/USD 2-Minute Chart',
-    description: 'Short term fractal analysis',
+    displayName: 'ETHUSD-2',
   },
   {
     fileName: '/fractal/ETHUSD-6.csv',
-    displayName: 'ETH/USD 6-Minute Chart',
-    description: 'Medium-short term fractal analysis',
+    displayName: 'ETHUSD-6',
   },
   {
     fileName: '/fractal/ETHUSD-8.csv',
-    displayName: 'ETH/USD 8-Minute Chart',
-    description: 'Medium term fractal analysis',
+    displayName: 'ETHUSD-8',
   },
   {
     fileName: '/fractal/ETHUSD-30.csv',
-    displayName: 'ETH/USD 30-Minute Chart',
-    description: 'Medium-long term fractal analysis',
+    displayName: 'ETHUSD-30',
   },
   {
     fileName: '/fractal/ETHUSD-90.csv',
-    displayName: 'ETH/USD 90-Minute Chart',
-    description: 'Long term fractal analysis',
+    displayName: 'ETHUSD-90',
   },
 ]
 
 export default function FractalChartControlled({
   width = 800,
-  height = 400,
+  height = 250,
 }: FractalChartControlledProps) {
   const chartRefs = useRef<(IChartApi | null)[]>([])
   const chartContainerRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -77,7 +70,7 @@ export default function FractalChartControlled({
   const [timeRange, setTimeRange] = useState<{ from: Time; to: Time } | null>(
     null
   )
-  const [zoomLevel, setZoomLevel] = useState<number>(100) // Percentage
+  const [zoomLevel, setZoomLevel] = useState<number>(500) // Percentage
 
   // Synchronized cursor position
   const [cursorTime, setCursorTime] = useState<Time | null>(null)
@@ -193,12 +186,10 @@ export default function FractalChartControlled({
         horzLines: { color: '#f0f0f0' },
       },
       rightPriceScale: {
-        borderColor: '#cccccc',
+        visible: false, // Hide the entire y-axis
       },
       timeScale: {
-        borderColor: '#cccccc',
-        timeVisible: true,
-        secondsVisible: false,
+        visible: false, // Hide the entire x-axis
       },
       crosshair: {
         mode: 1, // Normal crosshair mode for cursor synchronization
@@ -222,6 +213,8 @@ export default function FractalChartControlled({
       color: '#4CAF50',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     volumeStrengthSeries.setData(
       convertToChartData(fractalData, 'volumeStrength')
@@ -234,6 +227,8 @@ export default function FractalChartControlled({
       color: '#388E3C',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     volumeStrengthMaSeries.setData(
       convertToChartData(fractalData, 'volumeStrengthMa')
@@ -243,6 +238,8 @@ export default function FractalChartControlled({
       color: '#FF9800',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     priceVolumeStrengthSeries.setData(
       convertToChartData(fractalData, 'priceVolumeStrength')
@@ -252,6 +249,8 @@ export default function FractalChartControlled({
       color: '#F57C00',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     priceVolumeStrengthMaSeries.setData(
       convertToChartData(fractalData, 'priceVolumeStrengthMa')
@@ -261,6 +260,8 @@ export default function FractalChartControlled({
       color: '#2196F3',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     priceStrengthSeries.setData(
       convertToChartData(fractalData, 'priceStrength')
@@ -270,6 +271,8 @@ export default function FractalChartControlled({
       color: '#1976D2',
       lineWidth: 2,
       crosshairMarkerVisible: false, // Hide cursor markers
+      priceLineVisible: false, // Hide horizontal price line
+      lastValueVisible: false, // Hide last value label
     })
     priceStrengthMaSeries.setData(
       convertToChartData(fractalData, 'priceStrengthMa')
@@ -437,19 +440,6 @@ export default function FractalChartControlled({
 
   return (
     <div className="fractal-charts">
-      {/* Master Controls */}
-      <div className="controls-panel mb-6">
-        <input
-          type="range"
-          min="10"
-          max="1000"
-          step="10"
-          value={zoomLevel}
-          onChange={(e) => setZoomLevel(parseInt(e.target.value))}
-          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-
       {/* Render all charts stacked vertically */}
       {CHART_CONFIGS.map((config, index) => {
         const isLoading = loadingStates[index]
@@ -469,12 +459,11 @@ export default function FractalChartControlled({
             {/* Chart title positioned above chart but overlapping */}
             <div
               style={{ zIndex: 1000, top: 0, left: 0 }}
-              className="absolute bg-gray-700 bg-opacity-90 px-2 py-1 rounded shadow-sm pointer-events-none"
+              className="absolute bg-gray-700 bg-opacity-90 px-2 py-1 rounded shadow-sm pointer-events-none font-bold"
             >
               <h3 className="text-sm font-semibold text-gray-800 leading-tight">
                 {config.displayName}
               </h3>
-              <p className="text-xs text-gray-500">{config.description}</p>
 
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
@@ -492,9 +481,35 @@ export default function FractalChartControlled({
                 </div>
               )}
             </div>
+            <div
+              style={{
+                position: 'absolute',
+                backgroundColor: 'white',
+                opacity: 1,
+                zIndex: 1000,
+                bottom: '5px',
+                left: 0,
+                width: '60px',
+                height: '20px',
+              }}
+            ></div>
           </div>
         )
       })}
+
+      {/* Master Controls */}
+      <div className="controls-panel mb-6">
+        <input
+          type="range"
+          min="10"
+          max="1000"
+          step="10"
+          value={zoomLevel}
+          onChange={(e) => setZoomLevel(parseInt(e.target.value))}
+          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+        />
+        <b>{zoomLevel}</b>
+      </div>
     </div>
   )
 }
