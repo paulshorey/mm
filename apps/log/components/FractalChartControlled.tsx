@@ -24,10 +24,10 @@ interface FractalChartControlledProps {
 
 // Configuration for all CSV files
 const CHART_CONFIGS: ChartConfig[] = [
-  {
-    fileName: '/fractal/ETHUSD-30S.csv',
-    displayName: 'ETHUSD-30S',
-  },
+  // {
+  //   fileName: '/fractal/ETHUSD-30S.csv',
+  //   displayName: 'ETHUSD-30S',
+  // },
   {
     fileName: '/fractal/ETHUSD-2.csv',
     displayName: 'ETHUSD-2',
@@ -70,7 +70,7 @@ export default function FractalChartControlled({
   const [timeRange, setTimeRange] = useState<{ from: Time; to: Time } | null>(
     null
   )
-  const [zoomLevel, setZoomLevel] = useState<number>(500) // Percentage
+  const [zoomLevel, setZoomLevel] = useState<number>(1) // Percentage
 
   // Synchronized cursor position
   const [cursorTime, setCursorTime] = useState<Time | null>(null)
@@ -296,9 +296,6 @@ export default function FractalChartControlled({
       }
     })
 
-    // Fit the chart content initially
-    chart.timeScale().fitContent()
-
     return chart
   }
 
@@ -372,6 +369,15 @@ export default function FractalChartControlled({
               index
             )
             chartRefs.current[index] = chart
+
+            // Apply current time range to newly created chart
+            if (timeRange) {
+              try {
+                chart.timeScale().setVisibleRange(timeRange)
+              } catch (error) {
+                console.warn('Failed to set initial visible range:', error)
+              }
+            }
           } catch (err) {
             console.error(`Error creating chart ${index}:`, err)
             setErrors((prev) => {
@@ -501,7 +507,7 @@ export default function FractalChartControlled({
       <div className="controls-panel mb-6">
         <input
           type="range"
-          min="10"
+          min="1"
           max="1000"
           step="10"
           value={zoomLevel}
