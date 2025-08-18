@@ -22,7 +22,7 @@ function parseFractalText(bodyText: string) {
       if (key === 'ticker') {
         data.ticker = value
       } else if (key === 'interval') {
-        data.interval = parseInt(value)
+        data.interval = value
       } else if (key === 'time') {
         data.time = new Date(value)
       } else if (key === 'timenow') {
@@ -70,7 +70,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
     const fractalData = parseFractalText(bodyText)
 
     // Validate parsed data
-    if (isNaN(fractalData.interval)) {
+    if (!fractalData.interval || fractalData.interval.trim() === '') {
       throw new Error('Invalid interval value')
     }
     if (isNaN(fractalData.time.getTime())) {
