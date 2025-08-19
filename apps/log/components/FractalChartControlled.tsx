@@ -141,17 +141,67 @@ export default function FractalChartControlled({
     if (isUpdatingCursor.current) return
     isUpdatingCursor.current = true
 
+    const getNearestSeriesValueAtTime = (
+      data: FractalRowGet[] | null,
+      t: Time
+    ): number | null => {
+      if (!data || typeof t !== 'number' || data.length === 0) return null
+      const target = t as number
+
+      // Binary search to find nearest index by timenow
+      let left = 0
+      let right = data.length - 1
+      while (left <= right) {
+        const mid = (left + right) >> 1
+        const midTime = new Date(data[mid]!.timenow).getTime() / 1000
+        if (midTime === target) {
+          left = mid
+          right = mid - 1
+          break
+        }
+        if (midTime < target) left = mid + 1
+        else right = mid - 1
+      }
+
+      // Candidates are at indices right and left
+      let idx = right
+      if (left >= 0 && left < data.length) {
+        if (right < 0) idx = left
+        else {
+          const leftTime = new Date(data[left]!.timenow).getTime() / 1000
+          const rightTime = new Date(data[right]!.timenow).getTime() / 1000
+          idx =
+            Math.abs(leftTime - target) < Math.abs(rightTime - target)
+              ? left
+              : right
+        }
+      } else if (right < 0) {
+        idx = 0
+      } else if (right >= data.length) {
+        idx = data.length - 1
+      }
+
+      idx = Math.max(0, Math.min(idx, data.length - 1))
+      const raw = data[idx]!.priceStrengthMa as unknown as number | string
+      const value = typeof raw === 'string' ? parseFloat(raw) : raw
+      return Number.isFinite(value) ? value : null
+    }
+
     chartRefs.current.forEach((chart, index) => {
-      if (chart && seriesRefs.current[index]) {
-        try {
-          if (time !== null) {
-            chart.setCrosshairPosition(0, time, seriesRefs.current[index]!)
+      if (!chart || !seriesRefs.current[index]) return
+      try {
+        if (time !== null) {
+          const price = getNearestSeriesValueAtTime(allChartsData[index], time)
+          if (price != null) {
+            chart.setCrosshairPosition(price, time, seriesRefs.current[index]!)
           } else {
             chart.clearCrosshairPosition()
           }
-        } catch (error) {
-          console.warn('Failed to set crosshair position:', error)
+        } else {
+          chart.clearCrosshairPosition()
         }
+      } catch (error) {
+        console.warn('Failed to set crosshair position:', error)
       }
     })
 
@@ -184,7 +234,7 @@ export default function FractalChartControlled({
         visible: false, // Hide the entire x-axis
       },
       crosshair: {
-        mode: 1, // Normal crosshair mode for cursor synchronization
+        mode: 0, // Normal mode: we'll set Y explicitly via setCrosshairPosition
         vertLine: {
           visible: true,
           color: '#758391',
