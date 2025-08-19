@@ -46,22 +46,11 @@ function parseFractalText(bodyText: string) {
 }
 
 async function handleRequest(request: NextRequest): Promise<NextResponse> {
+  let bodyText = ''
   try {
-    // Extract body text
-    let bodyText = ''
-
-    if (request.method === 'GET') {
-      // For GET requests, check if there's a body (some clients send body with GET)
-      try {
-        bodyText = await request.text()
-      } catch {
-        // If no body, that's fine for GET
-        bodyText = ''
-      }
-    } else {
-      bodyText = await request.text()
-    }
-
+    bodyText = await request.text()
+  } catch {}
+  try {
     if (!bodyText || bodyText.trim() === '') {
       throw new Error('No body text provided')
     }
@@ -113,10 +102,6 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
       },
     })
   } catch (error: any) {
-    let bodyText = ''
-    try {
-      bodyText = await request.text()
-    } catch {}
     // Log the error
     await sqlLogAdd({
       name: 'info',
