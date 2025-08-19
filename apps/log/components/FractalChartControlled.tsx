@@ -441,7 +441,7 @@ export default function FractalChartControlled({
   }, [])
 
   return (
-    <div className="mx-auto w-full max-w-[600px] overflow-auto">
+    <div className="mx-auto w-full max-w-[600px]">
       {/* Master Controls */}
       <div className="controls-panel">
         {/* <div className="mb-2">
@@ -478,8 +478,10 @@ export default function FractalChartControlled({
         return (
           <div
             key={config.fileName}
-            className="fractal-chart relative flex justify-end overflow-x-auto"
+            id={`fractal-chart-${config.fileName}`}
+            className=" relative overflow-x-auto"
             style={{ marginBottom: '-12px' }}
+            dir="rtl"
           >
             {/* Chart container */}
             <div
@@ -489,43 +491,34 @@ export default function FractalChartControlled({
               style={{ width, height: height * 0.7 }}
               className="border border-gray-200 rounded relative z-10"
             ></div>
-            {/* Chart title positioned above chart but overlapping */}
-            <div
-              style={{ zIndex: 1000, top: 0, left: 0 }}
-              className="absolute bg-[var(--mantine-color-body)] opacity-50 bg-opacity-90 pl-2 pr-3 py-1 rounded-br-xl shadow-sm pointer-events-none font-bold"
-            >
-              <h3 className="text-sm font-semibold leading-tight">
-                {config.displayName}
-              </h3>
+            {/* Title positioned above chart but overlapping */}
+            <div style={{ zIndex: 1000 }} className="absolute left-0 top-0">
+              <div className="fixed left-0 bg-[var(--mantine-color-body)] opacity-50 pl-2 pr-3 py-1 rounded-br-xl shadow-sm pointer-events-none font-bold">
+                <h3 className="text-sm font-semibold leading-tight">
+                  {config.displayName}
+                </h3>
 
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
-                  <div className="text-lg">Loading {config.displayName}...</div>
-                </div>
-              )}
-              {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
-                  <div className="text-lg text-red-500">Error: {error}</div>
-                </div>
-              )}
-              {!isLoading && !error && !hasData && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
-                  <div className="text-lg text-gray-500">No data available</div>
-                </div>
-              )}
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
+                    <div className="text-lg">
+                      Loading {config.displayName}...
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
+                    <div className="text-lg text-red-500">Error: {error}</div>
+                  </div>
+                )}
+                {!isLoading && !error && !hasData && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white rounded">
+                    <div className="text-lg text-gray-500">
+                      No data available
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div
-              style={{
-                position: 'absolute',
-                backgroundColor: 'white',
-                opacity: 1,
-                zIndex: 1000,
-                bottom: '5px',
-                left: 0,
-                width: '60px',
-                height: '20px',
-              }}
-            ></div>
           </div>
         )
       })}
