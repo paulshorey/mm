@@ -104,7 +104,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
   } catch (error: any) {
     // Log the error
     await sqlLogAdd({
-      name: 'info',
+      name: 'warn',
       message: `Fractal endpoint error: ${error.message}`,
       stack: {
         url: request.nextUrl.href,
