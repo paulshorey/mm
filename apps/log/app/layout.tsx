@@ -5,7 +5,7 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children }: { children: any }) {
-  const defaultColorScheme = 'light'
+  const defaultColorScheme = 'dark'
   return (
     <html
       lang="en"
