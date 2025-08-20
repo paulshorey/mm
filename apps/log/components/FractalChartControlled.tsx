@@ -142,7 +142,7 @@ export default function FractalChartControlled({
     isUpdatingCursor.current = true
 
     const getNearestSeriesValueAtTime = (
-      data: FractalRowGet[] | null,
+      data: FractalRowGet[] | null | undefined,
       t: Time
     ): number | null => {
       if (!data || typeof t !== 'number' || data.length === 0) return null
