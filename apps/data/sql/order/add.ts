@@ -1,7 +1,7 @@
 "use server";
 
 import { OrderRowAdd } from "./types";
-import { prisma } from "../../lib/prisma";
+import { getDb } from "../../lib/neon";
 import { cc } from "../../cc";
 
 /**
@@ -27,29 +27,23 @@ export const orderAdd = async function (row: OrderRowAdd) {
   const app_name = process.env.APP_NAME || "";
   const node_env = process.env.NODE_ENV || "";
 
+  const client = await getDb().connect();
   try {
-    const order = await prisma.order.create({
-      data: {
-        client_id: row.client_id,
-        type: row.type,
-        ticker: row.ticker,
-        side: row.side,
-        amount: row.amount,
-        price: row.price,
-        server_name,
-        app_name,
-        node_env,
-      },
-    });
-    return order;
-
-    //@ts-ignore
-  } catch (e: Error) {
+    const queryText = `
+      INSERT INTO orders_v1(client_id, type, ticker, side, amount, price, server_name, app_name, node_env)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`;
+    const values = [row.client_id, row.type, row.ticker, row.side, row.amount, row.price, server_name, app_name, node_env];
+    const res = await client.query(queryText, values);
+    return res.rows[0];
+  } catch (e: any) {
     const error = {
       name: "Error order/add.ts catch",
       message: e.message || "",
       stack: e.stack || "",
     };
-    cc.error(`${error.name} ${e.message} ${e.stack?.substring(0, e.stack.indexOf(/\n/))}`, error);
+    cc.error(`${error.name} ${e.message} ${e.stack?.substring(0, e.stack?.indexOf("\n"))}`, error);
+  } finally {
+    client.release();
   }
 };

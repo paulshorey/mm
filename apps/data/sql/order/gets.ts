@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { prisma } from "../../lib/prisma";
+import { getDb } from "../../lib/neon";
 import { cc } from "../../cc";
 import { OrderRowGet } from "./types";
 
@@ -32,17 +32,39 @@ export const orderGets = async function ({ where }: Props = {}): Promise<Output>
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for") || headersList.get("remote-addr") || "IP not available";
 
+  const client = await getDb().connect();
   try {
-    const orders = await prisma.order.findMany({
-      where: {
-        ...(where?.client_id && { client_id: where.client_id }),
-        ...(where?.type && { type: where.type }),
-        ...(where?.ticker && { ticker: where.ticker }),
-        ...(where?.side && { side: where.side }),
-      },
-      orderBy: { time: "desc" },
-      take: where?.limit || 100,
-    });
+    let queryText = "SELECT * FROM orders_v1";
+    const params: any[] = [];
+    const whereClauses: string[] = [];
+
+    if (where?.client_id) {
+      params.push(where.client_id);
+      whereClauses.push(`client_id = $${params.length}`);
+    }
+    if (where?.type) {
+      params.push(where.type);
+      whereClauses.push(`type = $${params.length}`);
+    }
+    if (where?.ticker) {
+      params.push(where.ticker);
+      whereClauses.push(`ticker = $${params.length}`);
+    }
+    if (where?.side) {
+      params.push(where.side);
+      whereClauses.push(`side = $${params.length}`);
+    }
+
+    if (whereClauses.length > 0) {
+      queryText += ` WHERE ${whereClauses.join(" AND ")}`;
+    }
+
+    queryText += " ORDER BY time DESC";
+    params.push(where?.limit || 100);
+    queryText += ` LIMIT $${params.length}`;
+
+    const result = await client.query(queryText, params);
+    const orders = result.rows;
 
     // Convert Prisma results to OrderRowGet format
     const rows = orders.map((order) => ({
@@ -57,7 +79,7 @@ export const orderGets = async function ({ where }: Props = {}): Promise<Output>
       server_name: order.server_name || "",
       app_name: order.app_name || "",
       node_env: order.node_env || "",
-      time: order.time.getTime(),
+      time: new Date(order.time).getTime(),
     })) as OrderRowGet[];
 
     output.ip = ip;
@@ -77,6 +99,8 @@ export const orderGets = async function ({ where }: Props = {}): Promise<Output>
     } catch (e: Error) {
       console.error(output.error);
     }
+  } finally {
+    client.release();
   }
   return output;
 };

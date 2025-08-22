@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { prisma } from "../../lib/prisma";
+import { getDb } from "../../lib/neon";
 import { cc } from "../../cc";
 import { LogRowGet } from "./types";
 
@@ -32,17 +32,39 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for") || headersList.get("remote-addr") || "IP not available";
 
+  const client = await getDb().connect();
   try {
-    const logs = await prisma.log.findMany({
-      where: {
-        ...(where?.name && { name: where.name }),
-        ...(where?.category && { category: where.category }),
-        ...(where?.tag && { tag: where.tag }),
-        ...(where?.access_key && { access_key: where.access_key }),
-      },
-      orderBy: { time: "desc" },
-      take: where?.limit || 100,
-    });
+    let queryText = "SELECT * FROM logs_v1";
+    const params: any[] = [];
+    const whereClauses: string[] = [];
+
+    if (where?.name) {
+      params.push(where.name);
+      whereClauses.push(`name = $${params.length}`);
+    }
+    if (where?.category) {
+      params.push(where.category);
+      whereClauses.push(`category = $${params.length}`);
+    }
+    if (where?.tag) {
+      params.push(where.tag);
+      whereClauses.push(`tag = $${params.length}`);
+    }
+    if (where?.access_key) {
+      params.push(where.access_key);
+      whereClauses.push(`access_key = $${params.length}`);
+    }
+
+    if (whereClauses.length > 0) {
+      queryText += ` WHERE ${whereClauses.join(" AND ")}`;
+    }
+
+    queryText += " ORDER BY time DESC";
+    params.push(where?.limit || 100);
+    queryText += ` LIMIT $${params.length}`;
+
+    const result = await client.query(queryText, params);
+    const logs = result.rows;
 
     // Convert Prisma results to LogRowGet format
     const rows = logs.map((log) => ({
@@ -57,7 +79,7 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
       server_name: log.server_name || "",
       app_name: log.app_name || "",
       node_env: log.node_env || "",
-      time: log.time.getTime(),
+      time: new Date(log.time).getTime(),
     })) as LogRowGet[];
 
     output.ip = ip;
@@ -77,6 +99,8 @@ export const logGets = async function ({ where }: Props = {}): Promise<Output> {
     } catch (e: Error) {
       console.error(e);
     }
+  } finally {
+    client.release();
   }
   return output;
 };

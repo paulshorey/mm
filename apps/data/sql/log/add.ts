@@ -1,7 +1,7 @@
 "use server";
 
 import { LogRowAdd } from "./types";
-import { prisma } from "../../lib/prisma";
+import { getDb } from "../../lib/neon";
 import { getCurrentIpAddress } from "../../lib/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
@@ -38,22 +38,25 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
   const app_name = process.env.APP_NAME || "";
   const addr = (await getCurrentIpAddress()) || {};
 
+  const client = await getDb().connect();
   try {
-    await prisma.log.create({
-      data: {
-        name: row.name.toLowerCase(),
-        message: row.message,
-        stack: { ...row.stack, ...addr },
-        access_key,
-        server_name,
-        app_name,
-        node_env,
-        category: row.category,
-        tag: row.tag,
-      },
-    });
-    // @ts-ignore
-  } catch (e: Error) {
+    const queryText = `
+      INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`;
+    const values = [
+      row.name.toLowerCase(),
+      row.message,
+      JSON.stringify({ ...row.stack, ...addr }),
+      access_key,
+      server_name,
+      app_name,
+      node_env,
+      row.category,
+      row.tag,
+    ];
+    await client.query(queryText, values);
+  } catch (e: any) {
     try {
       const errorStack = {
         name: "Error",
@@ -61,24 +64,18 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
         stack: e?.stack,
       };
       const message = "Error in try sqlLogAdd.ts";
-      await prisma.log.create({
-        data: {
-          name: "error",
-          message,
-          stack: errorStack,
-          access_key,
-          server_name,
-          app_name,
-          node_env,
-          category: row.category,
-          tag: row.tag,
-        },
-      });
-      //@ts-ignore
-    } catch (err: Error) {
+      const queryText = `
+        INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *`;
+      const values = ["error", message, JSON.stringify(errorStack), access_key, server_name, app_name, node_env, row.category, row.tag];
+      await client.query(queryText, values);
+    } catch (err: any) {
       // Error sending
       console.error("Error in catch sqlLogAdd.ts", row, err);
     }
     return null;
+  } finally {
+    client.release();
   }
 };

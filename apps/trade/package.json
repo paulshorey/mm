@@ -18,8 +18,7 @@
     "test": "npm run typecheck && npm run jest",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "prepare": "husky",
-    "postinstall": "./scripts/copy-prisma.sh"
+    "prepare": "husky"
   },
   "dependencies": {
     "@apps/data": "workspace:*",
