@@ -7,8 +7,8 @@ export const maxDuration = 60;
 
 /**
  * Parses fractal data from text format: key=value key=value
- * Example: ticker=ETHUSD interval=2 time=2025-08-17T20:46:00Z timenow=2025-08-17T20:46:34Z volumeStrength=33.32665822909558 priceStrength=-14.005869947279702 priceVolumeStrength=-49.941121303580324 volumeStrengthMa=36.30304183354799 priceStrengthMa=-12.175479058829573 priceVolumeStrengthMa=-45.76830524619087
- * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} timenow={{timenow}} volumeStrength={{plot("volumeStrength")}} priceStrength={{plot("priceStrength")}} priceVolumeStrength={{plot("priceVolumeStrength")}} volumeStrengthMa={{plot("volumeStrengthMa")}} priceStrengthMa={{plot("priceStrengthMa")}} priceVolumeStrengthMa={{plot("priceVolumeStrengthMa")}}
+ * Example: ticker=ETHUSD interval=2 time=2025-08-17T20:46:00Z timenow=2025-08-17T20:46:34Z volume_strength=33.32665822909558 price_strength=-14.005869947279702 price_volume_strength=-49.941121303580324 volume_strength_ma=36.30304183354799 price_strength_ma=-12.175479058829573 price_volume_strength_ma=-45.76830524619087
+ * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} timenow={{timenow}} volume_strength={{plot("volume_strength")}} price_strength={{plot("price_strength")}} price_volume_strength={{plot("price_volume_strength")}} volume_strength_ma={{plot("volume_strength_ma")}} price_strength_ma={{plot("price_strength_ma")}} price_volume_strength_ma={{plot("price_volume_strength_ma")}}
  */
 function parseFractalText(bodyText: string) {
   const data = {} as FractalRowAdd;
@@ -27,17 +27,17 @@ function parseFractalText(bodyText: string) {
         data.time = new Date(value);
       } else if (key === "timenow") {
         data.timenow = new Date(value);
-      } else if (key === "volumeStrength") {
+      } else if (key === "volume_strength") {
         data.volume_strength = parseFloat(value);
-      } else if (key === "priceStrength") {
+      } else if (key === "price_strength") {
         data.price_strength = parseFloat(value);
-      } else if (key === "priceVolumeStrength") {
+      } else if (key === "price_volume_strength") {
         data.price_volume_strength = parseFloat(value);
-      } else if (key === "volumeStrengthMa") {
+      } else if (key === "volume_strength_ma") {
         data.volume_strength_ma = parseFloat(value);
-      } else if (key === "priceStrengthMa") {
+      } else if (key === "price_strength_ma") {
         data.price_strength_ma = parseFloat(value);
-      } else if (key === "priceVolumeStrengthMa") {
+      } else if (key === "price_volume_strength_ma") {
         data.price_volume_strength_ma = parseFloat(value);
       }
     }

@@ -152,7 +152,7 @@ export default function FractalChartControlled({ width = 600, height = 250 }: Fr
       }
 
       idx = Math.max(0, Math.min(idx, data.length - 1));
-      const raw = data[idx]!.priceStrengthMa as unknown as number | string;
+      const raw = data[idx]!.price_strength_ma as unknown as number | string;
       const value = typeof raw === "string" ? parseFloat(raw) : raw;
       return Number.isFinite(value) ? value : null;
     };
@@ -228,58 +228,58 @@ export default function FractalChartControlled({ width = 600, height = 250 }: Fr
     });
 
     // // Create line series for each metric
-    // const volumeStrengthSeries = chart.addSeries(LineSeries, {
+    // const volume_strengthSeries = chart.addSeries(LineSeries, {
     //   color: '#4caf4f12',
     //   lineWidth: 1,
     //   crosshairMarkerVisible: false, // Hide cursor markers
     //   priceLineVisible: false, // Hide horizontal price line
     //   lastValueVisible: false, // Hide last value label
     // })
-    // volumeStrengthSeries.setData(
-    //   convertToChartData(fractalData, 'volumeStrength')
+    // volume_strengthSeries.setData(
+    //   convertToChartData(fractalData, 'volume_strength')
     // )
 
-    const volumeStrengthMaSeries = chart.addSeries(LineSeries, {
+    const volume_strength_maSeries = chart.addSeries(LineSeries, {
       color: "#388e3c10",
       lineWidth: 1,
       crosshairMarkerVisible: false, // Hide cursor markers
       priceLineVisible: false, // Hide horizontal price line
       lastValueVisible: false, // Hide last value label
     });
-    volumeStrengthMaSeries.setData(convertToChartData(fractalData, "volumeStrengthMa"));
+    volume_strength_maSeries.setData(convertToChartData(fractalData, "volume_strength_ma"));
 
-    // const priceVolumeStrengthSeries = chart.addSeries(LineSeries, {
+    // const price_volume_strengthSeries = chart.addSeries(LineSeries, {
     //   color: '#ff99007d',
     //   lineWidth: 1,
     //   crosshairMarkerVisible: false, // Hide cursor markers
     //   priceLineVisible: false, // Hide horizontal price line
     //   lastValueVisible: false, // Hide last value label
     // })
-    // priceVolumeStrengthSeries.setData(
-    //   convertToChartData(fractalData, 'priceVolumeStrength')
+    // price_volume_strengthSeries.setData(
+    //   convertToChartData(fractalData, 'price_volume_strength')
     // )
 
-    const priceVolumeStrengthMaSeries = chart.addSeries(LineSeries, {
+    const price_volume_strength_maSeries = chart.addSeries(LineSeries, {
       color: "#f57b009f",
       lineWidth: 1,
       crosshairMarkerVisible: false, // Hide cursor markers
       priceLineVisible: false, // Hide horizontal price line
       lastValueVisible: false, // Hide last value label
     });
-    priceVolumeStrengthMaSeries.setData(convertToChartData(fractalData, "priceVolumeStrengthMa"));
+    price_volume_strength_maSeries.setData(convertToChartData(fractalData, "price_volume_strength_ma"));
 
-    // const priceStrengthSeries = chart.addSeries(LineSeries, {
+    // const price_strengthSeries = chart.addSeries(LineSeries, {
     //   color: '#2195f3a1',
     //   lineWidth: 1,
     //   crosshairMarkerVisible: false, // Hide cursor markers
     //   priceLineVisible: false, // Hide horizontal price line
     //   lastValueVisible: false, // Hide last value label
     // })
-    // priceStrengthSeries.setData(
-    //   convertToChartData(fractalData, 'priceStrength')
+    // price_strengthSeries.setData(
+    //   convertToChartData(fractalData, 'price_strength')
     // )
 
-    const priceStrengthMaSeries = chart.addSeries(LineSeries, {
+    const price_strength_maSeries = chart.addSeries(LineSeries, {
       color: "#1976D2",
       lineWidth: 1,
       crosshairMarkerBackgroundColor: "transparent",
@@ -289,10 +289,10 @@ export default function FractalChartControlled({ width = 600, height = 250 }: Fr
       priceLineVisible: false, // Hide horizontal price line
       lastValueVisible: false, // Hide last value label
     });
-    priceStrengthMaSeries.setData(convertToChartData(fractalData, "priceStrengthMa"));
+    price_strength_maSeries.setData(convertToChartData(fractalData, "price_strength_ma"));
 
-    // Store the priceStrengthMaSeries reference for crosshair synchronization
-    seriesRefs.current[chartIndex] = priceStrengthMaSeries;
+    // Store the price_strength_maSeries reference for crosshair synchronization
+    seriesRefs.current[chartIndex] = price_strength_maSeries;
 
     // Add crosshair event handlers for cursor synchronization
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
