@@ -29,7 +29,7 @@ export const fractalAdd = async function (row: FractalRowAdd) {
   const client = await getDb().connect();
   try {
     const queryText = `
-      INSERT INTO fractal_v1(ticker, interval, time, timenow, volumeStrength, priceStrength, priceVolumeStrength, volumeStrengthMa, priceStrengthMa, priceVolumeStrengthMa, server_name, app_name, node_env)
+      INSERT INTO fractal_v1(ticker, interval, time, timenow, volume_strength, price_strength, price_volume_strength, volume_strength_ma, price_strength_ma, price_volume_strength_ma, server_name, app_name, node_env)
       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`;
     const values = [
@@ -37,12 +37,12 @@ export const fractalAdd = async function (row: FractalRowAdd) {
       row.interval,
       row.time,
       row.timenow,
-      row.volumeStrength,
-      row.priceStrength,
-      row.priceVolumeStrength,
-      row.volumeStrengthMa,
-      row.priceStrengthMa,
-      row.priceVolumeStrengthMa,
+      row.volume_strength,
+      row.price_strength,
+      row.price_volume_strength,
+      row.volume_strength_ma,
+      row.price_strength_ma,
+      row.price_volume_strength_ma,
       server_name,
       app_name,
       node_env,

@@ -28,17 +28,17 @@ function parseFractalText(bodyText: string) {
       } else if (key === "timenow") {
         data.timenow = new Date(value);
       } else if (key === "volumeStrength") {
-        data.volumeStrength = parseFloat(value);
+        data.volume_strength = parseFloat(value);
       } else if (key === "priceStrength") {
-        data.priceStrength = parseFloat(value);
+        data.price_strength = parseFloat(value);
       } else if (key === "priceVolumeStrength") {
-        data.priceVolumeStrength = parseFloat(value);
+        data.price_volume_strength = parseFloat(value);
       } else if (key === "volumeStrengthMa") {
-        data.volumeStrengthMa = parseFloat(value);
+        data.volume_strength_ma = parseFloat(value);
       } else if (key === "priceStrengthMa") {
-        data.priceStrengthMa = parseFloat(value);
+        data.price_strength_ma = parseFloat(value);
       } else if (key === "priceVolumeStrengthMa") {
-        data.priceVolumeStrengthMa = parseFloat(value);
+        data.price_volume_strength_ma = parseFloat(value);
       }
     }
   }
@@ -69,12 +69,12 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
       throw new Error("Invalid timenow format");
     }
     if (
-      isNaN(fractalData.volumeStrength) ||
-      isNaN(fractalData.priceStrength) ||
-      isNaN(fractalData.priceVolumeStrength) ||
-      isNaN(fractalData.volumeStrengthMa) ||
-      isNaN(fractalData.priceStrengthMa) ||
-      isNaN(fractalData.priceVolumeStrengthMa)
+      isNaN(fractalData.volume_strength) ||
+      isNaN(fractalData.price_strength) ||
+      isNaN(fractalData.price_volume_strength) ||
+      isNaN(fractalData.volume_strength_ma) ||
+      isNaN(fractalData.price_strength_ma) ||
+      isNaN(fractalData.price_volume_strength_ma)
     ) {
       throw new Error("Invalid numeric values");
     }

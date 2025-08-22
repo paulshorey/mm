@@ -4,12 +4,12 @@ export type FractalRowGet = {
   interval: string;
   time: Date; // DateTime as ISO string
   timenow: Date; // DateTime as ISO string
-  volumeStrength: number;
-  priceStrength: number;
-  priceVolumeStrength: number;
-  volumeStrengthMa: number;
-  priceStrengthMa: number;
-  priceVolumeStrengthMa: number;
+  volume_strength: number;
+  price_strength: number;
+  price_volume_strength: number;
+  volume_strength_ma: number;
+  price_strength_ma: number;
+  price_volume_strength_ma: number;
   server_name: string;
   app_name: string;
   node_env: string;
@@ -21,12 +21,12 @@ export type FractalRowAdd = {
   interval: string;
   time: Date;
   timenow: Date;
-  volumeStrength: number;
-  priceStrength: number;
-  priceVolumeStrength: number;
-  volumeStrengthMa: number;
-  priceStrengthMa: number;
-  priceVolumeStrengthMa: number;
+  volume_strength: number;
+  price_strength: number;
+  price_volume_strength: number;
+  volume_strength_ma: number;
+  price_strength_ma: number;
+  price_volume_strength_ma: number;
   server_name?: string;
   app_name?: string;
   node_env?: string;
