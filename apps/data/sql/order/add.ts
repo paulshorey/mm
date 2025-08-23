@@ -30,10 +30,10 @@ export const orderAdd = async function (row: OrderRowAdd) {
   const client = await getDb().connect();
   try {
     const queryText = `
-      INSERT INTO orders_v1(client_id, type, ticker, side, amount, price, server_name, app_name, node_env)
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO orders_v1(client_id, type, ticker, side, amount, price, server_name, app_name, node_env, time)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`;
-    const values = [row.client_id, row.type, row.ticker, row.side, row.amount, row.price, server_name, app_name, node_env];
+    const values = [row.client_id, row.type, row.ticker, row.side, row.amount, row.price, server_name, app_name, node_env, new Date().toISOString()];
     const res = await client.query(queryText, values);
     return res.rows[0];
   } catch (e: any) {

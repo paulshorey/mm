@@ -17,8 +17,8 @@ interface FractalChartControlledProps {
 // Configuration for all CSV files
 const CHART_CONFIGS: ChartConfig[] = [
   {
-    interval: "30s",
-    displayName: "ETHUSD-30s",
+    interval: "30S",
+    displayName: "ETHUSD-30S",
   },
   {
     interval: "2",

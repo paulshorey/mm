@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { fractalGets } from '@apps/data/sql/fractal/gets'
 import { orderGets } from '@apps/data/sql/order/gets'
 import { Json } from '@apps/data/fe/components/blocks/Json'
 import { AccordionItem } from '@/list/components/accordion/AccordionItem'
@@ -24,7 +25,11 @@ export function ListData({
   // Fetch data
   const [logs, setLogs] = useState<RowGet[]>([])
   useEffect(() => {
-    ;(table === 'logs' ? logGets : orderGets)({ where }).then(({ rows }) => {
+    ;(table === 'logs'
+      ? logGets
+      : table === 'fractal'
+        ? fractalGets
+        : orderGets)({ where }).then(({ rows }) => {
       setLogs(rows || [])
     })
   }, [where])
@@ -37,7 +42,9 @@ export function ListData({
     let message =
       table === 'logs'
         ? log.message
-        : `${log.side} ${log.amount} ${log.ticker} @ ${log.price}`
+        : table === 'order'
+          ? `${log.side} ${log.amount} ${log.ticker} @ ${log.price}`
+          : `${log.ticker} ${log.interval}`
     let dataParsed
     try {
       dataParsed = log.stack ? JSON.parse(log.stack) : null

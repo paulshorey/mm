@@ -42,6 +42,15 @@ export const Header = ({ where }: { where: Where }) => {
         >
           Orders
         </Link>
+        <Link
+          href="/fractal"
+          style={{
+            color: colors.gray, //pathname === '/fractal' ? colors.gray : colors.green,
+            // textDecoration: pathname === '/fractal' ? 'none' : 'underline',
+          }}
+        >
+          Fractal
+        </Link>
       </nav>
     </div>
   )

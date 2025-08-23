@@ -80,8 +80,9 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
       }
 
       queryText += " ORDER BY timenow DESC";
-
+      console.log("queryText", queryText);
       const result = await client.query(queryText, params);
+      console.log("result", result);
       const fractals = result.rows as FractalRowGet[];
 
       const rows: FractalRowGet[] = [];
@@ -111,7 +112,7 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
         });
         fractals.splice(index, 1);
         fractals.splice(index, 1);
-        if (fr0.interval === "30s") {
+        if (fr0.interval === "30S") {
           fractals.splice(index, 1);
           fractals.splice(index, 1);
           fractals.splice(index, 1);
