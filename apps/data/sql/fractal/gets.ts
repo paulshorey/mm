@@ -87,7 +87,7 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
 
       const rows: FractalRowGet[] = [];
       for (let index = 0; index < fractals.length; index++) {
-        const fr0 = fractals[index];
+        const fr0 = fractals[index] as FractalRowGet;
         const fr1 = fractals[index + 1];
         const fr2 = fractals[index + 2];
         const fr3 = fractals[index + 3];
