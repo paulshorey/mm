@@ -1,6 +1,13 @@
 import { isNumber } from '@/lib/numbers'
 import { MarketOrderInput } from '@/dydx/types'
 
+/**
+ * Format: `ticker:position:stoploss`
+ * * coin (without USD)
+ * * dollars (integer)
+ * * stoploss: decimal of 1 percent (0.1 = 0.1%, 1 = 1%, 10 = 10%)
+ * Example: `ETH:1000:0.5`
+ */
 export const parseOrdersText = function (text: string): MarketOrderInput[] {
   const trades: MarketOrderInput[] = []
   text = text.trim()
@@ -9,7 +16,9 @@ export const parseOrdersText = function (text: string): MarketOrderInput[] {
     let trade = {} as MarketOrderInput
     let split = str.split(':') as Array<string | number>
     // ticker
-    if (typeof split[0] === 'string') trade.ticker = split[0].toUpperCase() + '-USD'
+    if (typeof split[0] === 'string') {
+      trade.ticker = split[0].toUpperCase() + '-USD'
+    }
     // position
     let num = Number(split[1])
     if (isNumber(num)) {

@@ -5,13 +5,19 @@ import { parseOrdersText } from '@/dydx/lib/parseOrdersText'
 import { sqlLogAdd } from '@apps/data/sql/log/add'
 import { MarketOrderOutput } from '@/dydx/types'
 import { sendToMyselfSMS } from '@apps/data/twillio/sendToMyselfSMS'
+import { parseFractalText } from '@/dydx/lib/parseFractalText'
+import { fractalAdd } from '@apps/data/sql/fractal'
 
 export const maxDuration = 60
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  let bodyData
+  let bodyText = ''
+
+  /**
+   * Parse body
+   */
   try {
-    let bodyData
-    let bodyText = ''
     const contentType = request.headers.get('Content-Type')
     if (contentType && contentType.includes('form')) {
       bodyData = Object.fromEntries(await request.formData())
@@ -19,78 +25,136 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       bodyText = await request.text()
     }
 
-    let access_key = request.nextUrl.searchParams.get('access_key')
-    if (!access_key) throw new Error('!access_key')
-    if (!(access_key === 'testkeyx' || access_key === 'postmansecret')) {
-      throw new Error('wrong access_key')
-    }
+    /**
+     * 1. Save fractal
+     */
+    const fractalData = parseFractalText(bodyText)
+    if (fractalData?.price_strength) {
+      try {
+        // Validate parsed data
+        if (!fractalData.interval || !fractalData.interval.trim() || isNaN(fractalData.time.getTime()) || isNaN(fractalData.timenow.getTime())) {
+          throw new Error(`Invalid bodyText "${bodyText}"`)
+        }
 
-    try {
-      // dydx status
-      const parsedOrders = parseOrdersText(bodyText)
-      if (!parsedOrders[0]) {
-        // relay message to myself
-        sendToMyselfSMS(bodyText)
-        // log to db
-        await sqlLogAdd({
-          name: 'log',
-          message: `parseOrdersText failed`,
-          stack: {
-            bodyText,
-            parsedOrders,
-            bodyData,
+        // Save to database
+        const result = await fractalAdd(fractalData)
+
+        // Log success
+        return formatResponse({
+          ok: true,
+          message: 'Fractal data saved successfully',
+          data: {
+            id: result?.id,
+            ticker: fractalData.ticker,
+            timestamp: new Date().toISOString(),
           },
         })
+      } catch (error: any) {
+        // Log error
+        await sqlLogAdd({
+          name: 'warn',
+          message: `Fractal endpoint error: ${error.message}`,
+          stack: {
+            url: request.nextUrl.href,
+            bodyText: bodyText,
+            method: request.method,
+            stack: error.stack,
+          },
+        })
+        // Done
         return formatResponse(
           {
             ok: false,
-            message: '!parsedOrders[0]',
-            parsedOrders,
+            error: error.message,
           },
-          405
+          400
         )
       }
-      const datas = [] as MarketOrderOutput[]
-      for (let order of parsedOrders) {
-        const data = await executeOrderMarket(order)
-        if (data?.error) {
-          return formatResponse(
-            {
-              ok: false,
-              message: 'data?.error',
-              data,
-              bodyText,
-              bodyData,
-              parsedOrders,
-            },
-            405
-          )
-        }
-        datas.push(data)
-      }
-      return formatResponse({
-        ok: true,
-        data: datas,
-        tvline: 1,
-      })
-
-      // @ts-ignore
-    } catch (error: Error) {
-      await sqlLogAdd({
-        name: 'error',
-        message: `${bodyText} failed with error: ${error.message}`,
-        stack: {
-          error: error.stack,
-          bodyText,
-          bodyData,
-        },
-      })
-      return formatResponse({ error: error.message }, 500)
     }
 
-    // @ts-ignore
-  } catch (error: Error) {
-    await sqlLogAdd({ name: 'error', message: error.message, stack: error.stack })
+    /*
+     * 2. Market order
+     */
+    const parsedOrders = parseOrdersText(bodyText)
+    if (parsedOrders[0]?.position) {
+      try {
+        let access_key = request.nextUrl.searchParams.get('access_key')
+        if (!access_key) throw new Error('!access_key')
+        if (!(access_key === 'testkeyx' || access_key === 'postmansecret')) {
+          throw new Error('wrong access_key')
+        }
+        const datas = [] as MarketOrderOutput[]
+        for (let order of parsedOrders) {
+          const data = await executeOrderMarket(order)
+          if (data?.error) {
+            return formatResponse(
+              {
+                ok: false,
+                message: 'data?.error',
+                data,
+                bodyText,
+                bodyData,
+                parsedOrders,
+              },
+              405
+            )
+          }
+          datas.push(data)
+        }
+        return formatResponse({
+          ok: true,
+          data: datas,
+          tvline: 1,
+        })
+      } catch (err: any) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        await sqlLogAdd({
+          name: 'error',
+          message: `/v1/market error "${error.message}"`,
+          stack: {
+            stack: error.stack,
+          },
+        })
+        return formatResponse({ error: error.message }, 500)
+      }
+    }
+
+    /**
+     * 3. Log message
+     */
+    sendToMyselfSMS(bodyText)
+    await sqlLogAdd({
+      name: 'log',
+      message: `parseOrdersText failed`,
+      stack: {
+        bodyText,
+        parsedOrders,
+        bodyData,
+      },
+    })
+    return formatResponse(
+      {
+        ok: false,
+        message: 'could not parse body text',
+        bodyText,
+      },
+      405
+    )
+
+    /**
+     * 4. Something went wrong
+     */
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err))
+    await sqlLogAdd({
+      name: 'error',
+      message: `/v1/market error "${error.message}" executing bodyText "${bodyText}"`,
+      stack: {
+        stack: error.stack,
+        bodyText,
+        bodyData,
+      },
+    })
     return formatResponse({ error: error.message }, 500)
   }
 }
