@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { formatResponse } from '../../../../../data/lib/nextjs/formatResponse'
-import { fractalAdd, FractalRowAdd } from '../../../../../data/sql/fractal'
-import { sqlLogAdd } from '../../../../../data/sql/log/add'
+import { formatResponse } from '@apps/common/lib/nextjs/formatResponse'
+import { fractalAdd, FractalRowAdd } from '@apps/common/sql/fractal'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 import { parseFractalText } from '@/dydx/lib/parseFractalText'
 
 export const maxDuration = 60

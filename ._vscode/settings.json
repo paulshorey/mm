@@ -1,8 +1,8 @@
 {
   "xfiles.exclude": {
-    "apps/log/public": true,
-    "apps/log/*.*": true,
-    "apps/log/.*": true,
+    "apps/data/public": true,
+    "apps/data/*.*": true,
+    "apps/data/.*": true,
     "apps/trade/public": true,
     "apps/trade/*.*": true,
     "apps/trade/.*": true,

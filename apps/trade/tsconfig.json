@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@apps/data/*": ["../data/*"]
+      "@apps/common/*": ["../data/*"]
     },
     "skipLibCheck": true
   },

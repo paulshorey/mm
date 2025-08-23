@@ -1,4 +1,4 @@
-import { FractalRowAdd } from '@apps/data/sql/fractal'
+import { FractalRowAdd } from '@apps/common/sql/fractal'
 
 /**
  * Parses fractal data from text format: key=value key=value

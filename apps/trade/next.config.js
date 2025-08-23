@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@apps/data'],
+  transpilePackages: ['@apps/common'],
   reactStrictMode: false,
   eslint: {
     ignoreDuringBuilds: true,

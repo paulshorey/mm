@@ -26,7 +26,7 @@ importers:
         specifier: 5.8.3
         version: 5.8.3
 
-  apps/data:
+  apps/common:
     dependencies:
       '@auth/prisma-adapter':
         specifier: ^2.10.0
@@ -108,11 +108,11 @@ importers:
         specifier: ^5
         version: 5.8.3
 
-  apps/log:
+  apps/data:
     dependencies:
-      '@apps/data':
+      '@apps/common':
         specifier: workspace:*
-        version: link:../data
+        version: link:../common
       '@mantine/code-highlight':
         specifier: ^7.17.8
         version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@18.3.1))(@types/react@18.3.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mantine/hooks@7.17.8(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -285,9 +285,9 @@ importers:
 
   apps/trade:
     dependencies:
-      '@apps/data':
+      '@apps/common':
         specifier: workspace:*
-        version: link:../data
+        version: link:../common
       '@dydxprotocol/v4-client-js':
         specifier: 1.21.1
         version: 1.21.1

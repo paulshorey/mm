@@ -1,13 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-  webpack: (config) => {
-    config.resolve.extensionAlias = {
-      ".js": [".js", ".ts"],
-      ".jsx": [".jsx", ".tsx"],
-    };
-    return config;
+  transpilePackages: ['@apps/common'],
+  reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true,
   },
-};
+  optimizePackageImports: ['@mantine/core', '@mantine/hooks'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        port: '',
+        pathname: '**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        port: '',
+        pathname: '**',
+      },
+    ],
+  },
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

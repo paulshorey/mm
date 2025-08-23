@@ -1,7 +1,7 @@
 'use server'
 
-import { sendToMyselfSMS } from '@apps/data/twillio/sendToMyselfSMS'
-import { sqlLogAdd } from '@apps/data/sql/log/add'
+import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 import Dydx from '@/dydx'
 import { numberOrZero, numberToFixed } from '@/lib/numbers'
 

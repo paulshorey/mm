@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { formatResponse } from '@apps/data/lib/nextjs/formatResponse'
+import { formatResponse } from '@apps/common/lib/nextjs/formatResponse'
 import { executeOrderMarket } from '@/dydx/executeOrderMarket'
 import { parseOrdersText } from '@/dydx/lib/parseOrdersText'
-import { sqlLogAdd } from '@apps/data/sql/log/add'
+import { sqlLogAdd } from '@apps/common/sql/log/add'
 import { MarketOrderOutput } from '@/dydx/types'
-import { sendToMyselfSMS } from '@apps/data/twillio/sendToMyselfSMS'
+import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
 import { parseFractalText } from '@/dydx/lib/parseFractalText'
-import { fractalAdd } from '@apps/data/sql/fractal'
+import { fractalAdd } from '@apps/common/sql/fractal'
 
 export const maxDuration = 60
 
