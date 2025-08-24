@@ -29,6 +29,9 @@ export const fractalAdd = async function (row: FractalRowAdd) {
     const values: (string | number | Date)[] = [row.ticker, row.interval, row.time, row.timenow];
 
     const numericColumns = [
+      "close",
+      "volume",
+      "average_strength",
       "volume_strength",
       "price_strength",
       "price_volume_strength",

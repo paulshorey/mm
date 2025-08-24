@@ -2,8 +2,8 @@ import { FractalRowAdd } from '@apps/common/sql/fractal'
 
 /**
  * Parses fractal data from text format: key=value key=value
- * Example: ticker=ETHUSD interval=2 time=2025-08-17T20:46:00Z timenow=2025-08-17T20:46:34Z volume_strength=33.32665822909558 price_strength=-14.005869947279702 price_volume_strength=-49.941121303580324 volume_strength_ma=36.30304183354799 price_strength_ma=-12.175479058829573 price_volume_strength_ma=-45.76830524619087
- * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} timenow={{timenow}} volume_strength={{plot("volume_strength")}} price_strength={{plot("price_strength")}} price_volume_strength={{plot("price_volume_strength")}} volume_strength_ma={{plot("volume_strength_ma")}} price_strength_ma={{plot("price_strength_ma")}} price_volume_strength_ma={{plot("price_volume_strength_ma")}}
+ * Example: ticker=ETHUSD interval=2 time=2025-08-17T20:46:00Z timenow=2025-08-17T20:46:34Z average_strength=33.72373292384374 price=4123 volume=456
+ * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} timenow={{timenow}} average_strength={{plot("average_strength")}} close={{close}} volume={{volume}}
  */
 export function parseFractalText(bodyText: string) {
   const data = {} as FractalRowAdd
@@ -22,6 +22,9 @@ export function parseFractalText(bodyText: string) {
         data.time = new Date(value)
       } else if (key === 'timenow') {
         data.timenow = new Date(value)
+      } else if (key === 'average_strength') {
+        const num = parseFloat(value)
+        if (!isNaN(num)) data.average_strength = num
       } else if (key === 'volume_strength') {
         const num = parseFloat(value)
         if (!isNaN(num)) data.volume_strength = num
@@ -40,6 +43,12 @@ export function parseFractalText(bodyText: string) {
       } else if (key === 'price_volume_strength_ma') {
         const num = parseFloat(value)
         if (!isNaN(num)) data.price_volume_strength_ma = num
+      } else if (key === 'close') {
+        const num = parseFloat(value)
+        if (!isNaN(num)) data.close = num
+      } else if (key === 'volume') {
+        const num = parseFloat(value)
+        if (!isNaN(num)) data.volume = num
       }
     }
   }

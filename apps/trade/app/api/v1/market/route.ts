@@ -29,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
      * 1. Save fractal
      */
     const fractalData = parseFractalText(bodyText)
-    if (fractalData?.price_strength) {
+    if (fractalData?.average_strength !== undefined) {
       try {
         // Validate parsed data
         if (!fractalData.interval || !fractalData.interval.trim() || isNaN(fractalData.time.getTime()) || isNaN(fractalData.timenow.getTime())) {
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
      * 2. Market order
      */
     const parsedOrders = parseOrdersText(bodyText)
-    if (parsedOrders[0]?.position !== undefined) {
+    if (parsedOrders?.[0]?.ticker && parsedOrders?.[0]?.position !== undefined) {
       try {
         let access_key = request.nextUrl.searchParams.get('access_key')
         if (!access_key) throw new Error('!access_key')
