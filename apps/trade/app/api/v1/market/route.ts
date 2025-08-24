@@ -40,7 +40,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               bodyText,
             },
           })
-          throw new Error(`Invalid bodyText "${bodyText}"`)
+          return formatResponse(
+            {
+              ok: false,
+              error: `Invalid bodyText "${bodyText}"`,
+            },
+            400
+          )
         }
 
         // Save to database
