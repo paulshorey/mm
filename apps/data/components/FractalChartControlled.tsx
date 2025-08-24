@@ -25,24 +25,24 @@ interface FractalChartControlledProps {
 // Configuration for all CSV files
 const CHART_CONFIGS: ChartConfig[] = [
   {
-    interval: '30S',
-    displayName: 'ETHUSD-30S',
+    interval: '3',
+    displayName: 'ETHUSD-3',
   },
   {
-    interval: '2',
-    displayName: 'ETHUSD-2',
+    interval: '6',
+    displayName: 'ETHUSD-6',
   },
   {
-    interval: '8',
-    displayName: 'ETHUSD-8',
+    interval: '12',
+    displayName: 'ETHUSD-12',
   },
   {
-    interval: '30',
-    displayName: 'ETHUSD-30',
+    interval: '24',
+    displayName: 'ETHUSD-24',
   },
   {
-    interval: '90',
-    displayName: 'ETHUSD-90',
+    interval: '48',
+    displayName: 'ETHUSD-48',
   },
 ]
 
@@ -182,7 +182,7 @@ export default function FractalChartControlled({
       }
 
       idx = Math.max(0, Math.min(idx, data.length - 1))
-      const raw = data[idx]!.price_strength_ma as unknown as number | string
+      const raw = data[idx]!.average_strength as unknown as number | string
       const value = typeof raw === 'string' ? parseFloat(raw) : raw
       return Number.isFinite(value) ? value : null
     }
@@ -263,7 +263,7 @@ export default function FractalChartControlled({
 
     // // Create line series for each metric
     // const volume_strengthSeries = chart.addSeries(LineSeries, {
-    //   color: '#4caf4f12',
+    //   color: '#be1cdbd9',
     //   lineWidth: 1,
     //   crosshairMarkerVisible: false, // Hide cursor markers
     //   priceLineVisible: false, // Hide horizontal price line
@@ -273,19 +273,8 @@ export default function FractalChartControlled({
     //   convertToChartData(fractalData, 'volume_strength')
     // )
 
-    const volume_strength_maSeries = chart.addSeries(LineSeries, {
-      color: '#388e3c10',
-      lineWidth: 1,
-      crosshairMarkerVisible: false, // Hide cursor markers
-      priceLineVisible: false, // Hide horizontal price line
-      lastValueVisible: false, // Hide last value label
-    })
-    volume_strength_maSeries.setData(
-      convertToChartData(fractalData, 'volume_strength_ma')
-    )
-
     // const price_volume_strengthSeries = chart.addSeries(LineSeries, {
-    //   color: '#ff99007d',
+    //   color: '#8cff007c',
     //   lineWidth: 1,
     //   crosshairMarkerVisible: false, // Hide cursor markers
     //   priceLineVisible: false, // Hide horizontal price line
@@ -294,17 +283,6 @@ export default function FractalChartControlled({
     // price_volume_strengthSeries.setData(
     //   convertToChartData(fractalData, 'price_volume_strength')
     // )
-
-    const price_volume_strength_maSeries = chart.addSeries(LineSeries, {
-      color: '#f57b009f',
-      lineWidth: 1,
-      crosshairMarkerVisible: false, // Hide cursor markers
-      priceLineVisible: false, // Hide horizontal price line
-      lastValueVisible: false, // Hide last value label
-    })
-    price_volume_strength_maSeries.setData(
-      convertToChartData(fractalData, 'price_volume_strength_ma')
-    )
 
     // const price_strengthSeries = chart.addSeries(LineSeries, {
     //   color: '#2195f3a1',
@@ -317,8 +295,8 @@ export default function FractalChartControlled({
     //   convertToChartData(fractalData, 'price_strength')
     // )
 
-    const price_strength_maSeries = chart.addSeries(LineSeries, {
-      color: '#1976D2',
+    const average_strengthSeries = chart.addSeries(LineSeries, {
+      color: '#e8850d',
       lineWidth: 1,
       crosshairMarkerBackgroundColor: 'transparent',
       crosshairMarkerBorderColor: 'transparent',
@@ -327,12 +305,12 @@ export default function FractalChartControlled({
       priceLineVisible: false, // Hide horizontal price line
       lastValueVisible: false, // Hide last value label
     })
-    price_strength_maSeries.setData(
-      convertToChartData(fractalData, 'price_strength_ma')
+    average_strengthSeries.setData(
+      convertToChartData(fractalData, 'average_strength')
     )
 
-    // Store the price_strength_maSeries reference for crosshair synchronization
-    seriesRefs.current[chartIndex] = price_strength_maSeries
+    // Store the average_strengthSeries reference for crosshair synchronization
+    seriesRefs.current[chartIndex] = average_strengthSeries
 
     // Add crosshair event handlers for cursor synchronization
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
