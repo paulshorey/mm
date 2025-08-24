@@ -32,7 +32,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (fractalData?.average_strength !== undefined) {
       try {
         // Validate parsed data
-        if (!fractalData.interval || !fractalData.interval.trim() || isNaN(fractalData.time.getTime()) || isNaN(fractalData.timenow.getTime())) {
+        if (!fractalData.interval || !fractalData.interval.trim() || !fractalData.time || !fractalData.timenow || fractalData.average_strength === null) {
+          await sqlLogAdd({
+            name: 'log',
+            message: `/v1/market invalid bodyText`,
+            stack: {
+              bodyText,
+            },
+          })
           throw new Error(`Invalid bodyText "${bodyText}"`)
         }
 
@@ -125,7 +132,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sendToMyselfSMS(bodyText)
     await sqlLogAdd({
       name: 'log',
-      message: `parseOrdersText failed`,
+      message: `trade market log`,
       stack: {
         bodyText,
         parsedOrders,

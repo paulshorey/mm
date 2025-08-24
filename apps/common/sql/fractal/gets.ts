@@ -80,11 +80,13 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
       }
 
       queryText += " ORDER BY timenow DESC";
-      console.log("queryText", queryText);
       const result = await client.query(queryText, params);
-      console.log("result", result);
       const fractals = result.rows as FractalRowGet[];
 
+      /**
+       * Save 1 avg value out of 3 minutes (3 rows). Discard the next 2 rows.
+       * For 30S, save 1 avg value out of 3 minutes (6 rows). Discard next 5 rows.
+       */
       const rows: FractalRowGet[] = [];
       for (let index = 0; index < fractals.length; index++) {
         const fr0 = fractals[index] as FractalRowGet;
@@ -99,15 +101,16 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
           interval: fr0.interval,
           time: new Date(fr0.time),
           timenow: new Date(fr0.timenow),
-          close: Number(fr0.close),
-          volume: Number(fr0.volume),
-          average_strength: Number(fr0.average_strength),
-          volume_strength: Number(fr0.volume_strength),
-          price_strength: Number(fr0.price_strength),
-          price_volume_strength: Number(fr0.price_volume_strength),
-          volume_strength_ma: avgFrNum("volume_strength", fr0, fr1, fr2, fr3, fr4, fr5),
-          price_strength_ma: avgFrNum("price_strength", fr0, fr1, fr2, fr3, fr4, fr5),
-          price_volume_strength_ma: avgFrNum("price_volume_strength", fr0, fr1, fr2, fr3, fr4, fr5),
+          close: fr0.interval === "30S" ? avgFrNum("close", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("close", fr0, fr1, fr2),
+          volume: fr0.interval === "30S" ? avgFrNum("volume", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("volume", fr0, fr1, fr2),
+          average_strength: fr0.interval === "30S" ? avgFrNum("average_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("average_strength", fr0, fr1, fr2),
+          // volume_strength: fr0.interval === "30S" ? avgFrNum("volume_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("volume_strength", fr0, fr1, fr2),
+          // price_strength: fr0.interval === "30S" ? avgFrNum("price_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("price_strength", fr0, fr1, fr2),
+          // price_volume_strength:
+          //   fr0.interval === "30S" ? avgFrNum("price_volume_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("price_volume_strength", fr0, fr1, fr2),
+          // volume_strength_ma: avgFrNum("volume_strength", fr0, fr1, fr2, fr3, fr4, fr5),
+          // price_strength_ma: avgFrNum("price_strength", fr0, fr1, fr2, fr3, fr4, fr5),
+          // price_volume_strength_ma: avgFrNum("price_volume_strength", fr0, fr1, fr2, fr3, fr4, fr5),
           server_name: fr0.server_name || "",
           app_name: fr0.app_name || "",
           node_env: fr0.node_env || "",
@@ -135,10 +138,8 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
       };
       output.error = error;
       cc.error("sql/fractal/gets Error", error);
-      //@ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-    } catch (e: Error) {
-      console.error(e);
+    } catch (err: any) {
+      console.error("sql/fractal/gets Error", err);
     }
   }
   return output;
