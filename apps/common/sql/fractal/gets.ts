@@ -61,12 +61,22 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
     const client = await getDb().connect();
     try {
       let queryText = `
-        SELECT * FROM (
-          SELECT DISTINCT ON (timenow) *
-          FROM fractal_v1
-          ORDER BY timenow DESC
-        ) AS distinct_fractals
-        WHERE timenow >= $1
+SELECT 
+    id,
+    ticker,
+    "interval",
+    "time",
+    timenow,
+    average_strength AS strength,
+    close,
+    volume,
+    created_at
+FROM (
+    SELECT DISTINCT ON (timenow) *
+    FROM fractal_v1
+    ORDER BY timenow DESC
+) AS distinct_fractals
+WHERE timenow >= $1
       `;
       const params: any[] = [twoDaysAgo];
 
@@ -101,9 +111,9 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
           interval: fr0.interval,
           time: new Date(fr0.time),
           timenow: new Date(fr0.timenow),
-          close: fr0.interval === "30S" ? avgFrNum("close", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("close", fr0, fr1, fr2),
-          volume: fr0.interval === "30S" ? avgFrNum("volume", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("volume", fr0, fr1, fr2),
-          average_strength: fr0.interval === "30S" ? avgFrNum("average_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("average_strength", fr0, fr1, fr2),
+          close: fr0.interval === "30S" ? avgFrNum("close", fr0, fr1) : avgFrNum("close", fr0),
+          volume: fr0.interval === "30S" ? avgFrNum("volume", fr0, fr1) : avgFrNum("volume", fr0),
+          strength: fr0.interval === "30S" ? avgFrNum("strength", fr0, fr1) : avgFrNum("strength", fr0),
           // volume_strength: fr0.interval === "30S" ? avgFrNum("volume_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("volume_strength", fr0, fr1, fr2),
           // price_strength: fr0.interval === "30S" ? avgFrNum("price_strength", fr0, fr1, fr2, fr3, fr4, fr5) : avgFrNum("price_strength", fr0, fr1, fr2),
           // price_volume_strength:
@@ -116,12 +126,12 @@ export const fractalGets = async function ({ where }: Props = {}): Promise<Outpu
           node_env: fr0.node_env || "",
           created_at: new Date(fr0.created_at),
         });
-        fractals.splice(index, 1);
-        fractals.splice(index, 1);
+        // fractals.splice(index, 1);
+        // fractals.splice(index, 1);
         if (fr0.interval === "30S") {
           fractals.splice(index, 1);
-          fractals.splice(index, 1);
-          fractals.splice(index, 1);
+          // fractals.splice(index, 1);
+          // fractals.splice(index, 1);
         }
       }
 

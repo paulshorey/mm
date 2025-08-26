@@ -6,7 +6,7 @@ export type FractalRowGet = {
   timenow: Date; // DateTime as ISO string
   close: number;
   volume: number;
-  average_strength: number;
+  strength: number;
   // volume_strength: number;
   // price_strength: number;
   // price_volume_strength: number;

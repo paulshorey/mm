@@ -40,10 +40,18 @@ const CHART_CONFIGS: ChartConfig[] = [
     interval: '24',
     displayName: 'ETHUSD-24',
   },
-  {
-    interval: '48',
-    displayName: 'ETHUSD-48',
-  },
+  // {
+  //   interval: 'AVG',
+  //   displayName: 'ETHUSD-AVG',
+  // },
+  // {
+  //   interval: '48',
+  //   displayName: 'ETHUSD-48',
+  // },
+  // {
+  //   interval: '72',
+  //   displayName: 'ETHUSD-72',
+  // },
 ]
 
 export default function FractalChartControlled({
@@ -95,16 +103,22 @@ export default function FractalChartControlled({
   }
 
   // Helper function to calculate time range based on hours back from latest data
-  // Always keeps the end of data on the right edge
-  const calculateVisibleRange = (data: FractalRowGet[]) => {
-    if (data.length === 0) return null
+  // Always keeps the end of data on the right edge (optionally overridden)
+  const calculateVisibleRange = (
+    data: FractalRowGet[],
+    overrideLastTimeSeconds?: number
+  ) => {
+    if (!data || data.length === 0) return null
 
     const firstItem = data[0]
     const lastItem = data[data.length - 1]
     if (!firstItem || !lastItem) return null
 
     const firstTime = firstItem.timenow.getTime() / 1000
-    const lastTime = lastItem.timenow.getTime() / 1000
+    const lastTime =
+      overrideLastTimeSeconds != null
+        ? overrideLastTimeSeconds
+        : lastItem.timenow.getTime() / 1000
 
     // Calculate start time based on hours back from latest data
     const hoursBackInSeconds = hoursBack * 60 * 60 // Convert hours to seconds
@@ -114,6 +128,19 @@ export default function FractalChartControlled({
       from: Math.max(firstTime, startTime) as Time, // Don't go before data starts
       to: lastTime as Time,
     }
+  }
+
+  const getGlobalLatestTimeSeconds = (
+    datasets: (FractalRowGet[] | null)[]
+  ): number | null => {
+    let latest = 0
+    for (const ds of datasets) {
+      if (!ds || ds.length === 0) continue
+      const last = ds[ds.length - 1]!
+      const seconds = Math.floor(last.timenow.getTime() / 1000)
+      if (seconds > latest) latest = seconds
+    }
+    return latest || null
   }
 
   // Apply time range to all charts
@@ -182,7 +209,7 @@ export default function FractalChartControlled({
       }
 
       idx = Math.max(0, Math.min(idx, data.length - 1))
-      const raw = data[idx]!.average_strength as unknown as number | string
+      const raw = data[idx]!.strength as unknown as number | string
       const value = typeof raw === 'string' ? parseFloat(raw) : raw
       return Number.isFinite(value) ? value : null
     }
@@ -230,14 +257,14 @@ export default function FractalChartControlled({
       rightPriceScale: {
         visible: false, // Hide the entire y-axis
       },
-      timeScale: {
-        visible: false,
-      },
       // timeScale: {
-      //   visible: true,
-      //   timeVisible: true,
-      //   secondsVisible: false,
+      //   visible: false,
       // },
+      timeScale: {
+        visible: true,
+        timeVisible: true,
+        secondsVisible: false,
+      },
       crosshair: {
         mode: 0, // Normal mode: we'll set Y explicitly via setCrosshairPosition
         vertLine: {
@@ -261,41 +288,7 @@ export default function FractalChartControlled({
       handleScale: false,
     })
 
-    // // Create line series for each metric
-    // const volume_strengthSeries = chart.addSeries(LineSeries, {
-    //   color: '#be1cdbd9',
-    //   lineWidth: 1,
-    //   crosshairMarkerVisible: false, // Hide cursor markers
-    //   priceLineVisible: false, // Hide horizontal price line
-    //   lastValueVisible: false, // Hide last value label
-    // })
-    // volume_strengthSeries.setData(
-    //   convertToChartData(fractalData, 'volume_strength')
-    // )
-
-    // const price_volume_strengthSeries = chart.addSeries(LineSeries, {
-    //   color: '#8cff007c',
-    //   lineWidth: 1,
-    //   crosshairMarkerVisible: false, // Hide cursor markers
-    //   priceLineVisible: false, // Hide horizontal price line
-    //   lastValueVisible: false, // Hide last value label
-    // })
-    // price_volume_strengthSeries.setData(
-    //   convertToChartData(fractalData, 'price_volume_strength')
-    // )
-
-    // const price_strengthSeries = chart.addSeries(LineSeries, {
-    //   color: '#2195f3a1',
-    //   lineWidth: 1,
-    //   crosshairMarkerVisible: false, // Hide cursor markers
-    //   priceLineVisible: false, // Hide horizontal price line
-    //   lastValueVisible: false, // Hide last value label
-    // })
-    // price_strengthSeries.setData(
-    //   convertToChartData(fractalData, 'price_strength')
-    // )
-
-    const average_strengthSeries = chart.addSeries(LineSeries, {
+    const strengthSeries = chart.addSeries(LineSeries, {
       color: '#e8850d',
       lineWidth: 1,
       crosshairMarkerBackgroundColor: 'transparent',
@@ -305,12 +298,10 @@ export default function FractalChartControlled({
       priceLineVisible: false, // Hide horizontal price line
       lastValueVisible: false, // Hide last value label
     })
-    average_strengthSeries.setData(
-      convertToChartData(fractalData, 'average_strength')
-    )
+    strengthSeries.setData(convertToChartData(fractalData, 'strength'))
 
-    // Store the average_strengthSeries reference for crosshair synchronization
-    seriesRefs.current[chartIndex] = average_strengthSeries
+    // Store the strengthSeries reference for crosshair synchronization
+    seriesRefs.current[chartIndex] = strengthSeries
 
     // Add crosshair event handlers for cursor synchronization
     chart.subscribeCrosshairMove((param: MouseEventParams) => {
@@ -339,6 +330,9 @@ export default function FractalChartControlled({
       try {
         // Load all chart data in parallel for better performance
         const dataPromises = CHART_CONFIGS.map(async (config, index) => {
+          if (config.interval === 'AVG') {
+            return { index, data: null, error: null }
+          }
           try {
             const { rows, error } = await fractalGets({
               where: { ticker: 'ETHUSD', interval: config.interval },
@@ -364,24 +358,48 @@ export default function FractalChartControlled({
         const results = await Promise.all(dataPromises)
 
         // Update states based on results
-        const newData = new Array(CHART_CONFIGS.length).fill(null)
-        const newErrors = new Array(CHART_CONFIGS.length).fill(null)
-        const newLoadingStates = new Array(CHART_CONFIGS.length).fill(false)
+        const newData: (FractalRowGet[] | null)[] = new Array(
+          CHART_CONFIGS.length
+        ).fill(null)
+        const newErrors: (string | null)[] = new Array(
+          CHART_CONFIGS.length
+        ).fill(null)
+        const newLoadingStates: boolean[] = new Array(
+          CHART_CONFIGS.length
+        ).fill(false)
 
-        results.forEach((result) => {
-          newData[result.index] = result.data
-          newErrors[result.index] = result.error
-          newLoadingStates[result.index] = false
+        let globalLatestTimeSeconds = 0
+
+        results.forEach((result, index) => {
+          newData[index] = result.data
+          newErrors[index] = result.error
+          newLoadingStates[index] = false
+
+          // Scan each dataset to find the latest time
+          const ds = result.data
+          if (ds && ds.length) {
+            for (let i = 0; i < ds.length; i++) {
+              const seconds = Math.floor(ds[i]!.timenow.getTime() / 1000)
+              if (seconds > globalLatestTimeSeconds) {
+                globalLatestTimeSeconds = seconds
+              }
+            }
+          }
         })
 
         setAllChartsData(newData)
         setErrors(newErrors)
         setLoadingStates(newLoadingStates)
 
-        // Set initial time range based on first dataset
-        const firstDataset = newData.find((data) => data !== null)
-        if (firstDataset) {
-          const initialRange = calculateVisibleRange(firstDataset)
+        // Set initial time range based on global latest time across all datasets
+        const firstDataset = newData.find((d) => d?.[0]?.interval === '3') as
+          | FractalRowGet[]
+          | undefined
+        if (firstDataset && globalLatestTimeSeconds) {
+          const initialRange = calculateVisibleRange(
+            firstDataset,
+            globalLatestTimeSeconds
+          )
           setTimeRange(initialRange)
         }
       } catch (err) {
@@ -447,7 +465,11 @@ export default function FractalChartControlled({
   useEffect(() => {
     const firstDataset = allChartsData.find((data) => data !== null)
     if (firstDataset) {
-      const newRange = calculateVisibleRange(firstDataset)
+      const latest = getGlobalLatestTimeSeconds(allChartsData)
+      const newRange = calculateVisibleRange(
+        firstDataset as FractalRowGet[],
+        latest == null ? undefined : latest
+      )
       setTimeRange(newRange)
     }
   }, [hoursBack, allChartsData])
@@ -515,7 +537,7 @@ export default function FractalChartControlled({
             key={config.interval}
             id={`fractal-chart-${config.interval}`}
             className=" relative overflow-x-auto"
-            style={{ marginBottom: '-12px', marginTop: '-12px' }}
+            // style={{ marginBottom: '-12px', marginTop: '-12px' }}
             dir="rtl"
           >
             {/* Chart container */}
