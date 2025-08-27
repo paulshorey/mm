@@ -1,9 +1,9 @@
 "use server";
 
-import { StrengthDataAdd, StrengthRowAdd } from "./types";
+import { StrengthDataAdd } from "./types";
 import { getDb } from "../../lib/neon";
 import { cc } from "../../cc";
-import { sqlLogAdd } from "sql/log";
+import { sqlLogAdd } from "../../sql/log";
 
 /**
  * Adds strength record to `strength_v1` table.
