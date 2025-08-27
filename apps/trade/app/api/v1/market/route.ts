@@ -32,11 +32,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
      */
     const strengthData = parseStrengthText(bodyText)
     // Check if we have both price and strength values, and one of the interval columns is set
-    const hasIntervalData = strengthData?.['30S'] || strengthData?.['1'] || strengthData?.['2'] || strengthData?.['3'] || strengthData?.['4'] || strengthData?.['5'] || strengthData?.['7'] || strengthData?.['9']
+    const hasIntervalData = strengthData?.['30S'] || strengthData?.['1'] || strengthData?.['2'] || strengthData?.['3'] || strengthData?.['4'] || strengthData?.['5'] || strengthData?.['7'] || strengthData?.['9'] || strengthData?.['12'] || strengthData?.['24'] || strengthData?.['48'] || strengthData?.['60'] || strengthData?.['72'] || strengthData?.['90']
     if (strengthData?.price !== null && hasIntervalData) {
       try {
         // Validate parsed data
-        if (!strengthData.time || !strengthData.timenow || !strengthData.ticker || !strengthData.price || (!strengthData['30S'] && !strengthData['1'] && !strengthData['2'] && !strengthData['3'] && !strengthData['4'] && !strengthData['5'] && !strengthData['7'] && !strengthData['9'])) {
+        if (!strengthData.time || !strengthData.timenow || !strengthData.ticker || !strengthData.price || (!strengthData['30S'] && !strengthData['1'] && !strengthData['2'] && !strengthData['3'] && !strengthData['4'] && !strengthData['5'] && !strengthData['7'] && !strengthData['9'] && strengthData?.['12'] && strengthData?.['24'] && strengthData?.['48'] && strengthData?.['60'] && strengthData?.['72'] && strengthData?.['90'])) {
           await sqlLogAdd({
             name: 'log',
             message: `/v1/market invalid strength bodyText`,

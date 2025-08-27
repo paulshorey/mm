@@ -14,6 +14,12 @@ export type StrengthRowGet = {
   "5": number | null;
   "7": number | null;
   "9": number | null;
+  "12": number | null;
+  "24": number | null;
+  "48": number | null;
+  "60": number | null;
+  "72": number | null;
+  "90": number | null;
   server_name: string;
   app_name: string;
   node_env: string;
@@ -35,6 +41,12 @@ export type StrengthRowAdd = {
   "5": number | null;
   "7": number | null;
   "9": number | null;
+  "12": number | null;
+  "24": number | null;
+  "48": number | null;
+  "60": number | null;
+  "72": number | null;
+  "90": number | null;
   server_name?: string | null;
   app_name?: string | null;
   node_env?: string | null;
