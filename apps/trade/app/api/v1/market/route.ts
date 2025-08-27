@@ -32,7 +32,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
      */
     const strengthData = parseStrengthText(bodyText)
     // Check if we have both strength and interval values
-    if (strengthData?.strength && strengthData?.interval) {
+    if (strengthData?.strength !== undefined && strengthData?.interval !== undefined) {
+      // Validate parsed data
+      if (strengthData.strength === null || strengthData.interval === null) {
+        await sqlLogAdd({
+          name: 'log',
+          message: `/v1/market invalid strengthData`,
+          stack: {
+            bodyText,
+          },
+        })
+        return formatResponse(
+          {
+            ok: false,
+            error: `Invalid strengthData`,
+          },
+          400
+        )
+      }
+
       try {
         // Save to database
         const result = await strengthAdd(strengthData)
