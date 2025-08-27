@@ -1,4 +1,4 @@
-import { StrengthRowAdd } from '@apps/common/sql/strength'
+import { StrengthDataAdd } from '@apps/common/sql/strength/types'
 
 /**
  * Parses strength data from text format: key=value key=value
@@ -6,18 +6,18 @@ import { StrengthRowAdd } from '@apps/common/sql/strength'
  * The strength value is saved to the column that matches the interval value
  */
 export function parseStrengthText(bodyText: string) {
-  const data = {} as StrengthRowAdd
+  const data = {} as StrengthDataAdd
 
   // Split by spaces and parse key=value pairs
   const pairs = bodyText.trim().split(/\s+/)
-  let strengthValue: number | null = null
-  let intervalValue: string | null = null
 
   for (const pair of pairs) {
     const [key, value] = pair.split('=')
     if (key && value !== undefined) {
       if (key === 'ticker') {
         data.ticker = value !== '{{ticker}}' ? value : null
+      } else if (key === 'interval') {
+        data.interval = value !== '{{interval}}' ? value : null
       } else if (key === 'time') {
         if (value) {
           const parsed = new Date(value)
@@ -37,19 +37,12 @@ export function parseStrengthText(bodyText: string) {
         data.price = !isNaN(num) ? num : null
       } else if (key === 'strength') {
         const num = parseFloat(value)
-        strengthValue = !isNaN(num) ? num : null
-      } else if (key === 'interval') {
-        intervalValue = value !== '{{interval}}' ? value : null
+        data.strength = !isNaN(num) ? num : null
       } else if (key === 'volume') {
         const num = parseFloat(value)
         data.volume = !isNaN(num) ? num : null
       }
     }
-  }
-
-  if (strengthValue !== null && intervalValue !== null) {
-    // @ts-ignore
-    data[intervalValue] = strengthValue
   }
 
   return data
