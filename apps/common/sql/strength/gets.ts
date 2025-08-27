@@ -80,7 +80,6 @@ WHERE timenow >= $1
         rows.push({
           id: fr0.id,
           ticker: fr0.ticker,
-          time: new Date(fr0.time),
           timenow: new Date(fr0.timenow),
           price: fr0.price,
           volume: fr0.volume,

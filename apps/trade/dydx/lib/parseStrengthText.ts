@@ -2,7 +2,7 @@ import { StrengthDataAdd } from '@apps/common/sql/strength/types'
 
 /**
  * Parses strength data from text format: key=value key=value
- * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} timenow={{timenow}} strength={{plot("strength")}} price={{price}} volume={{volume}}
+ * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} strength={{plot("strength")}} price={{price}} volume={{volume}}
  * The strength value is saved to the column that matches the interval value
  */
 export function parseStrengthText(bodyText: string) {
@@ -24,13 +24,6 @@ export function parseStrengthText(bodyText: string) {
           data.time = isNaN(parsed.getTime()) ? null : parsed
         } else {
           data.time = null
-        }
-      } else if (key === 'timenow') {
-        if (value) {
-          const parsed = new Date(value)
-          data.timenow = isNaN(parsed.getTime()) ? null : parsed
-        } else {
-          data.timenow = null
         }
       } else if (key === 'price') {
         const num = parseFloat(value)

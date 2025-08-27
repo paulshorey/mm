@@ -1,7 +1,6 @@
 export type StrengthRowGet = {
   id: number;
   ticker: string;
-  time: Date; // DateTime as ISO string
   timenow: Date; // DateTime as ISO string
   price: number;
   volume: number;
@@ -27,10 +26,9 @@ export type StrengthRowGet = {
 };
 export type StrengthRowAdd = {
   ticker: string;
-  time: Date; // DateTime as ISO string
   timenow: Date; // DateTime as ISO string
-  price?: number;
-  volume?: number;
+  price: number | null;
+  volume: number | null;
   "30S"?: number | null;
   "1"?: number | null;
   "2"?: number | null;
@@ -55,9 +53,8 @@ export type StrengthRowAdd = {
 export type StrengthDataAdd = {
   ticker: string | null;
   interval: string | null;
-  time: Date | null;
-  timenow: Date | null;
-  price: number | null;
-  volume: number | null;
   strength: number | null;
+  price?: number | null;
+  volume?: number | null;
+  time?: Date | null;
 };
