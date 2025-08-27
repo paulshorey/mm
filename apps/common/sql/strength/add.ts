@@ -3,6 +3,7 @@
 import { StrengthDataAdd, StrengthRowAdd } from "./types";
 import { getDb } from "../../lib/neon";
 import { cc } from "../../cc";
+import { sqlLogAdd } from "sql/log";
 
 /**
  * Adds strength record to `strength_v1` table.
@@ -24,8 +25,6 @@ import { cc } from "../../cc";
  */
 export const strengthAdd = async function (data: StrengthDataAdd) {
   "use server";
-
-  console.log("strengthAdd", JSON.stringify(data, null, 2));
 
   const client = await getDb().connect();
   try {
@@ -65,13 +64,13 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
     const existingRow = await client.query(checkQuery, [data.ticker, normalizedTimenow]);
 
     let res: any;
-    let queryText = "";
+    let sqlQuery = "";
     const values = [data.ticker, normalizedTimenow, data.strength, data.price ?? null, data.volume ?? null];
 
     if (existingRow.rows.length > 0) {
       // Row exists - UPDATE it
       // If a value already exists for this interval, average it with the new value
-      queryText = `
+      sqlQuery = `
         UPDATE strength_v1
         SET "${data.interval}" = CASE
               WHEN "${data.interval}" IS NULL THEN $3
@@ -82,16 +81,26 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
         WHERE ticker = $1 AND timenow = $2
         RETURNING *
       `;
-      res = await client.query(queryText, values);
+      res = await client.query(sqlQuery, values);
     } else {
       // Row doesn't exist - INSERT new row
-      queryText = `
+      sqlQuery = `
         INSERT INTO strength_v1("ticker", "timenow", "${data.interval}", "price", "volume")
         VALUES(${values.map((_, i) => `$${i + 1}`).join(", ")})
         RETURNING *
       `;
-      res = await client.query(queryText, values);
+      res = await client.query(sqlQuery, values);
     }
+    await sqlLogAdd({
+      name: "log",
+      message: `strengthAdd after sqlQuery`,
+      stack: {
+        resRows0: res.rows[0],
+        sqlQuery,
+        values,
+        data,
+      },
+    });
 
     return res.rows[0];
   } catch (e: any) {

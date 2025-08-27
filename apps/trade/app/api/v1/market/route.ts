@@ -56,14 +56,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // Save to database
         const result = await strengthAdd(strengthData)
         // Log success
-        await sqlLogAdd({
-          name: 'log',
-          message: `/v1/market ✅ saved strengthData`,
-          stack: {
-            bodyText,
-            strengthData,
-          },
-        })
+        // await sqlLogAdd({
+        //   name: 'log',
+        //   message: `/v1/market ✅ saved strengthData`,
+        //   stack: {
+        //     bodyText,
+        //     strengthData,
+        //   },
+        // })
         // Return success
         return formatResponse({
           ok: true,
