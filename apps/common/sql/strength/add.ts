@@ -12,9 +12,16 @@ import { cc } from "../../cc";
  * different interval values as they come in.
  *
  * The function normalizes the current time to every 2 minutes (seconds set to 00 and odd
- * minutes rounded down to even) and either updates an existing row or inserts a new one.
+ * minutes rounded down to even).
  *
- * When updating an existing row:
+ * To prevent race conditions where multiple concurrent requests try to create or update
+ * the same rows, this function pre-creates BOTH the current 2-minute interval row AND
+ * the next 2-minute interval row (without data) before processing. This ensures both rows
+ * always exist, eliminating any race conditions during data insertion. The database's
+ * UNIQUE constraint on (ticker, timenow) prevents duplicate rows, and ON CONFLICT DO NOTHING
+ * safely handles simultaneous creation attempts.
+ *
+ * After pre-creating the rows, the function always performs an UPDATE:
  * - If the interval column is empty (NULL), it sets the new value
  * - If the interval column already has a value, it averages the existing value with the new value
  * - Price and volume are always updated to the latest values
@@ -56,17 +63,55 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
       normalizedTimenow.setMinutes(currentMinute - 1);
     }
 
-    // First, check if a row exists for this ticker and normalized minute
-    const checkQuery = `
-      SELECT * FROM strength_v1 
-      WHERE ticker = $1 AND timenow = $2
-      LIMIT 1
-    `;
-    const existingRow = await client.query(checkQuery, [data.ticker, normalizedTimenow]);
+    // Calculate the future timenow (2 minutes ahead)
+    const futureTimenow = new Date(normalizedTimenow);
+    const futureMinutes = futureTimenow.getMinutes() + 2;
 
+    if (futureMinutes >= 60) {
+      // Handle minute overflow - increment hour and set minutes
+      futureTimenow.setHours(futureTimenow.getHours() + 1);
+      futureTimenow.setMinutes(futureMinutes - 60);
+    } else {
+      futureTimenow.setMinutes(futureMinutes);
+    }
+
+    // Pre-create both current and future rows to avoid race conditions
+    // This ensures both rows exist before we start processing data
+    // The UNIQUE constraint on (ticker, timenow) will prevent duplicates
+
+    // Pre-create current row
+    try {
+      const currentInsertQuery = `
+        INSERT INTO strength_v1("ticker", "timenow")
+        VALUES($1, $2)
+        ON CONFLICT (ticker, timenow) DO NOTHING
+        RETURNING *
+      `;
+      await client.query(currentInsertQuery, [data.ticker, normalizedTimenow]);
+    } catch (preCreateError: any) {
+      // If there's a conflict (another request created it), that's fine - continue
+      cc.log(`Pre-creating current row (expected occasional conflicts): ${preCreateError.message}`);
+    }
+
+    // Pre-create future row
+    try {
+      const futureInsertQuery = `
+        INSERT INTO strength_v1("ticker", "timenow")
+        VALUES($1, $2)
+        ON CONFLICT (ticker, timenow) DO NOTHING
+        RETURNING *
+      `;
+      await client.query(futureInsertQuery, [data.ticker, futureTimenow]);
+    } catch (preCreateError: any) {
+      // If there's a conflict (another request created it), that's fine - continue
+      cc.log(`Pre-creating future row (expected occasional conflicts): ${preCreateError.message}`);
+    }
+
+    // Now update the row with the strength data
     let res: any;
     const values = [data.ticker, normalizedTimenow, data.strength, data.price ?? null, data.volume ?? null];
 
+<<<<<<< Updated upstream
     if (existingRow.rows.length > 0) {
       // Row exists - UPDATE it
       // If a value already exists for this interval, average it with the new value
@@ -92,6 +137,23 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
       res = await client.query(queryText, values);
     }
 
+=======
+    // Now the row always exists after pre-creation, so we always UPDATE
+    // If the interval column has data, average it with the new value
+    // If the interval column is NULL, set it to the new value
+    const sqlQuery = `
+      UPDATE strength_v1
+      SET "${data.interval}" = CASE
+            WHEN "${data.interval}" IS NULL THEN $3
+            ELSE ("${data.interval}" + $3) / 2
+          END,
+          price = $4,
+          volume = $5
+      WHERE ticker = $1 AND timenow = $2
+      RETURNING *
+    `;
+    res = await client.query(sqlQuery, values);
+>>>>>>> Stashed changes
     return res.rows[0];
   } catch (e: any) {
     const error = {

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         // Save to database
         const result = await strengthAdd(strengthData)
+<<<<<<< Updated upstream
         // Log success
         await sqlLogAdd({
           name: 'log',
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           },
         })
         // Return success
+=======
+>>>>>>> Stashed changes
         return formatResponse({
           ok: true,
           message: 'Strength data saved successfully',
