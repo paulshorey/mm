@@ -22,88 +22,133 @@ import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
  * @param row - A `LogRow` object containing the log details.
  */
 export const sqlLogAdd = async function (row: LogRowAdd) {
-  "use server";
+  // Debug logging with timestamp
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] sqlLogAdd START`, { row });
+  // DB
+  const access_key = row.access_key ?? "";
+  const node_env = process.env.NODE_ENV ?? "";
+  const server_name = process.env.SERVER_NAME ?? "";
+  const app_name = process.env.APP_NAME ?? "";
+  const addr = {}; //(await getCurrentIpAddress()) ?? {};
+  let sqlQuery = "";
+  let res = null;
+  let values: any[] = [];
+  let client = null;
 
-  console.log("common/sql/log/add.ts sqlLogAdd start", JSON.stringify(row, null, 2));
+  console.log(`[${timestamp}] sqlLogAdd before main try block`);
+
   try {
-    // SMS
+    // SMS notification (uncomment when needed)
     // if (row.sms || row.name === "error" || row.name === "warn") {
     //   if (process.env.NODE_ENV !== "development") {
     //     await sendToMyselfSMS(row.message);
     //   }
     // }
-    console.log("common/sql/log/add.ts sqlLogAdd before db", JSON.stringify(row, null, 2));
 
-    // DB
-    const access_key = row.access_key ?? "";
-    const node_env = process.env.NODE_ENV ?? "";
-    const server_name = process.env.SERVER_NAME ?? "";
-    const app_name = process.env.APP_NAME ?? "";
-    const addr = {}; //(await getCurrentIpAddress()) ?? {};
-    let sqlQuery = "";
-    let res = null;
-    let values: any[] = [];
+    console.log(`[${timestamp}] sqlLogAdd getting DB connection`);
+    client = await getDb().connect();
+    console.log(`[${timestamp}] sqlLogAdd got DB connection`);
 
-    console.log("common/sql/log/add.ts sqlLogAdd before client", JSON.stringify(row, null, 2));
-    const client = await getDb().connect();
-    try {
-      console.log("common/sql/log/add.ts sqlLogAdd before sqlQuery", JSON.stringify(row, null, 2));
-      sqlQuery = `
+    // Build and execute query
+    sqlQuery = `
       INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag, time)
       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`;
-      console.log("common/sql/log/add.ts sqlLogAdd before values", JSON.stringify(row, null, 2));
-      values = [
-        row.name.toLowerCase(),
-        row.message,
-        JSON.stringify({ ...row.stack, ...addr }),
-        access_key,
-        server_name,
-        app_name,
-        node_env,
-        row.category,
-        row.tag,
-        new Date().toISOString(),
-      ];
-      console.log("common/sql/log/add.ts sqlLogAdd before res", JSON.stringify(row, null, 2));
-      res = await client.query(sqlQuery, values);
-      console.log("common/sql/log/add.ts sqlLogAdd after res", JSON.stringify(row, null, 2));
-    } catch (e: any) {
+
+    values = [
+      row.name.toLowerCase(),
+      row.message,
+      JSON.stringify({ ...row.stack, ...addr }),
+      access_key,
+      server_name,
+      app_name,
+      node_env,
+      row.category || null,
+      row.tag || null,
+      new Date().toISOString(),
+    ];
+
+    console.log(`[${timestamp}] sqlLogAdd executing query`, {
+      query: sqlQuery.replace(/\s+/g, " ").trim(),
+      valueCount: values.length,
+    });
+
+    res = await client.query(sqlQuery, values);
+
+    console.log(`[${timestamp}] sqlLogAdd query SUCCESS`, {
+      rowId: res?.rows[0]?.id,
+      rowCount: res?.rowCount,
+    });
+
+    // Return the inserted row
+    return res?.rows[0] || null;
+  } catch (error: any) {
+    console.error(`[${timestamp}] sqlLogAdd ERROR`, {
+      error: {
+        message: error?.message,
+        stack: error?.stack,
+        code: error?.code,
+      },
+      row,
+    });
+
+    // Try to log the error to the database
+    if (client) {
       try {
-        console.log("common/sql/log/add.ts sqlLogAdd sql error", JSON.stringify(row, null, 2));
+        console.log(`[${timestamp}] sqlLogAdd attempting to log error to DB`);
         const errorStack = {
-          name: "Error",
-          message: e?.message,
-          stack: e?.stack,
+          originalError: {
+            message: error?.message,
+            stack: error?.stack,
+            code: error?.code,
+          },
+          originalRow: row,
         };
-        const message = "Error in try sqlLogAdd.ts";
-        sqlQuery = `
-        INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag, time)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *`;
-        values = ["error", message, JSON.stringify(errorStack), access_key, server_name, app_name, node_env, row.category, row.tag, new Date().toISOString()];
-        res = await client.query(sqlQuery, values);
-      } catch (err: any) {
-        // Error sending
-        console.error("Error in catch sqlLogAdd.ts", row, err);
+
+        const errorQuery = `
+          INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag, time)
+          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          RETURNING *`;
+
+        const errorValues = [
+          "error",
+          `sqlLogAdd failed: ${error?.message || "Unknown error"}`,
+          JSON.stringify(errorStack),
+          access_key,
+          server_name,
+          app_name,
+          node_env,
+          "system_error",
+          "sqlLogAdd",
+          new Date().toISOString(),
+        ];
+
+        const errorRes = await client.query(errorQuery, errorValues);
+        console.log(`[${timestamp}] sqlLogAdd error logged to DB`, {
+          errorRowId: errorRes?.rows[0]?.id,
+        });
+      } catch (secondaryError: any) {
+        console.error(`[${timestamp}] sqlLogAdd CRITICAL - Failed to log error to DB`, {
+          primaryError: error?.message,
+          secondaryError: secondaryError?.message,
+        });
       }
-
-      console.log("common/sql/log/add.ts sqlLogAdd after sqlQuery", {
-        name: "log",
-        message: `sqlLogAdd after sqlQuery`,
-        stack: {
-          resRows0: res?.rows[0],
-          sqlQuery,
-          values,
-          row,
-        },
-      });
-
-      return null;
-    } finally {
-      client.release();
     }
-  } catch (e: any) {
-    console.error("common/sql/log/add.ts sqlLogAdd error", row, e);
+
+    // Return null to indicate failure
+    return null;
+  } finally {
+    // Always release the client connection if it exists
+    if (client) {
+      try {
+        client.release();
+        console.log(`[${timestamp}] sqlLogAdd DB connection released`);
+      } catch (releaseError: any) {
+        console.error(`[${timestamp}] sqlLogAdd failed to release connection`, {
+          error: releaseError?.message,
+        });
+      }
+    }
   }
 };
