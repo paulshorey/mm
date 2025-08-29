@@ -111,33 +111,6 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
     let res: any;
     const values = [data.ticker, normalizedTimenow, data.strength, data.price ?? null, data.volume ?? null];
 
-<<<<<<< Updated upstream
-    if (existingRow.rows.length > 0) {
-      // Row exists - UPDATE it
-      // If a value already exists for this interval, average it with the new value
-      const queryText = `
-        UPDATE strength_v1
-        SET "${data.interval}" = CASE
-              WHEN "${data.interval}" IS NULL THEN $3
-              ELSE ("${data.interval}" + $3) / 2
-            END,
-            price = $4,
-            volume = $5
-        WHERE ticker = $1 AND timenow = $2
-        RETURNING *
-      `;
-      res = await client.query(queryText, values);
-    } else {
-      // Row doesn't exist - INSERT new row
-      const queryText = `
-        INSERT INTO strength_v1("ticker", "timenow", "${data.interval}", "price", "volume")
-        VALUES(${values.map((_, i) => `$${i + 1}`).join(", ")})
-        RETURNING *
-      `;
-      res = await client.query(queryText, values);
-    }
-
-=======
     // Now the row always exists after pre-creation, so we always UPDATE
     // If the interval column has data, average it with the new value
     // If the interval column is NULL, set it to the new value
@@ -153,7 +126,6 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
       RETURNING *
     `;
     res = await client.query(sqlQuery, values);
->>>>>>> Stashed changes
     return res.rows[0];
   } catch (e: any) {
     const error = {
