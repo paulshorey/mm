@@ -6,7 +6,7 @@ import { getCurrentIpAddress } from "../../lib/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
 /**
- * Inserts a log entry into the `logs_v1` table and sends an SMS for critical logs.
+ * Inserts a log entry into the `log_v1` table and sends an SMS for critical logs.
  *
  * This function is responsible for persisting log data. It takes a `LogRow` object
  * and inserts it into the database. It also includes logic to send an SMS notification
@@ -22,36 +22,31 @@ import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
  * @param row - A `LogRow` object containing the log details.
  */
 export const sqlLogAdd = async function (row: LogRowAdd) {
-  // Debug logging with timestamp
-  const timestamp = new Date().toISOString();
+  "use server";
+
+  console.log("sqlLogAdd", JSON.stringify(row, null, 2));
+
+  // SMS
+  if (row.sms || row.name === "error" || row.name === "warn") {
+    if (process.env.NODE_ENV !== "development") {
+      await sendToMyselfSMS(row.message);
+    }
+  }
+
   // DB
-  const access_key = row.access_key ?? "";
-  const node_env = process.env.NODE_ENV ?? "";
-  const server_name = process.env.SERVER_NAME ?? "";
-  const app_name = process.env.APP_NAME ?? "";
-  const addr = {}; //(await getCurrentIpAddress()) ?? {};
-  let sqlQuery = "";
-  let res = null;
-  let values: any[] = [];
-  let client = null;
+  const access_key = row.access_key;
+  const node_env = process.env.NODE_ENV || "";
+  const server_name = process.env.SERVER_NAME || "";
+  const app_name = process.env.APP_NAME || "";
+  const addr = (await getCurrentIpAddress()) || {};
 
+  const client = await getDb().connect();
   try {
-    // SMS notification (uncomment when needed)
-    // if (row.sms || row.name === "error" || row.name === "warn") {
-    //   if (process.env.NODE_ENV !== "development") {
-    //     await sendToMyselfSMS(row.message);
-    //   }
-    // }
-
-    client = await getDb().connect();
-
-    // Build and execute query
-    sqlQuery = `
-      INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag, time)
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    const queryText = `
+      INSERT INTO log_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`;
-
-    values = [
+    const values = [
       row.name.toLowerCase(),
       row.message,
       JSON.stringify({ ...row.stack, ...addr }),
@@ -59,75 +54,30 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
       server_name,
       app_name,
       node_env,
-      row.category || null,
-      row.tag || null,
-      new Date().toISOString(),
+      row.category,
+      row.tag,
     ];
-    res = await client.query(sqlQuery, values);
-
-    // Return the inserted row
-    return res?.rows[0] || null;
-  } catch (error: any) {
-    console.error(`[${timestamp}] sqlLogAdd ERROR`, {
-      error: {
-        message: error?.message,
-        stack: error?.stack,
-        code: error?.code,
-      },
-      row,
-    });
-
-    // Try to log the error to the database
-    if (client) {
-      try {
-        const errorStack = {
-          originalError: {
-            message: error?.message,
-            stack: error?.stack,
-            code: error?.code,
-          },
-          originalRow: row,
-        };
-
-        const errorQuery = `
-          INSERT INTO logs_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag, time)
-          VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-          RETURNING *`;
-
-        const errorValues = [
-          "error",
-          `sqlLogAdd failed: ${error?.message || "Unknown error"}`,
-          JSON.stringify(errorStack),
-          access_key,
-          server_name,
-          app_name,
-          node_env,
-          "system_error",
-          "sqlLogAdd",
-          new Date().toISOString(),
-        ];
-
-        await client.query(errorQuery, errorValues);
-      } catch (secondaryError: any) {
-        console.error(`[${timestamp}] sqlLogAdd CRITICAL - Failed to log error to DB`, {
-          primaryError: error?.message,
-          secondaryError: secondaryError?.message,
-        });
-      }
+    await client.query(queryText, values);
+  } catch (e: any) {
+    try {
+      const errorStack = {
+        name: "Error",
+        message: e?.message,
+        stack: e?.stack,
+      };
+      const message = "Error in try sqlLogAdd.ts";
+      const queryText = `
+        INSERT INTO log_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *`;
+      const values = ["error", message, JSON.stringify(errorStack), access_key, server_name, app_name, node_env, row.category, row.tag];
+      await client.query(queryText, values);
+    } catch (err: any) {
+      // Error sending
+      console.error("Error in catch sqlLogAdd.ts", row, err);
     }
-
-    // Return null to indicate failure
     return null;
   } finally {
-    // Always release the client connection if it exists
-    if (client) {
-      try {
-        client.release();
-      } catch (releaseError: any) {
-        console.error(`[${timestamp}] sqlLogAdd failed to release connection`, {
-          error: releaseError?.message,
-        });
-      }
-    }
+    client.release();
   }
 };

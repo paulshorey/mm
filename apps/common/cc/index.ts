@@ -13,12 +13,10 @@ import { consoleAction } from "./lib/consoleAction";
  * in addition to database logging, providing immediate alerts for critical issues.
  */
 export const cc = {
-  // @ts-ignore
-  no: async function (message: string, data?: any, options: Record<string, any> = {}) {},
   log: async function (message: string, data?: any, options: Record<string, any> = {}) {
     try {
       consoleAction("log", message, data);
-      // await sqlLogAdd("log", message, data);
+      await sqlLogAdd({ name: "log", message, stack: data, ...options });
     } catch (e) {
       console.error(e);
     }

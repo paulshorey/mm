@@ -5,9 +5,7 @@ import { parseOrdersText } from '@/dydx/lib/parseOrdersText'
 import { sqlLogAdd } from '@apps/common/sql/log/add'
 import { MarketOrderOutput } from '@/dydx/types'
 import { sendToMyselfSMS } from '@apps/common/twillio/sendToMyselfSMS'
-import { parseFractalText } from '@/dydx/lib/parseFractalText'
 import { parseStrengthText } from '@/dydx/lib/parseStrengthText'
-import { fractalAdd } from '@apps/common/sql/fractal'
 import { strengthAdd } from '@apps/common/sql/strength'
 
 export const maxDuration = 60
@@ -40,7 +38,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           message: `/v1/market invalid strengthData`,
           stack: {
             bodyText,
-            strengthData,
           },
         })
         return formatResponse(
@@ -55,16 +52,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         // Save to database
         const result = await strengthAdd(strengthData)
-        // Log success
-        // await sqlLogAdd({
-        //   name: 'log',
-        //   message: `/v1/market ✅ saved strengthData`,
-        //   stack: {
-        //     bodyText,
-        //     strengthData,
-        //   },
-        // })
-        // Return success
         return formatResponse({
           ok: true,
           message: 'Strength data saved successfully',
@@ -94,68 +81,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    /**
-     * 2. Save fractal
-     */
-    const fractalData = parseFractalText(bodyText)
-    if (fractalData?.average_strength !== undefined) {
-      try {
-        // Validate parsed data
-        if (!fractalData.interval || !fractalData.interval.trim() || !fractalData.time || !fractalData.timenow || fractalData.average_strength === null) {
-          await sqlLogAdd({
-            name: 'log',
-            message: `/v1/market invalid bodyText`,
-            stack: {
-              bodyText,
-            },
-          })
-          return formatResponse(
-            {
-              ok: false,
-              error: `Invalid bodyText "${bodyText}"`,
-            },
-            400
-          )
-        }
-
-        // Save to database
-        const result = await fractalAdd(fractalData)
-
-        // Log success
-        return formatResponse({
-          ok: true,
-          message: 'Fractal data saved successfully',
-          data: {
-            id: result?.id,
-            ticker: fractalData.ticker,
-            timestamp: new Date().toISOString(),
-          },
-        })
-      } catch (error: any) {
-        // Log error
-        await sqlLogAdd({
-          name: 'warn',
-          message: `Fractal endpoint error: ${error.message}`,
-          stack: {
-            url: request.nextUrl.href,
-            bodyText: bodyText,
-            method: request.method,
-            stack: error.stack,
-          },
-        })
-        // Done
-        return formatResponse(
-          {
-            ok: false,
-            error: error.message,
-          },
-          400
-        )
-      }
-    }
-
     /*
-     * 3. Market order
+     * 2. Market order
      */
     const parsedOrders = parseOrdersText(bodyText)
     if (parsedOrders?.[0]?.ticker && parsedOrders?.[0]?.position !== undefined) {
@@ -202,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     /**
-     * 4. Log message
+     * 3. Log message
      */
     sendToMyselfSMS(bodyText)
     await sqlLogAdd({
@@ -224,7 +151,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     )
 
     /**
-     * 5. Something went wrong
+     * 4. Something went wrong
      */
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err))
