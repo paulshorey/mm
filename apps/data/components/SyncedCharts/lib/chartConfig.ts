@@ -29,6 +29,7 @@ export const getChartConfig = (
   layout: {
     background: { color: '#ffffff' },
     textColor: '#333',
+    attributionLogo: false, // Hide TradingView logo
   },
   grid: {
     vertLines: { visible: false }, // Hide vertical grid lines to reduce clutter

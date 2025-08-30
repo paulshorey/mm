@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { LineData, Time, ISeriesApi } from 'lightweight-charts'
 import { StrengthRowGet, strengthGets } from '@apps/common/sql/strength'
 
@@ -15,14 +15,17 @@ import SingleChart, { SingleChartRef } from './components/SingleChart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 
 export interface SyncedChartsProps {
-  width: number
-  height: number
+  availableWidth: number
+  availableHeight: number
 }
 
 /**
  * Inner component that renders charts with specific dimensions
  */
-export function SyncedCharts({ width, height }: SyncedChartsProps) {
+export function SyncedCharts({
+  availableWidth,
+  availableHeight,
+}: SyncedChartsProps) {
   // Chart refs
   const chartComponentRefs = useRef<(SingleChartRef | null)[]>([])
   const isUpdatingCursor = useRef(false)
@@ -53,6 +56,24 @@ export function SyncedCharts({ width, height }: SyncedChartsProps) {
   const handleControlTickersChange = useCallback((tickers: string[]) => {
     setControlTickers(tickers)
   }, [])
+
+  // Calculate chart dimensions based on available space and number of tickers
+  const chartDimensions = useMemo(() => {
+    // Width = 100% of browser width minus padding
+    const chartWidth = availableWidth - 10 // 10px padding right edge
+
+    // Height = browser height divided by number of charts
+    const adjustedHeight = availableHeight + 100 // make charts a bit taller to account for negative margin
+    const chartHeight =
+      controlTickers.length > 0
+        ? Math.floor(adjustedHeight / controlTickers.length)
+        : adjustedHeight
+
+    return {
+      width: Math.max(chartWidth, 320), // Minimum width of 320px
+      height: Math.max(chartHeight, 200), // Minimum height of 200px per chart
+    }
+  }, [availableWidth, availableHeight, controlTickers.length])
 
   // Initialize refs arrays
   const [allChartsData, setAllChartsData] = useState<(LineData[] | null)[]>(
@@ -225,8 +246,8 @@ export function SyncedCharts({ width, height }: SyncedChartsProps) {
             }}
             ticker={ticker}
             chartData={allChartsData[index] || null}
-            width={width}
-            height={height}
+            width={chartDimensions.width}
+            height={chartDimensions.height}
             onCrosshairMove={handleCrosshairMove}
             chartIndex={index}
             timeRange={timeRange}

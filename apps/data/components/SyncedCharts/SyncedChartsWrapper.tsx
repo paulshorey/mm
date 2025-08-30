@@ -4,20 +4,16 @@ import { useEffect, useState } from 'react'
 
 import { SyncedCharts } from './SyncedCharts'
 
-interface SyncedChartsWrapperProps {
-  tickers?: string[]
-}
+interface SyncedChartsWrapperProps {}
 
 /**
  * Responsive wrapper component that calculates window dimensions
  * and renders charts only when document is ready
  */
-export default function SyncedChartsWrapper({
-  tickers = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'LINKUSD'],
-}: SyncedChartsWrapperProps) {
+export default function SyncedChartsWrapper({}: SyncedChartsWrapperProps) {
   const [dimensions, setDimensions] = useState<{
-    chartDimensionsWidth: number
-    chartDimensionsHeight: number
+    availableWidth: number
+    availableHeight: number
   } | null>(null)
 
   useEffect(() => {
@@ -27,16 +23,9 @@ export default function SyncedChartsWrapper({
         const windowWidth = window.innerWidth
         const windowHeight = window.innerHeight
 
-        // Width = 100% of browser width
-        const chartWidth = windowWidth - 10 // 10px padding right edge
-
-        // Height = browser height divided by number of charts
-        const availableHeight = windowHeight + 100 // make charts a bit taller to account for negative margin
-        const chartHeight = Math.floor(availableHeight / tickers.length)
-
         setDimensions({
-          chartDimensionsWidth: Math.max(chartWidth, 320), // Minimum width of 320px
-          chartDimensionsHeight: Math.max(chartHeight, 200), // Minimum height of 200px per chart
+          availableWidth: windowWidth,
+          availableHeight: windowHeight,
         })
       }
     }
@@ -58,7 +47,7 @@ export default function SyncedChartsWrapper({
       clearTimeout(resizeTimeout)
       window.removeEventListener('resize', handleResize)
     }
-  }, [tickers.length, typeof window])
+  }, [])
 
   // Only render charts once we have dimensions
   if (!dimensions) {
@@ -71,9 +60,8 @@ export default function SyncedChartsWrapper({
 
   return (
     <SyncedCharts
-      width={dimensions.chartDimensionsWidth}
-      height={dimensions.chartDimensionsHeight}
-      tickers={tickers}
+      availableWidth={dimensions.availableWidth}
+      availableHeight={dimensions.availableHeight}
     />
   )
 }
