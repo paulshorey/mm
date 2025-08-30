@@ -44,7 +44,7 @@ export function SyncedCharts({
     null
   )
   const [hoursBack, setHoursBack] = useState<number>(60) // Default to 60 hours
-  const [controlInterval, setControlInterval] = useState<string>('3')
+  const [controlInterval, setControlInterval] = useState<string>('11')
   const [cursorTime, setCursorTime] = useState<Time | null>(null)
 
   // Initialize refs arrays
