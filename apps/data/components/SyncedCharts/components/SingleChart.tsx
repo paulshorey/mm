@@ -26,6 +26,7 @@ interface SingleChartProps {
   height: number
   onCrosshairMove: (time: Time | null) => void
   chartIndex: number
+  timeRange?: { from: Time; to: Time } | null
 }
 
 export interface SingleChartRef {
@@ -35,11 +36,23 @@ export interface SingleChartRef {
 }
 
 const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
-  ({ ticker, chartData, width, height, onCrosshairMove, chartIndex }, ref) => {
+  (
+    {
+      ticker,
+      chartData,
+      width,
+      height,
+      onCrosshairMove,
+      chartIndex,
+      timeRange,
+    },
+    ref
+  ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const chartRef = useRef<IChartApi | null>(null)
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const isUpdatingCursor = useRef(false)
+    const hasInitialized = useRef(false)
 
     useImperativeHandle(ref, () => ({
       chart: chartRef.current,
@@ -47,8 +60,9 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
       container: containerRef.current,
     }))
 
+    // Create chart only once on mount
     useEffect(() => {
-      if (!containerRef.current || !chartData) return
+      if (!containerRef.current || hasInitialized.current) return
 
       // Create chart
       const chart = createChart(
@@ -56,10 +70,10 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         getChartConfig(width, height)
       )
       chartRef.current = chart
+      hasInitialized.current = true
 
       // Add line series
       const strengthSeries = chart.addSeries(LineSeries, getLineSeriesConfig())
-      strengthSeries.setData(chartData)
       seriesRef.current = strengthSeries
 
       // Add crosshair event handlers for cursor synchronization
@@ -73,13 +87,85 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         }
       })
 
+      // Set initial data if available
+      if (chartData) {
+        strengthSeries.setData(chartData)
+      }
+
+      // Apply initial time range if provided
+      if (timeRange) {
+        try {
+          chart.timeScale().setVisibleRange(timeRange)
+        } catch (error) {
+          console.warn('Failed to set initial visible range:', error)
+        }
+      }
+
       // Cleanup
       return () => {
         chart.remove()
         chartRef.current = null
         seriesRef.current = null
+        hasInitialized.current = false
       }
-    }, [chartData, width, height, onCrosshairMove])
+    }, []) // Only run once on mount - removed all dependencies
+
+    // Update data when it changes (without recreating chart)
+    useEffect(() => {
+      if (!seriesRef.current || !chartData || !hasInitialized.current) return
+
+      try {
+        seriesRef.current.setData(chartData)
+
+        // Reapply time range after data update
+        if (timeRange && chartRef.current) {
+          // Small delay to ensure data is rendered
+          setTimeout(() => {
+            if (chartRef.current && timeRange) {
+              try {
+                chartRef.current.timeScale().setVisibleRange(timeRange)
+              } catch (error) {
+                console.warn(
+                  'Failed to set visible range after data update:',
+                  error
+                )
+              }
+            }
+          }, 10)
+        }
+      } catch (error) {
+        console.warn('Failed to update chart data:', error)
+      }
+    }, [chartData, timeRange])
+
+    // Update chart dimensions when they change
+    useEffect(() => {
+      if (!chartRef.current || !hasInitialized.current) return
+
+      chartRef.current.applyOptions({
+        width,
+        height,
+      })
+    }, [width, height])
+
+    // Update time range when it changes
+    useEffect(() => {
+      if (!chartRef.current || !timeRange || !hasInitialized.current) return
+
+      try {
+        chartRef.current.timeScale().setVisibleRange(timeRange)
+      } catch (error) {
+        console.warn('Failed to set visible range:', error)
+      }
+    }, [timeRange])
+
+    // Handle crosshair updates from other charts
+    useEffect(() => {
+      isUpdatingCursor.current = true
+      setTimeout(() => {
+        isUpdatingCursor.current = false
+      }, 0)
+    }, [onCrosshairMove])
 
     const hasData = chartData !== null
 

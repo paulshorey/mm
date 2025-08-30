@@ -1,15 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { IChartApi, LineData, Time, ISeriesApi } from 'lightweight-charts'
+import { LineData, Time, ISeriesApi } from 'lightweight-charts'
 import { StrengthRowGet, strengthGets } from '@apps/common/sql/strength'
 
 import { convertToChartData, calculateTimeRange } from './lib/chartUtils'
-import {
-  applyTimeRangeToAllCharts,
-  applyCursorToAllCharts,
-  handleWindowResize,
-} from './lib/chartSync'
+import { applyCursorToAllCharts } from './lib/chartSync'
 
 import ChartControls from './components/ChartControls'
 import SingleChart, { SingleChartRef } from './components/SingleChart'
@@ -154,25 +150,14 @@ export function SyncedCharts({
     }
   }, [hoursBack, rawData])
 
-  // Apply time range changes to all charts
-  useEffect(() => {
-    // Small delay to ensure charts are fully initialized after data change
-    const timeoutId = setTimeout(() => {
-      const chartRefs = chartComponentRefs.current
-        .map((ref) => ref?.chart)
-        .filter(Boolean) as IChartApi[]
-
-      applyTimeRangeToAllCharts(chartRefs, timeRange)
-    }, 50)
-
-    return () => clearTimeout(timeoutId)
-  }, [timeRange, allChartsData]) // Also apply when chart data changes (charts get recreated)
+  // No longer need this effect - time range is now passed as a prop to SingleChart
+  // and handled internally by each chart
 
   // Apply cursor position changes to all charts
   useEffect(() => {
     const chartRefs = chartComponentRefs.current
       .map((ref) => ref?.chart)
-      .filter(Boolean) as IChartApi[]
+      .filter(Boolean)
 
     const seriesRefs = chartComponentRefs.current
       .map((ref) => ref?.series)
@@ -189,21 +174,7 @@ export function SyncedCharts({
     )
   }, [cursorTime, allChartsData, rawData, controlInterval])
 
-  // React to dimension changes from props
-  useEffect(() => {
-    const chartRefs = chartComponentRefs.current
-      .map((ref) => ref?.chart)
-      .filter(Boolean) as IChartApi[]
-
-    const containerRefs = chartComponentRefs.current
-      .map((ref) => ref?.container)
-      .filter(Boolean) as HTMLDivElement[]
-
-    // Update chart dimensions when width/height props change
-    if (chartRefs.length > 0 && containerRefs.length > 0) {
-      handleWindowResize(chartRefs, containerRefs)
-    }
-  }, [width, height])
+  // Dimension changes are now handled directly in SingleChart via props
 
   // Crosshair move handler - memoized to prevent SingleChart re-renders
   const handleCrosshairMove = useCallback((time: Time | null) => {
@@ -251,6 +222,7 @@ export function SyncedCharts({
             height={height}
             onCrosshairMove={handleCrosshairMove}
             chartIndex={index}
+            timeRange={timeRange}
           />
         ))}
     </div>

@@ -1,33 +1,13 @@
-import { IChartApi, ISeriesApi, Time, LineData } from 'lightweight-charts'
+import { ISeriesApi, Time, LineData } from 'lightweight-charts'
 import { StrengthRowGet } from '@apps/common/sql/strength'
 import { getNearestSeriesValueAtTime } from './chartUtils'
-
-/**
- * Apply time range to all charts
- */
-export const applyTimeRangeToAllCharts = (
-  chartRefs: (IChartApi | null)[],
-  range: { from: Time; to: Time } | null
-) => {
-  if (!range) return
-
-  chartRefs.forEach((chart) => {
-    if (chart) {
-      try {
-        chart.timeScale().setVisibleRange(range)
-      } catch (error) {
-        console.warn('Failed to set visible range:', error)
-      }
-    }
-  })
-}
 
 /**
  * Apply cursor position to all charts
  */
 export const applyCursorToAllCharts = (
   time: Time | null,
-  chartRefs: (IChartApi | null)[],
+  chartRefs: any[], // Using any to avoid IChartApi import issues
   seriesRefs: (ISeriesApi<'Line'> | null)[],
   allChartsData: (LineData[] | null)[],
   rawData: (StrengthRowGet[] | null)[],
@@ -70,7 +50,7 @@ export const applyCursorToAllCharts = (
  * Handle window resize for all charts
  */
 export const handleWindowResize = (
-  chartRefs: (IChartApi | null)[],
+  chartRefs: any[], // Using any to avoid IChartApi import issues
   chartContainerRefs: (HTMLDivElement | null)[]
 ) => {
   chartRefs.forEach((chart, index) => {

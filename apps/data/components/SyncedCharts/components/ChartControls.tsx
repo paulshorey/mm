@@ -29,9 +29,9 @@ export default function ChartControls({
     <div className="flex flex-row">
       {/* Time range slider */}
       <div className="flex flex-1">
-        <label>{hoursBack} hrs</label>
+        <label className="mx-2">{hoursBack} hrs</label>
         <input
-          className="flex-1 mx-2"
+          className="flex-1 mx-1"
           type="range"
           min="12"
           max="60"
@@ -42,7 +42,7 @@ export default function ChartControls({
       </div>
 
       {/* Interval selector */}
-      <div className="min-w-[150px] text-right">
+      <div className="text-right">
         <select
           className="mx-2"
           value={controlInterval}
