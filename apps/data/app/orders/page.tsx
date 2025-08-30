@@ -1,4 +1,5 @@
 import { ListData } from '@/list/components/data/ListData'
+import { ThemeWrapper } from '@/components/ThemeWrapper'
 
 export const revalidate = 0
 
@@ -15,5 +16,9 @@ export default async function Page({ searchParams }: PageProps) {
       where[key] = value as string
     }
   }
-  return <ListData filters={filters} where={where} table={table} />
+  return (
+    <ThemeWrapper colorScheme="dark">
+      <ListData filters={filters} where={where} table={table} />
+    </ThemeWrapper>
+  )
 }

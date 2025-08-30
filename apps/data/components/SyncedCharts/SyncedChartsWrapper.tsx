@@ -28,7 +28,7 @@ export default function SyncedChartsWrapper({
         const windowHeight = window.innerHeight
 
         // Width = 100% of browser width
-        const chartWidth = windowWidth - 0 // 0 padding left/right
+        const chartWidth = windowWidth - 10 // 10px padding right edge
 
         // Height = browser height divided by number of charts
         const availableHeight = windowHeight + 100 // make charts a bit taller to account for negative margin

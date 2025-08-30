@@ -194,7 +194,7 @@ export function SyncedCharts({
   }, []) // No dependencies needed as setControlInterval is stable
 
   return (
-    <div className="mx-auto w-full">
+    <div className="pr-[10px] w-full">
       {/* Master Controls */}
       <ChartControls
         hoursBack={hoursBack}

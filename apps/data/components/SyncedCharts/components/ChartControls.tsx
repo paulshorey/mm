@@ -44,7 +44,7 @@ export default function ChartControls({
       {/* Interval selector */}
       <div className="text-right">
         <select
-          className="mx-2"
+          className="ml-2"
           value={controlInterval}
           onChange={(e) => onControlIntervalChange(e.target.value)}
         >

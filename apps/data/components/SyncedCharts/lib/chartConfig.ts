@@ -19,8 +19,11 @@ export const getChartConfig = (
     timeFormatter: (time: Time) => {
       // Convert the time (which is in seconds since epoch) to milliseconds
       const date = new Date((time as number) * 1000)
-      // Format the date in the user's local time zone
-      return date.toLocaleTimeString()
+      // Format as MM/DD HH:MM:SS in the user's local time zone
+      const month = (date.getMonth() + 1).toString()
+      const day = date.getDate().toString()
+      const timeStr = date.toLocaleTimeString()
+      return `${month}/${day} ${timeStr}`
     },
   },
   layout: {
@@ -38,6 +41,26 @@ export const getChartConfig = (
     visible: true,
     timeVisible: true,
     secondsVisible: false,
+    tickMarkFormatter: (time: Time) => {
+      // Convert the time (which is in seconds since epoch) to milliseconds
+      const date = new Date((time as number) * 1000)
+      // Format the time in the user's local time zone
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+
+      // Check if this is the first tick of a new day to also show date
+      const prevDate = new Date(date)
+      prevDate.setHours(0, 0, 0, 0)
+      const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
+
+      if (isNewDay) {
+        const month = (date.getMonth() + 1).toString()
+        const day = date.getDate().toString()
+        return `${month}/${day} ${hours}:${minutes}`
+      }
+
+      return `${hours}:${minutes}`
+    },
   },
   crosshair: {
     mode: 0, // Normal mode: we'll set Y explicitly via setCrosshairPosition

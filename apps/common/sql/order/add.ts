@@ -31,7 +31,7 @@ export const orderAdd = async function (row: OrderRowAdd) {
   try {
     const queryText = `
       INSERT INTO order_v1(client_id, type, ticker, side, amount, price, server_name, app_name, node_env)
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`;
     const values = [row.client_id, row.type, row.ticker, row.side, row.amount, row.price, server_name, app_name, node_env];
     const res = await client.query(queryText, values);

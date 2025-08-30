@@ -1,9 +1,12 @@
 import FractalChartControlled from '../components/SyncedCharts/SyncedChartsWrapper'
+import { ThemeWrapper } from '../components/ThemeWrapper'
 
-export default async function Page() {
+export default function Page() {
   return (
-    <div>
-      <FractalChartControlled />
-    </div>
+    <ThemeWrapper colorScheme="light">
+      <div>
+        <FractalChartControlled />
+      </div>
+    </ThemeWrapper>
   )
 }

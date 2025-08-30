@@ -1,17 +1,11 @@
-import { Providers } from '@apps/common/fe/components/wrappers/Providers'
-
 export const metadata = {
   title: 'Log',
 }
 
 export default async function RootLayout({ children }: { children: any }) {
-  const defaultColorScheme = 'dark'
+  // Don't set any providers here - let pages handle their own theming
   return (
-    <html
-      lang="en"
-      data-mantine-color-scheme={defaultColorScheme}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="shortcut icon" href="/favicon.svg" />
         <meta
@@ -19,11 +13,7 @@ export default async function RootLayout({ children }: { children: any }) {
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
       </head>
-      <body suppressHydrationWarning>
-        <Providers defaultColorScheme={defaultColorScheme}>
-          {children}
-        </Providers>
-      </body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }
