@@ -11,6 +11,8 @@ import {
   useChartControlsStore,
   intervalsOptions,
 } from '../state/useChartControlsStore'
+import StrengthControl from './StrengthControl'
+import PriceControl from './PriceControl'
 
 export function ControlsDropdown() {
   // Get state and actions from Zustand store
@@ -32,12 +34,23 @@ export function ControlsDropdown() {
 
   return (
     <Popover position="bottom-end" offset={0} shadow="md">
-      <Popover.Target>
-        <IconAdjustmentsHorizontal size={28} className="pt-1" />
+      {/* @ts-ignore */}
+      <Popover.Target className="text-gray-700 cursor-pointer">
+        <IconAdjustmentsHorizontal size={28} className="pt-1 mr-[-5px]" />
       </Popover.Target>
       <Popover.Dropdown>
+        {/* Tickers */}
+        <div className="pb-2">
+          <StrengthControl />
+        </div>
+
+        {/* Price */}
+        <div className="pb-2">
+          <PriceControl />
+        </div>
+
         {/* Time range selector */}
-        <div>
+        <div className="pb-2">
           <Select
             label="Time range"
             value={hoursBack.toString()}
@@ -48,8 +61,8 @@ export function ControlsDropdown() {
           />
         </div>
 
-        <div>
-          {/* Interval selector */}
+        {/* Interval selector */}
+        <div className="pb-2">
           <Combobox
             store={combobox}
             withinPortal={false}

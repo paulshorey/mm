@@ -22,15 +22,15 @@ export const tickersOptions = [
     value: ['ETHUSD', 'BTCUSD', 'SOLUSD', 'XRPUSD'],
   },
   {
-    label: 'Equities',
+    label: 'ES1!, YM1!',
     value: ['ES1!', 'YM1!'],
   },
   {
-    label: 'Gold',
+    label: 'GC1!',
     value: ['GC1!'],
   },
   {
-    label: 'Treasuries',
+    label: 'TN1!',
     value: ['TN1!'],
   },
 ]

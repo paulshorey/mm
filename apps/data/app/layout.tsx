@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Log',
+  title: 'Data',
 }
 
 export default async function RootLayout({ children }: { children: any }) {
@@ -13,7 +13,9 @@ export default async function RootLayout({ children }: { children: any }) {
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning className="overflow-hidden">
+        {children}
+      </body>
     </html>
   )
 }

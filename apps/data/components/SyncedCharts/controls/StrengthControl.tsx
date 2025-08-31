@@ -1,35 +1,87 @@
 'use client'
 
 import React from 'react'
+import { Combobox, InputBase, Input, useCombobox } from '@mantine/core'
 import {
   useChartControlsStore,
   tickersOptions,
 } from '../state/useChartControlsStore'
+import { IconChevronDown } from '@tabler/icons-react'
 
-export default function TopControls() {
+interface Props {
+  showLabel?: boolean
+}
+
+export default function StrengthControl({ showLabel = true }: Props) {
   // Get state and actions from Zustand store
   const { controlTickers, updateControlTickersAndPrice } =
     useChartControlsStore()
 
-  // Convert array to string for select value comparison
+  // ComboBox for ticker selector
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  })
+
+  // Convert array to string for value comparison
   const currentTickers = JSON.stringify(controlTickers)
-  const onChangeTickers = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    updateControlTickersAndPrice(JSON.parse(e.target.value) as string[])
-  }
+
+  // Find the selected option label
+  const selectedOption = tickersOptions.find(
+    (item) => JSON.stringify(item.value) === currentTickers
+  )
 
   return (
-    <span className="flex flex-row justify-between border-gray-500 border-solid border rounded-md px-[2px] py-[1px] ml-1">
-      {/* Ticker selector */}
-      <select value={currentTickers} onChange={onChangeTickers}>
-        {tickersOptions.map((option) => (
-          <option
-            key={JSON.stringify(option.value)}
-            value={JSON.stringify(option.value)}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </span>
+    <Combobox
+      offset={0}
+      store={combobox}
+      withinPortal={false}
+      onOptionSubmit={(val) => {
+        updateControlTickersAndPrice(JSON.parse(val) as string[])
+        combobox.closeDropdown()
+      }}
+      styles={{
+        dropdown: {
+          boxShadow: '1px 1px 4px 0 rgba(0, 0, 0, 0.1)',
+        },
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          styles={{
+            input: {
+              border: 'solid 1px rgba(0, 0, 0, 0.2)',
+              boxShadow: '1px 1px 2px 0 rgba(0, 0, 0, 0.1)',
+              borderRadius: '5px',
+            },
+          }}
+          component="button"
+          type="button"
+          pointer
+          rightSection={<IconChevronDown size={14} />}
+          onClick={() => combobox.toggleDropdown()}
+          rightSectionPointerEvents="none"
+          label={showLabel ? 'Strength:' : null}
+        >
+          {selectedOption ? (
+            selectedOption.label
+          ) : (
+            <Input.Placeholder>Pick ticker</Input.Placeholder>
+          )}
+        </InputBase>
+      </Combobox.Target>
+
+      <Combobox.Dropdown>
+        <Combobox.Options>
+          {tickersOptions.map((option) => (
+            <Combobox.Option
+              value={JSON.stringify(option.value)}
+              key={JSON.stringify(option.value)}
+            >
+              {option.label}
+            </Combobox.Option>
+          ))}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
   )
 }

@@ -178,7 +178,7 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         />
 
         {/* Title positioned above chart but overlapping */}
-        <ChartTitle name={name} heading={heading} hasData={hasData}>
+        <ChartTitle heading={heading} hasData={hasData}>
           <NoDataState />
         </ChartTitle>
       </div>

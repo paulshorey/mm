@@ -235,7 +235,11 @@ export function SyncedCharts({
               chartComponentRefs.current[0] = el
             }}
             name={`Strength`}
-            heading={<StrengthControl />}
+            heading={
+              <span className="ml-2 flex">
+                <StrengthControl showLabel={false} />
+              </span>
+            }
             chartData={aggregatedStrengthData}
             width={chartDimensions.width}
             height={chartDimensions.height}
@@ -251,7 +255,12 @@ export function SyncedCharts({
               chartComponentRefs.current[1] = el
             }}
             name={`Price`}
-            heading={<PriceControl />}
+            heading={
+              <span className="ml-2 flex">
+                <span className="mr-1 text-gray-700">$</span>
+                <PriceControl showLabel={false} />
+              </span>
+            }
             chartData={aggregatedPriceData}
             width={chartDimensions.width}
             height={chartDimensions.height}

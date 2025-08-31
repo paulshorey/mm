@@ -2,26 +2,23 @@
 
 import React from 'react'
 import { useChartControlsStore } from '../state/useChartControlsStore'
+import { Select } from '@mantine/core'
 
-export default function PriceControl() {
+interface Props {
+  showLabel?: boolean
+}
+
+export default function PriceControl({ showLabel = true }: Props) {
   // Get state and actions from Zustand store
   const { controlTickers, priceTicker, setPriceTicker } =
     useChartControlsStore()
 
   return (
-    <span className="flex flex-row justify-between border-gray-500 border-solid border rounded-md px-[2px] py-[1px] ml-1">
-      {/* Price ticker selector */}
-      <select
-        value={priceTicker}
-        onChange={(e) => setPriceTicker(e.target.value)}
-        title="Select ticker for price chart"
-      >
-        {controlTickers.map((ticker) => (
-          <option key={ticker} value={ticker}>
-            {ticker}
-          </option>
-        ))}
-      </select>
-    </span>
+    <Select
+      label={showLabel ? 'Price:' : null}
+      value={priceTicker}
+      data={controlTickers}
+      onChange={(value) => (value ? setPriceTicker(value) : undefined)}
+    />
   )
 }
