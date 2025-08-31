@@ -99,7 +99,7 @@ export default function ChartControls({
 
       {/* Time range slider */}
       <div className="flex flex-1">
-        <label className="mx-2">{hoursBack} hrs</label>
+        <label className="mx-2">{hoursBack}hrs</label>
         <input
           className="flex-1 mx-1"
           type="range"
