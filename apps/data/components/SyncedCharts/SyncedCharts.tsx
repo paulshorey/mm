@@ -4,7 +4,12 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { LineData, Time, ISeriesApi } from 'lightweight-charts'
 import { StrengthRowGet, strengthGets } from '@apps/common/sql/strength'
 
-import { convertToChartData, calculateTimeRange } from './lib/chartUtils'
+import {
+  convertToChartData,
+  calculateTimeRange,
+  aggregateStrengthData,
+  getSingleTickerPriceData,
+} from './lib/chartUtils'
 import { applyCursorToAllCharts } from './lib/chartSync'
 
 import ChartControls, {
@@ -53,46 +58,63 @@ export function SyncedCharts({
   const [controlTickers, setControlTickers] = useState<string[]>(
     tickersOptions[0]!.value
   )
-  const handleControlTickersChange = useCallback((tickers: string[]) => {
-    setControlTickers(tickers)
+
+  // Price ticker selection (default to first ticker)
+  const [priceTicker, setPriceTicker] = useState<string>(
+    tickersOptions[0]!.value[0]!
+  )
+  const handlePriceTickerChange = useCallback((ticker: string) => {
+    setPriceTicker(ticker)
   }, [])
 
-  // Calculate chart dimensions based on available space and number of tickers
+  const handleControlTickersChange = useCallback(
+    (tickers: string[]) => {
+      setControlTickers(tickers)
+      // If current price ticker is not in new tickers list, set to first ticker
+      if (!tickers.includes(priceTicker)) {
+        setPriceTicker(tickers[0] || '')
+      }
+    },
+    [priceTicker]
+  )
+
+  // Calculate chart dimensions based on available space for 2 charts
   const chartDimensions = useMemo(() => {
     // Width = 100% of browser width minus padding
     const chartWidth = availableWidth - 10 // 10px padding right edge
 
-    // Height = browser height divided by number of charts
-    const adjustedHeight = availableHeight + 100 // make charts a bit taller to account for negative margin
-    const chartHeight =
-      controlTickers.length > 0
-        ? Math.floor(adjustedHeight / controlTickers.length)
-        : adjustedHeight
+    // Height = browser height divided by 2 (for 2 charts)
+    const adjustedHeight = availableHeight // make charts a bit taller to account for negative margin
+    const chartHeight = Math.floor(adjustedHeight / 2) // Always 2 charts
 
     return {
       width: Math.max(chartWidth, 320), // Minimum width of 320px
       height: Math.max(chartHeight, 200), // Minimum height of 200px per chart
     }
-  }, [availableWidth, availableHeight, controlTickers.length])
+  }, [availableWidth, availableHeight])
 
-  // Initialize refs arrays
-  const [allChartsData, setAllChartsData] = useState<(LineData[] | null)[]>(
-    new Array(controlTickers.length).fill(null)
-  )
-  const [rawData, setRawData] = useState<(StrengthRowGet[] | null)[]>(
-    new Array(controlTickers.length).fill(null)
-  )
+  // Initialize refs for 2 charts (strength average and price average)
+  const [aggregatedStrengthData, setAggregatedStrengthData] = useState<
+    LineData[] | null
+  >(null)
+  const [aggregatedPriceData, setAggregatedPriceData] = useState<
+    LineData[] | null
+  >(null)
+  const [rawData, setRawData] = useState<(StrengthRowGet[] | null)[]>([])
+
+  // Always have exactly 2 chart refs (one for strength, one for price)
   useEffect(() => {
-    chartComponentRefs.current = new Array(controlTickers.length).fill(null)
-  }, [controlTickers.length])
+    chartComponentRefs.current = new Array(2).fill(null)
+  }, [])
 
-  // Load data for each ticker (only on mount or when tickers/interval changes)
+  // Load data for each ticker when tickers change
   useEffect(() => {
     const loadAllData = async () => {
       try {
+        setLoadingState(true)
+
         // Fetch data for each ticker separately
         const allTickerData: (StrengthRowGet[] | null)[] = []
-        const allChartData: (LineData[] | null)[] = []
         let latestOverallTime = 0
         let earliestOverallTime = Infinity
 
@@ -116,14 +138,12 @@ export function SyncedCharts({
           if (error) {
             console.error(`Error loading data for ${ticker}:`, error)
             allTickerData.push(null)
-            allChartData.push(null)
             continue
           }
 
           if (!rows || rows.length === 0) {
             console.warn(`No data found for ${ticker}`)
             allTickerData.push(null)
-            allChartData.push(null)
             continue
           }
 
@@ -132,10 +152,6 @@ export function SyncedCharts({
 
           // Store raw data for this ticker
           allTickerData.push(rows)
-
-          // Convert to chart data
-          const chartData = convertToChartData(rows, controlInterval) // Use default single interval for initial load
-          allChartData.push(chartData.length > 0 ? chartData : null)
 
           // Track overall time range across all charts
           if (rows.length > 0) {
@@ -146,14 +162,10 @@ export function SyncedCharts({
           }
         }
 
-        // Store all data
+        // Store raw data
         setRawData(allTickerData)
-        setAllChartsData(allChartData)
         setError(null)
         setLoadingState(false)
-
-        // Don't set time range here - let the dedicated useEffect handle it
-        // based on hoursBack and rawData
       } catch (err) {
         console.error('Error loading chart data:', err)
         setError(err instanceof Error ? err.message : 'Failed to load data')
@@ -162,19 +174,21 @@ export function SyncedCharts({
     }
 
     loadAllData()
-  }, [controlTickers]) // Run once on mount, then when controlTickers changes
+  }, [controlTickers]) // Only run when tickers change
 
-  // Recalculate chart data when controlInterval changes
+  // Recalculate aggregated data when rawData, controlInterval or priceTicker changes
   useEffect(() => {
-    if (rawData.some((data) => data !== null)) {
-      const newChartData = rawData.map((tickerData) => {
-        if (!tickerData) return null
-        const chartData = convertToChartData(tickerData, controlInterval) // Now correctly using the array
-        return chartData.length > 0 ? chartData : null
-      })
-      setAllChartsData(newChartData)
+    if (rawData.length > 0 && rawData.some((data) => data !== null)) {
+      const strengthData = aggregateStrengthData(rawData, controlInterval)
+      const priceData = getSingleTickerPriceData(
+        rawData,
+        controlTickers,
+        priceTicker
+      )
+      setAggregatedStrengthData(strengthData.length > 0 ? strengthData : null)
+      setAggregatedPriceData(priceData.length > 0 ? priceData : null)
     }
-  }, [controlInterval, rawData])
+  }, [controlInterval, priceTicker, rawData, controlTickers])
 
   // Update time range when hours back changes
   useEffect(() => {
@@ -184,7 +198,7 @@ export function SyncedCharts({
     }
   }, [hoursBack, rawData])
 
-  // Apply cursor position changes to all charts
+  // Apply cursor position changes to both charts
   useEffect(() => {
     const chartRefs = chartComponentRefs.current
       .map((ref) => ref?.chart)
@@ -194,16 +208,25 @@ export function SyncedCharts({
       .map((ref) => ref?.series)
       .filter(Boolean) as ISeriesApi<'Line'>[]
 
+    // Create array of chart data for the 2 charts
+    const chartsData = [aggregatedStrengthData, aggregatedPriceData]
+
     applyCursorToAllCharts(
       cursorTime,
       chartRefs,
       seriesRefs,
-      allChartsData,
+      chartsData,
       rawData,
-      controlInterval, // Now passing the array
+      controlInterval,
       isUpdatingCursor
     )
-  }, [cursorTime, allChartsData, rawData, controlInterval])
+  }, [
+    cursorTime,
+    aggregatedStrengthData,
+    aggregatedPriceData,
+    rawData,
+    controlInterval,
+  ])
 
   // Dimension changes are now handled directly in SingleChart via props
 
@@ -229,30 +252,48 @@ export function SyncedCharts({
         onControlIntervalChange={handleControlIntervalChange}
         controlTickers={controlTickers}
         onControlTickersChange={handleControlTickersChange}
+        priceTicker={priceTicker}
+        onPriceTickerChange={handlePriceTickerChange}
       />
 
       {/* Show loading or error state for all charts */}
       {loadingState && <LoadingState />}
       {error && !loadingState && <ErrorState error={error} />}
 
-      {/* Render all charts stacked vertically */}
-      {!loadingState &&
-        !error &&
-        controlTickers.map((ticker, index) => (
+      {/* Render 2 aggregated charts */}
+      {!loadingState && !error && (
+        <>
+          {/* Chart 1: Aggregated Strength (average of all interval averages) */}
           <SingleChart
-            key={ticker}
+            key="aggregated-strength"
             ref={(el) => {
-              chartComponentRefs.current[index] = el
+              chartComponentRefs.current[0] = el
             }}
-            ticker={ticker}
-            chartData={allChartsData[index] || null}
+            ticker={`Avg Strength (${controlTickers.join(', ')})`}
+            chartData={aggregatedStrengthData}
             width={chartDimensions.width}
             height={chartDimensions.height}
             onCrosshairMove={handleCrosshairMove}
-            chartIndex={index}
+            chartIndex={0}
             timeRange={timeRange}
           />
-        ))}
+
+          {/* Chart 2: Single Ticker Price */}
+          <SingleChart
+            key={`price-${priceTicker}`}
+            ref={(el) => {
+              chartComponentRefs.current[1] = el
+            }}
+            ticker={`${priceTicker} Price`}
+            chartData={aggregatedPriceData}
+            width={chartDimensions.width}
+            height={chartDimensions.height}
+            onCrosshairMove={handleCrosshairMove}
+            chartIndex={1}
+            timeRange={timeRange}
+          />
+        </>
+      )}
     </div>
   )
 }

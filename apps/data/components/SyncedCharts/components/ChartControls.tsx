@@ -9,6 +9,8 @@ interface ChartControlsProps {
   onControlIntervalChange: (intervals: string[]) => void
   controlTickers: string[]
   onControlTickersChange: (tickers: string[]) => void
+  priceTicker: string
+  onPriceTickerChange: (ticker: string) => void
 }
 
 // Available intervals - these should match the column names in your strength table
@@ -49,6 +51,8 @@ export default function ChartControls({
   onControlIntervalChange,
   controlTickers,
   onControlTickersChange,
+  priceTicker,
+  onPriceTickerChange,
 }: ChartControlsProps) {
   // Convert array to string for select value comparison
   const currentInterval = JSON.stringify(controlInterval)
@@ -62,7 +66,7 @@ export default function ChartControls({
   }
 
   return (
-    <div className="flex flex-row">
+    <div className="flex flex-row pb-1">
       {/* Ticker selector */}
       <select
         className="ml-2"
@@ -75,6 +79,20 @@ export default function ChartControls({
             value={JSON.stringify(option.value)}
           >
             {option.label}
+          </option>
+        ))}
+      </select>
+
+      {/* Price ticker selector */}
+      <select
+        className="ml-2"
+        value={priceTicker}
+        onChange={(e) => onPriceTickerChange(e.target.value)}
+        title="Select ticker for price chart"
+      >
+        {controlTickers.map((ticker) => (
+          <option key={ticker} value={ticker}>
+            {ticker}
           </option>
         ))}
       </select>

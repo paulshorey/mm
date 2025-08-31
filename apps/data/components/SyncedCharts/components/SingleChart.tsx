@@ -174,7 +174,7 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         key={ticker}
         id={`strength-chart-${ticker}`}
         className="relative overflow-x-auto"
-        style={{ marginTop: '-2px', marginBottom: '-30px' }}
+        style={{ marginBottom: '-30px' }}
         dir="rtl"
       >
         {/* Chart container */}

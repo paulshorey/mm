@@ -81,6 +81,160 @@ export const calculateTimeRange = (
 }
 
 /**
+ * Aggregate strength data from all tickers
+ * Creates a single chart data series that averages all interval values from all tickers
+ */
+export const aggregateStrengthData = (
+  allRawData: (StrengthRowGet[] | null)[],
+  control_intervals: string[]
+): LineData[] => {
+  // Create a map to store aggregated values by timestamp
+  const aggregatedMap = new Map<number, { sum: number; count: number }>()
+
+  // Process each ticker's data
+  allRawData.forEach((tickerData) => {
+    if (!tickerData) return
+
+    tickerData.forEach((item) => {
+      const timestamp = new Date(item.timenow).getTime() / 1000
+
+      // Calculate average value across all specified intervals for this ticker
+      let sum = 0
+      let count = 0
+
+      for (const interval of control_intervals) {
+        const value = item[interval as keyof StrengthRowGet]
+
+        if (value !== null && value !== undefined) {
+          const numericValue =
+            typeof value === 'string' ? parseFloat(value) : Number(value)
+
+          if (Number.isFinite(numericValue)) {
+            sum += numericValue
+            count++
+          }
+        }
+      }
+
+      // Add this ticker's average to the aggregated map
+      if (count > 0) {
+        const averageValue = sum / count
+
+        if (!aggregatedMap.has(timestamp)) {
+          aggregatedMap.set(timestamp, { sum: 0, count: 0 })
+        }
+
+        const existing = aggregatedMap.get(timestamp)!
+        existing.sum += averageValue
+        existing.count++
+      }
+    })
+  })
+
+  // Convert map to sorted LineData array
+  const result: LineData[] = []
+  aggregatedMap.forEach((value, timestamp) => {
+    if (value.count > 0) {
+      result.push({
+        time: timestamp as Time,
+        value: value.sum / value.count,
+      })
+    }
+  })
+
+  // Sort by time
+  return result.sort((a, b) => (a.time as number) - (b.time as number))
+}
+
+/**
+ * Get price data for a single ticker
+ * Creates a chart data series for the price values of a specific ticker
+ */
+export const getSingleTickerPriceData = (
+  allRawData: (StrengthRowGet[] | null)[],
+  controlTickers: string[],
+  selectedTicker: string
+): LineData[] => {
+  // Find the index of the selected ticker
+  const tickerIndex = controlTickers.indexOf(selectedTicker)
+  if (tickerIndex === -1 || !allRawData[tickerIndex]) {
+    return []
+  }
+
+  const tickerData = allRawData[tickerIndex]!
+  const result: LineData[] = []
+
+  // Process the selected ticker's data
+  tickerData.forEach((item) => {
+    if (
+      item.price !== null &&
+      item.price !== undefined &&
+      item.price !== 0 &&
+      Number.isFinite(item.price)
+    ) {
+      result.push({
+        time: (new Date(item.timenow).getTime() / 1000) as Time,
+        value: item.price,
+      })
+    }
+  })
+
+  // Sort by time
+  return result.sort((a, b) => (a.time as number) - (b.time as number))
+}
+
+/**
+ * Aggregate price data from all tickers
+ * Creates a single chart data series that averages all price values from all tickers
+ * @deprecated Use getSingleTickerPriceData instead for better handling of different price scales
+ */
+export const aggregatePriceData = (
+  allRawData: (StrengthRowGet[] | null)[]
+): LineData[] => {
+  // Create a map to store aggregated prices by timestamp
+  const aggregatedMap = new Map<number, { sum: number; count: number }>()
+
+  // Process each ticker's data
+  allRawData.forEach((tickerData) => {
+    if (!tickerData) return
+
+    tickerData.forEach((item) => {
+      const timestamp = new Date(item.timenow).getTime() / 1000
+
+      // Add price to aggregation if it exists
+      if (
+        item.price !== null &&
+        item.price !== undefined &&
+        item.price !== 0 &&
+        Number.isFinite(item.price)
+      ) {
+        if (!aggregatedMap.has(timestamp)) {
+          aggregatedMap.set(timestamp, { sum: 0, count: 0 })
+        }
+
+        const existing = aggregatedMap.get(timestamp)!
+        existing.sum += item.price
+        existing.count++
+      }
+    })
+  })
+
+  // Convert map to sorted LineData array
+  const result: LineData[] = []
+  aggregatedMap.forEach((value, timestamp) => {
+    if (value.count > 0) {
+      result.push({
+        time: timestamp as Time,
+        value: value.sum / value.count,
+      })
+    }
+  })
+
+  // Sort by time
+  return result.sort((a, b) => (a.time as number) - (b.time as number))
+}
+
+/**
  * Get nearest series value at a specific time using binary search
  * If multiple intervals are provided, average their values
  */
