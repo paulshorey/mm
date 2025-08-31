@@ -20,6 +20,7 @@ export const intervalsOptions = [
   { value: ['5'], label: '5 min' },
   { value: ['9'], label: '9 min' },
   { value: ['11'], label: '11 min' },
+  { value: ['3', '4', '5', '9', '11'], label: '3m - 11m' },
   { value: ['30S', '3', '4', '5', '9', '11'], label: '30s - 11m' },
 ]
 export const tickersOptions = [
@@ -28,8 +29,16 @@ export const tickersOptions = [
     value: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'LINKUSD'],
   },
   {
-    label: 'futures',
-    value: ['ES1!', 'YM1!', 'GC1!', 'TN1!', 'ETHUSD'],
+    label: 'equities',
+    value: ['ES1!', 'YM1!'],
+  },
+  {
+    label: 'gold',
+    value: ['GC1!'],
+  },
+  {
+    label: 'treasuries',
+    value: ['TN1!'],
   },
 ]
 

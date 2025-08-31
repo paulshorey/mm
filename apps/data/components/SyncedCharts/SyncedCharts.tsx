@@ -51,7 +51,7 @@ export function SyncedCharts({
 
   // Control Ticker list
   const [controlTickers, setControlTickers] = useState<string[]>(
-    tickersOptions[tickersOptions.length - 1]!.value
+    tickersOptions[0]!.value
   )
   const handleControlTickersChange = useCallback((tickers: string[]) => {
     setControlTickers(tickers)
