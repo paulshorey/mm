@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import * as Ably from 'ably'
 import {
   AblyProvider,
@@ -32,8 +32,7 @@ export function DemoWebsocket() {
 //      --data '{ "name": "first", "data": "Here is my first message!" }'
 
 export function AblyPubSub() {
-  const [subscribed, setSubscribed] = useState(false)
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState<Ably.Message[]>([])
 
   useConnectionStateListener('connected', () => {
     console.log('Connected to Ably!')
