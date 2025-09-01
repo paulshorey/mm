@@ -1,7 +1,7 @@
 "use server";
 
 import { OrderRowAdd } from "./types";
-import { getDb } from "../../lib/neon";
+import { getDb } from "../../lib/db/neon";
 import { cc } from "../../cc";
 
 /**

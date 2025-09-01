@@ -2,7 +2,7 @@ import dynamic from 'next/dynamic'
 import { ThemeWrapper } from '@/components/ThemeWrapper'
 
 const ListData = dynamic(() =>
-  import('@/list/components/data/ListData').then((mod) => mod.ListData)
+  import('@/components/list/data/ListData').then((mod) => mod.ListData)
 )
 
 export const revalidate = 0

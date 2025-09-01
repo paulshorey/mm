@@ -1,7 +1,7 @@
 "use server";
 
 import { LogRowAdd } from "./types";
-import { getDb } from "../../lib/neon";
+import { getDb } from "../../lib/db/neon";
 import { getCurrentIpAddress } from "../../lib/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 

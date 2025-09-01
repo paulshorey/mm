@@ -1,6 +1,6 @@
-import { auth } from "../lib/auth";
-import { prisma } from "../lib/prisma";
-import { signIn, signOut } from "../lib/auth";
+import { auth } from "../lib/db/auth";
+import { prisma } from "../lib/db/prisma";
+import { signIn, signOut } from "../lib/db/auth";
 
 const Page = async () => {
   const session = await auth();

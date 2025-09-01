@@ -2,6 +2,7 @@ import { isNumber } from '@/lib/numbers'
 import { MarketOrderInput } from '@/dydx/types'
 
 /**
+ * DEPRECATED - WILL BE REMOVED SOON
  * Format: `ticker:position:stoploss`
  * * coin (without USD)
  * * dollars (integer)

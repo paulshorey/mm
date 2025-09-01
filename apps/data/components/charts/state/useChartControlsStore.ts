@@ -18,8 +18,32 @@ export const intervalsOptions = [
 // Available tickers configuration
 export const tickersOptions = [
   {
-    label: 'ETH, BTC, SOL, XRP',
-    value: ['ETHUSD', 'BTCUSD', 'SOLUSD', 'XRPUSD'],
+    label: 'ETH, BTC, SOL, XRP, SUI, BNB',
+    value: ['ETHUSD', 'BTCUSD', 'SOLUSD', 'XRPUSD', 'SUIUSD', 'BNBUSD'],
+  },
+  {
+    label: 'ETH',
+    value: ['ETHUSD'],
+  },
+  {
+    label: 'BTC',
+    value: ['BTCUSD'],
+  },
+  {
+    label: 'SOL',
+    value: ['SOLUSD'],
+  },
+  {
+    label: 'XRP',
+    value: ['XRPUSD'],
+  },
+  {
+    label: 'SUI',
+    value: ['SUIUSD'],
+  },
+  {
+    label: 'BNB',
+    value: ['BNBUSD'],
   },
   {
     label: 'ES1!, YM1!',

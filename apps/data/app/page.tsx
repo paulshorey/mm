@@ -1,4 +1,4 @@
-import FractalChartControlled from '../components/SyncedCharts/SyncedChartsWrapper'
+import FractalChartControlled from '../components/charts/SyncedChartsWrapper'
 import { ThemeWrapper } from '../components/ThemeWrapper'
 
 export default function Page() {

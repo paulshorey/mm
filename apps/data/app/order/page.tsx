@@ -1,4 +1,4 @@
-import { ListData } from '@/list/components/data/ListData'
+import { ListData } from '@/components/list/data/ListData'
 import { ThemeWrapper } from '@/components/ThemeWrapper'
 
 export const revalidate = 0

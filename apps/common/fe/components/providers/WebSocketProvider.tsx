@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect } from "react";
-import { useWebSocket, UseWebSocketReturn } from "../../hooks/useWebSocket";
+import { useWebSocket, UseWebSocketReturn } from "../../../websocket/hooks/useWebSocket";
 
 interface WebSocketContextValue extends UseWebSocketReturn {
   isReady: boolean;

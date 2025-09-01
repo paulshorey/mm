@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { getDb } from "../../lib/neon";
+import { getDb } from "../../lib/db/neon";
 import { cc } from "../../cc";
 import { LogRowGet } from "./types";
 

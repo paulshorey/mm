@@ -49,6 +49,7 @@ export default function StrengthControl({ showLabel = true }: Props) {
         <InputBase
           styles={{
             input: {
+              minWidth: '100px',
               border: 'solid 1px rgba(0, 0, 0, 0.2)',
               boxShadow: '1px 1px 2px 0 rgba(0, 0, 0, 0.1)',
               borderRadius: '5px',
@@ -60,7 +61,7 @@ export default function StrengthControl({ showLabel = true }: Props) {
           rightSection={<IconChevronDown size={14} />}
           onClick={() => combobox.toggleDropdown()}
           rightSectionPointerEvents="none"
-          label={showLabel ? 'Strength:' : null}
+          label={showLabel ? 'Average Strength:' : null}
         >
           {selectedOption ? (
             selectedOption.label

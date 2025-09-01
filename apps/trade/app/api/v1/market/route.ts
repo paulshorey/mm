@@ -27,6 +27,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     /**
      * 1. Save strength
+     * DEPRECATED - WILL BE REMOVED SOON
      */
     const strengthData = parseStrengthText(bodyText)
     // Check if we have both strength and interval values
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
 
       try {
-        // Save to database with WebSocket emission
-        const result = await strengthAdd(strengthData, true)
+        // Save to database
+        const result = await strengthAdd(strengthData)
 
         return formatResponse({
           ok: true,

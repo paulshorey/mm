@@ -1,9 +1,8 @@
 "use server";
 
-import { StrengthDataAdd, StrengthRowAdd } from "./types";
-import { getDb } from "../../lib/neon";
+import { StrengthDataAdd } from "./types";
+import { getDb } from "../../lib/db/neon";
 import { cc } from "../../cc";
-import { emitStrengthAdded } from "../../websocket/emitter";
 
 /**
  * Adds strength record to `strength_v1` table.
@@ -28,10 +27,9 @@ import { emitStrengthAdded } from "../../websocket/emitter";
  * - Price and volume use COALESCE to preserve existing values when NULL is provided
  *
  * @param data - A `StrengthDataAdd` object containing the strength details.
- * @param emitWebSocket - Optional boolean to emit WebSocket event after successful save (default: false)
  * @returns The result of the SQL query, which includes the newly inserted or updated row.
  */
-export const strengthAdd = async function (data: StrengthDataAdd, emitWebSocket: boolean = false) {
+export const strengthAdd = async function (data: StrengthDataAdd) {
   "use server";
 
   console.log("strengthAdd", JSON.stringify(data, null, 2));
@@ -128,33 +126,7 @@ export const strengthAdd = async function (data: StrengthDataAdd, emitWebSocket:
       RETURNING *
     `;
     res = await client.query(sqlQuery, values);
-    const result = res.rows[0];
-
-    // Emit WebSocket event if enabled
-    if (emitWebSocket && result) {
-      try {
-        const emitted = emitStrengthAdded({
-          id: result.id,
-          ticker: result.ticker,
-          interval: data.interval,
-          strength: data.strength,
-          price: result.price,
-          volume: result.volume,
-          timenow: result.timenow,
-        });
-
-        if (emitted) {
-          console.log(`WebSocket event emitted for strength data: ${data.ticker} @ ${data.interval}`);
-        } else {
-          console.warn("Failed to emit WebSocket event for strength data");
-        }
-      } catch (wsError: any) {
-        console.error("Error emitting WebSocket event:", wsError);
-        // Don't throw - WebSocket emission failure shouldn't break the database operation
-      }
-    }
-
-    return result;
+    return res.rows[0];
   } catch (e: any) {
     const error = {
       name: "Error strength/add.ts catch",
