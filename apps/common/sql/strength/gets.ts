@@ -1,3 +1,6 @@
+"use server";
+
+import { headers } from "next/headers";
 import { getDb } from "../../lib/db/neon";
 import { cc } from "../../cc";
 import { StrengthRowGet } from "./types";
@@ -32,7 +35,11 @@ type Props = {
  * Date parameters accept Date objects or ISO string timestamps.
  */
 export const strengthGets = async function ({ where }: Props = {}): Promise<Output> {
+  "use server";
+
   const output = {} as Output;
+  const headersList = headers();
+  const ip = headersList.get("x-forwarded-for") || headersList.get("remote-addr") || "IP not available";
 
   const client = await getDb().connect();
   try {
@@ -94,6 +101,7 @@ export const strengthGets = async function ({ where }: Props = {}): Promise<Outp
       "180": strength["180"] !== null ? Number(strength["180"]) : null,
     })) as StrengthRowGet[];
 
+    output.ip = ip;
     output.rows = rows;
     //@ts-ignore - this Error type is correct
   } catch (e: any) {
