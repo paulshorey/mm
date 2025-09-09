@@ -14,7 +14,9 @@ export const intervalsOptions = [
   { value: ['180'], label: '180 min' },
   { value: ['15S', '3', '7'], label: 'short' },
   { value: ['44', '59', '180'], label: 'long' },
+  { value: ['3', '7', '44', '59'], label: 'mid' },
   { value: ['15S', '3', '7', '44', '59', '180'], label: 'all' },
+  { value: ['3', '7', '44', '59', '180'], label: 'minutes' },
 ]
 
 // Available tickers configuration
@@ -40,8 +42,8 @@ export const tickersOptions = [
     value: ['TN1!'],
   },
   {
-    label: 'ETH, BTC, SOL, XRP, SUI, BNB',
-    value: ['ETHUSD', 'BTCUSD', 'SOLUSD', 'XRPUSD', 'SUIUSD', 'BNBUSD'],
+    label: 'BTC, ETH, SOL, XRP, SUI, BNB',
+    value: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'SUIUSD', 'BNBUSD'],
   },
   {
     label: 'ETH',

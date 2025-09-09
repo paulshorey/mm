@@ -6,6 +6,18 @@ import {
   SeriesOptionsCommon,
 } from 'lightweight-charts'
 
+function timeFormatter(time: Time) {
+  // Convert the time (which is in seconds since epoch) to milliseconds
+  const date = new Date((time as number) * 1000)
+  // Format the time in the user's local time zone
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+
+  const month = (date.getMonth() + 1).toString()
+  const day = date.getDate().toString()
+  return `${month}/${day} ${hours}:${minutes}`
+}
+
 /**
  * Get base chart configuration
  */
@@ -16,15 +28,7 @@ export const getChartConfig = (
   width,
   height: height, // Use full height passed from parent
   localization: {
-    timeFormatter: (time: Time) => {
-      // Convert the time (which is in seconds since epoch) to milliseconds
-      const date = new Date((time as number) * 1000)
-      // Format as MM/DD HH:MM:SS in the user's local time zone
-      const month = (date.getMonth() + 1).toString()
-      const day = date.getDate().toString()
-      const timeStr = date.toLocaleTimeString()
-      return `${month}/${day} ${timeStr}`
-    },
+    timeFormatter,
   },
   layout: {
     background: { color: '#ffffff' },
@@ -35,33 +39,17 @@ export const getChartConfig = (
     vertLines: { visible: false }, // Hide vertical grid lines to reduce clutter
     horzLines: { color: '#f0f0f0' },
   },
+  // Y-Axis
   rightPriceScale: {
-    visible: false, // Hide the entire y-axis
+    visible: true,
+    minimumWidth: 80,
   },
+  // X-Axis
   timeScale: {
     visible: true,
     timeVisible: true,
     secondsVisible: false,
-    tickMarkFormatter: (time: Time) => {
-      // Convert the time (which is in seconds since epoch) to milliseconds
-      const date = new Date((time as number) * 1000)
-      // Format the time in the user's local time zone
-      const hours = date.getHours().toString().padStart(2, '0')
-      const minutes = date.getMinutes().toString().padStart(2, '0')
-
-      // Check if this is the first tick of a new day to also show date
-      const prevDate = new Date(date)
-      prevDate.setHours(0, 0, 0, 0)
-      const isNewDay = date.getHours() === 0 && date.getMinutes() === 0
-
-      if (isNewDay) {
-        const month = (date.getMonth() + 1).toString()
-        const day = date.getDate().toString()
-        return `${month}/${day} ${hours}:${minutes}`
-      }
-
-      return `${hours}:${minutes}`
-    },
+    tickMarkFormatter: timeFormatter,
   },
   crosshair: {
     mode: 0, // Normal mode: we'll set Y explicitly via setCrosshairPosition
