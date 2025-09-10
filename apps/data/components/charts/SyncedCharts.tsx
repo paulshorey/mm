@@ -332,7 +332,7 @@ export function SyncedCharts({
                   <span
                     className="pt-[1.5px] pl-[3px] opacity-50"
                     style={{
-                      filter: 'brightness(1.5) contrast(1.2)',
+                      filter: 'brightness(1.6) contrast(1.2)',
                       scale: '0.9 1',
                       transformOrigin: 'right',
                     }}
