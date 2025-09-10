@@ -184,9 +184,9 @@ export const getSingleTickerPriceData = (
 }
 
 /**
- * Aggregate price data from all tickers as a simple average
- * Creates a single chart data series that averages all price values from all tickers
- * using aggressive backfill and forward-fill to eliminate all gaps
+ * Aggregate price data from all tickers with normalization
+ * Creates a single chart data series that averages normalized price values from all tickers
+ * Each ticker is normalized to contribute equally regardless of its absolute price level
  */
 export const aggregatePriceData = (
   allRawData: (StrengthRowGet[] | null)[]
@@ -209,9 +209,10 @@ export const aggregatePriceData = (
     return []
   }
 
-  // Step 2: Process each ticker with aggressive fill
+  // Step 2: Process each ticker with aggressive fill and track last valid price
   const processedTickers: {
     filledPrices: Map<number, number>
+    lastValidPrice: number
     hasAnyData: boolean
   }[] = []
 
@@ -224,6 +225,7 @@ export const aggregatePriceData = (
     if (!tickerData || tickerData.length === 0) {
       processedTickers.push({
         filledPrices,
+        lastValidPrice: 0,
         hasAnyData: false,
       })
       return
@@ -249,9 +251,10 @@ export const aggregatePriceData = (
     })
 
     // If this ticker has no valid prices at all, skip it
-    if (!hasAnyValidData) {
+    if (!hasAnyValidData || lastKnownPrice === null) {
       processedTickers.push({
         filledPrices,
+        lastValidPrice: 0,
         hasAnyData: false,
       })
       return
@@ -294,8 +297,14 @@ export const aggregatePriceData = (
       }
     }
 
+    // Get the forward-filled last price
+    const lastFilledPrice = filledPrices.get(
+      sortedTimestamps[sortedTimestamps.length - 1]!
+    )
+
     processedTickers.push({
       filledPrices,
+      lastValidPrice: lastFilledPrice || lastKnownPrice,
       hasAnyData: hasAnyValidData,
     })
   })
@@ -307,26 +316,49 @@ export const aggregatePriceData = (
     return []
   }
 
-  // Step 3: Create simple averaged result
+  // Step 3: Calculate normalization factors based on last valid prices
+  // Each ticker's prices will be normalized relative to its last price
+  // This makes each ticker contribute equally regardless of absolute price level
+  const normalizationFactors = tickersWithData.map((ticker) => {
+    // Avoid division by zero
+    if (ticker.lastValidPrice === 0) return 0
+    // Normalize so that each ticker's last price becomes 1.0
+    return 1 / ticker.lastValidPrice
+  })
+
+  // Step 4: Create normalized and averaged result
   const result: LineData[] = []
 
   sortedTimestamps.forEach((timestamp) => {
-    let priceSum = 0
+    let normalizedSum = 0
     let validCount = 0
 
-    tickersWithData.forEach((ticker) => {
+    tickersWithData.forEach((ticker, idx) => {
       const price = ticker.filledPrices.get(timestamp)
       if (price !== undefined && Number.isFinite(price)) {
-        priceSum += price
+        // Normalize the price relative to its last value
+        const normalizedPrice = price * normalizationFactors[idx]!
+        normalizedSum += normalizedPrice
         validCount++
       }
     })
 
-    // Only add if we have data from all tickers (they should all have filled data)
-    if (validCount === tickersWithData.length && validCount > 0) {
+    // Calculate average of normalized values
+    // Each normalized ticker now has its last price = 1.0
+    // So the average represents the relative movement of all tickers
+    if (validCount > 0) {
+      const averageNormalized = normalizedSum / validCount
+
+      // Scale back to a meaningful price range
+      // We use the average of all last prices as the reference point
+      const avgLastPrice =
+        tickersWithData.reduce((sum, t) => sum + t.lastValidPrice, 0) /
+        tickersWithData.length
+      const scaledValue = averageNormalized * avgLastPrice
+
       result.push({
         time: timestamp as Time,
-        value: priceSum / validCount, // Simple average
+        value: scaledValue,
       })
     }
   })

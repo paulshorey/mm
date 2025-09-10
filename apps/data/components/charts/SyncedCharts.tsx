@@ -195,7 +195,7 @@ export function SyncedCharts({
    * - controlTickers changes (needed to find the right price data)
    *
    * The aggregation creates two data series:
-   * 1. Strength data: Average of selected intervals across all selected tickers
+   * 1. Strength data: average of selected intervals across all selected tickers
    * 2. Price data: Either individual ticker price or normalized average of all prices
    */
   useEffect(() => {
@@ -204,7 +204,7 @@ export function SyncedCharts({
 
       // Choose between individual ticker price or average of all prices
       const priceData =
-        priceTicker === 'Average'
+        priceTicker === 'average'
           ? aggregatePriceData(rawData)
           : getSingleTickerPriceData(rawData, controlTickers, priceTicker)
 

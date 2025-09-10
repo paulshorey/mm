@@ -13,13 +13,13 @@ export default function PriceControl({ showLabel = true }: Props) {
   const { controlTickers, priceTicker, setPriceTicker } =
     useChartControlsStore()
 
-  // Create select options with "Average" option when multiple tickers are selected
+  // Create select options with "average" option when multiple tickers are selected
   const selectOptions = useMemo(() => {
     const options = [...controlTickers]
 
-    // Add "Average" option only when there are multiple tickers
+    // Add "average" option only when there are multiple tickers
     if (controlTickers.length > 1) {
-      options.unshift('Average')
+      options.unshift('average')
     }
 
     return options

@@ -151,8 +151,8 @@ const getInitialState = (): State => {
     hoursBack: 240,
     controlInterval: intervalsOptions[intervalsOptions.length - 1]!.value,
     controlTickers: defaultTickers,
-    // Default to "Average" if multiple tickers, otherwise first ticker
-    priceTicker: defaultTickers.length > 1 ? 'Average' : defaultTickers[0]!,
+    // Default to "average" if multiple tickers, otherwise first ticker
+    priceTicker: defaultTickers.length > 1 ? 'average' : defaultTickers[0]!,
 
     // Time and cursor defaults
     timeRange: null,
@@ -187,26 +187,26 @@ const getInitialState = (): State => {
       defaultState.controlTickers = urlParams.controlTickers
       // Update priceTicker if it's not valid for the new tickers list
       if (
-        defaultState.priceTicker !== 'Average' &&
+        defaultState.priceTicker !== 'average' &&
         !urlParams.controlTickers.includes(defaultState.priceTicker)
       ) {
-        // Default to "Average" if multiple tickers, otherwise first ticker
+        // Default to "average" if multiple tickers, otherwise first ticker
         defaultState.priceTicker =
           urlParams.controlTickers.length > 1
-            ? 'Average'
+            ? 'average'
             : urlParams.controlTickers[0] || ''
       }
     }
 
     if (urlParams.priceTicker !== undefined) {
-      // Validate that the priceTicker is either "Average" or in controlTickers
+      // Validate that the priceTicker is either "average" or in controlTickers
       const isValidTicker =
-        urlParams.priceTicker === 'Average' ||
+        urlParams.priceTicker === 'average' ||
         defaultState.controlTickers.includes(urlParams.priceTicker)
       if (isValidTicker) {
-        // Also check that "Average" is only used when there are multiple tickers
+        // Also check that "average" is only used when there are multiple tickers
         if (
-          urlParams.priceTicker === 'Average' &&
+          urlParams.priceTicker === 'average' &&
           defaultState.controlTickers.length <= 1
         ) {
           defaultState.priceTicker = defaultState.controlTickers[0] || ''
@@ -293,17 +293,17 @@ export const useChartControlsStore = create<ChartControlsStore>()(
           return
         }
 
-        // Handle "Average" option
+        // Handle "average" option
         let newPriceTicker = currentPriceTicker
 
-        // If current is "Average", keep it if we still have multiple tickers
-        if (currentPriceTicker === 'Average') {
-          newPriceTicker = tickers.length > 1 ? 'Average' : tickers[0] || ''
+        // If current is "average", keep it if we still have multiple tickers
+        if (currentPriceTicker === 'average') {
+          newPriceTicker = tickers.length > 1 ? 'average' : tickers[0] || ''
         }
         // If current ticker is not in new tickers list, set appropriately
         else if (!tickers.includes(currentPriceTicker)) {
-          // Default to "Average" if multiple tickers, otherwise first ticker
-          newPriceTicker = tickers.length > 1 ? 'Average' : tickers[0] || ''
+          // Default to "average" if multiple tickers, otherwise first ticker
+          newPriceTicker = tickers.length > 1 ? 'average' : tickers[0] || ''
         }
 
         // Ensure we create a new array reference for proper React effect triggering
