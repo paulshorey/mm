@@ -18,6 +18,7 @@ import { useChartControlsStore } from './state/useChartControlsStore'
 import StrengthControl from './controls/StrengthControl'
 import PriceControl from './controls/PriceControl'
 import IntervalControl from './controls/IntervalControl'
+import TimeControl from './controls/TimeControl'
 
 export interface SyncedChartsProps {
   availableWidth: number
@@ -291,24 +292,14 @@ export function SyncedCharts({
               chartComponentRefs.current[0] = el
             }}
             name={`Strength`}
-            heading={
-              <span className="ml-2 flex">
-                {/* <span className="pt-[1.5px] mr-1 text-gray-700">🦾</span> */}
-                <span className="flex flex-row gap-2">
-                  <StrengthControl showLabel={false} />{' '}
-                  <span className="flex flex-row">
-                    {/* <span className="inline-block pt-[1.5px] pr-[2px]">⏱️</span> */}
-                    <IntervalControl showLabel={false} />
-                  </span>
-                </span>
-              </span>
-            }
+            heading={null}
             chartData={aggregatedStrengthData}
             width={chartDimensions.width}
             height={chartDimensions.height}
             onCrosshairMove={handleCrosshairMove}
             chartIndex={0}
             timeRange={timeRange}
+            showZeroLine={true}
           />
 
           {/* Chart: Single Ticker Price */}
@@ -318,15 +309,19 @@ export function SyncedCharts({
               chartComponentRefs.current[1] = el
             }}
             name={`Price`}
+            chartData={aggregatedPriceData}
             heading={
               <span className="ml-2 flex">
-                <span className="pt-[1px] mr-1 text-gray-400 font-semibold">
-                  $
+                <span className="flex flex-row gap-1">
+                  <StrengthControl showLabel={false} />{' '}
+                  <span className="flex flex-row">
+                    <IntervalControl showLabel={false} />
+                  </span>
                 </span>
                 <PriceControl showLabel={false} />
+                <TimeControl showLabel={false} />
               </span>
             }
-            chartData={aggregatedPriceData}
             width={chartDimensions.width}
             height={chartDimensions.height}
             onCrosshairMove={handleCrosshairMove}

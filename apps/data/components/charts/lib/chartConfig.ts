@@ -41,7 +41,7 @@ export const getChartConfig = (
   },
   // Y-Axis
   rightPriceScale: {
-    visible: window.innerWidth > 1200 ? true : false,
+    visible: false, //window.innerWidth > 1200 ? true : false,
     minimumWidth: 80,
     // invertScale: true,
   },

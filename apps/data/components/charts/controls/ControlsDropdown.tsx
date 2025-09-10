@@ -1,14 +1,11 @@
-import { Popover, Select } from '@mantine/core'
+import { Popover } from '@mantine/core'
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react'
-import { useChartControlsStore } from '../state/useChartControlsStore'
 import StrengthControl from './StrengthControl'
 import PriceControl from './PriceControl'
 import IntervalControl from './IntervalControl'
+import TimeControl from './TimeControl'
 
 export function ControlsDropdown() {
-  // Get state and actions from Zustand store
-  const { hoursBack, setHoursBack } = useChartControlsStore()
-
   return (
     <Popover position="bottom-end" offset={0} shadow="md">
       {/* @ts-ignore */}
@@ -28,14 +25,7 @@ export function ControlsDropdown() {
 
         {/* Time range selector */}
         <div className="pb-2">
-          <Select
-            label="Time range"
-            value={hoursBack.toString()}
-            data={['12', '24', '36', '48', '60', '120', '240']}
-            onChange={(value) =>
-              value ? setHoursBack(parseInt(value)) : undefined
-            }
-          />
+          <TimeControl />
         </div>
 
         {/* Interval selector */}

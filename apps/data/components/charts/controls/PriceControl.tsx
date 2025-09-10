@@ -15,7 +15,7 @@ export default function PriceControl({ showLabel = true }: Props) {
 
   return (
     <Select
-      style={{ zIndex: 10000000 }}
+      style={{ width: '120px', zIndex: 10000000 }}
       label={showLabel ? 'Price:' : null}
       value={priceTicker}
       data={controlTickers}

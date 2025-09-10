@@ -14,6 +14,7 @@ import {
   MouseEventParams,
   ISeriesApi,
   Time,
+  IPriceLine,
 } from 'lightweight-charts'
 import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
@@ -28,6 +29,7 @@ interface SingleChartProps {
   onCrosshairMove: (time: Time | null) => void
   chartIndex: number
   timeRange?: { from: Time; to: Time } | null
+  showZeroLine?: boolean
 }
 
 export interface SingleChartRef {
@@ -38,12 +40,22 @@ export interface SingleChartRef {
 
 const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
   (
-    { heading, name, chartData, width, height, onCrosshairMove, timeRange },
+    {
+      heading,
+      name,
+      chartData,
+      width,
+      height,
+      onCrosshairMove,
+      timeRange,
+      showZeroLine,
+    },
     ref
   ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const chartRef = useRef<IChartApi | null>(null)
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+    const zeroLineRef = useRef<IPriceLine | null>(null)
     const isUpdatingCursor = useRef(false)
     const hasInitialized = useRef(false)
 
@@ -99,6 +111,7 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         chart.remove()
         chartRef.current = null
         seriesRef.current = null
+        zeroLineRef.current = null
         hasInitialized.current = false
       }
     }, []) // Only run once on mount - removed all dependencies
@@ -151,6 +164,30 @@ const SingleChart = forwardRef<SingleChartRef, SingleChartProps>(
         console.warn('Failed to set visible range:', error)
       }
     }, [timeRange])
+
+    // Handle showZeroLine changes
+    useEffect(() => {
+      if (!seriesRef.current || !hasInitialized.current) return
+
+      // Remove existing zero line if it exists
+      if (zeroLineRef.current) {
+        seriesRef.current.removePriceLine(zeroLineRef.current)
+        zeroLineRef.current = null
+      }
+
+      // Add zero line if requested
+      if (showZeroLine) {
+        const zeroLine = seriesRef.current.createPriceLine({
+          price: 0,
+          color: '#666666',
+          lineWidth: 1,
+          lineStyle: 2, // Dashed line
+          axisLabelVisible: false,
+          title: '',
+        })
+        zeroLineRef.current = zeroLine
+      }
+    }, [showZeroLine])
 
     // Handle crosshair updates from other charts
     useEffect(() => {
