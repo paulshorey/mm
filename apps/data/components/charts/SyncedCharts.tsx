@@ -8,6 +8,7 @@ import {
   calculateTimeRange,
   aggregateStrengthData,
   getSingleTickerPriceData,
+  aggregatePriceData,
 } from './lib/chartUtils'
 import { applyCursorToAllCharts } from './lib/chartSync'
 
@@ -195,16 +196,18 @@ export function SyncedCharts({
    *
    * The aggregation creates two data series:
    * 1. Strength data: Average of selected intervals across all selected tickers
-   * 2. Price data: Price values for the selected price ticker only
+   * 2. Price data: Either individual ticker price or normalized average of all prices
    */
   useEffect(() => {
     if (rawData.length > 0 && rawData.some((data) => data !== null)) {
       const strengthData = aggregateStrengthData(rawData, controlInterval)
-      const priceData = getSingleTickerPriceData(
-        rawData,
-        controlTickers,
-        priceTicker
-      )
+
+      // Choose between individual ticker price or average of all prices
+      const priceData =
+        priceTicker === 'Average'
+          ? aggregatePriceData(rawData)
+          : getSingleTickerPriceData(rawData, controlTickers, priceTicker)
+
       setAggregatedStrengthData(strengthData.length > 0 ? strengthData : null)
       setAggregatedPriceData(priceData.length > 0 ? priceData : null)
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useChartControlsStore } from '../state/useChartControlsStore'
 import { Select } from '@mantine/core'
 
@@ -13,12 +13,24 @@ export default function PriceControl({ showLabel = true }: Props) {
   const { controlTickers, priceTicker, setPriceTicker } =
     useChartControlsStore()
 
+  // Create select options with "Average" option when multiple tickers are selected
+  const selectOptions = useMemo(() => {
+    const options = [...controlTickers]
+
+    // Add "Average" option only when there are multiple tickers
+    if (controlTickers.length > 1) {
+      options.unshift('Average')
+    }
+
+    return options
+  }, [controlTickers])
+
   return (
     <Select
       style={{ width: '120px', zIndex: 10000000 }}
       label={showLabel ? 'Price:' : null}
       value={priceTicker}
-      data={controlTickers}
+      data={selectOptions}
       onChange={(value) => (value ? setPriceTicker(value) : undefined)}
     />
   )

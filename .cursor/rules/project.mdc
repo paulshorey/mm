@@ -48,6 +48,10 @@ Neon database project "data" has two branches:
 3. After dev changes, ask: "Applied to development. Apply to production?"
 4. Always label results clearly: "Development Database" or "Production Database"
 
-### Most important:
+### Questions:
 
 If I present you with a contradictory or confusing question, comment, or evidence, and you do not understand what I mean, or you're not sure if I am mistaken in my assumption or if I am correct, then please ask me to clarify. Please let me know your evidence and thoughts, and what is confusing you. Ask me. But if you understand the problem and confident in the solution, then just go ahead with your reasoning. I trust you.
+
+### Do not run build
+
+Do NOT run `pnpm run build` or `npm run build` or `pnpm build` or anything like that. I will check the build for errors myself.

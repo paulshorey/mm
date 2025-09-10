@@ -184,54 +184,154 @@ export const getSingleTickerPriceData = (
 }
 
 /**
- * Aggregate price data from all tickers
+ * Aggregate price data from all tickers as a simple average
  * Creates a single chart data series that averages all price values from all tickers
- * @deprecated Use getSingleTickerPriceData instead for better handling of different price scales
+ * using aggressive backfill and forward-fill to eliminate all gaps
  */
 export const aggregatePriceData = (
   allRawData: (StrengthRowGet[] | null)[]
 ): LineData[] => {
-  // Create a map to store aggregated prices by timestamp
-  const aggregatedMap = new Map<number, { sum: number; count: number }>()
-
-  // Process each ticker's data
+  // Step 1: Collect all timestamps across all tickers
+  const globalTimestamps = new Set<number>()
   allRawData.forEach((tickerData) => {
-    if (!tickerData) return
+    if (tickerData && tickerData.length > 0) {
+      tickerData.forEach((item) => {
+        const timestamp = new Date(item.timenow).getTime() / 1000
+        globalTimestamps.add(timestamp)
+      })
+    }
+  })
 
+  // Convert to sorted array for easier processing
+  const sortedTimestamps = Array.from(globalTimestamps).sort((a, b) => a - b)
+
+  if (sortedTimestamps.length === 0) {
+    return []
+  }
+
+  // Step 2: Process each ticker with aggressive fill
+  const processedTickers: {
+    filledPrices: Map<number, number>
+    hasAnyData: boolean
+  }[] = []
+
+  allRawData.forEach((tickerData, tickerIndex) => {
+    const filledPrices = new Map<number, number>()
+    let lastKnownPrice: number | null = null
+    let firstValidPrice: number | null = null
+    let hasAnyValidData = false
+
+    if (!tickerData || tickerData.length === 0) {
+      processedTickers.push({
+        filledPrices,
+        hasAnyData: false,
+      })
+      return
+    }
+
+    // First pass: collect all valid prices
+    const validPricesByTimestamp = new Map<number, number>()
     tickerData.forEach((item) => {
       const timestamp = new Date(item.timenow).getTime() / 1000
-
-      // Add price to aggregation if it exists
       if (
         item.price !== null &&
         item.price !== undefined &&
         item.price !== 0 &&
         Number.isFinite(item.price)
       ) {
-        if (!aggregatedMap.has(timestamp)) {
-          aggregatedMap.set(timestamp, { sum: 0, count: 0 })
+        validPricesByTimestamp.set(timestamp, item.price)
+        if (firstValidPrice === null) {
+          firstValidPrice = item.price
+        }
+        lastKnownPrice = item.price
+        hasAnyValidData = true
+      }
+    })
+
+    // If this ticker has no valid prices at all, skip it
+    if (!hasAnyValidData) {
+      processedTickers.push({
+        filledPrices,
+        hasAnyData: false,
+      })
+      return
+    }
+
+    // Second pass: aggressively fill ALL timestamps
+    let previousPrice: number | null = null
+
+    for (let i = 0; i < sortedTimestamps.length; i++) {
+      const timestamp = sortedTimestamps[i]!
+      const existingPrice = validPricesByTimestamp.get(timestamp)
+
+      if (existingPrice !== undefined) {
+        // We have a valid price at this timestamp
+        filledPrices.set(timestamp, existingPrice)
+        previousPrice = existingPrice
+      } else {
+        // Missing price - need to fill
+        let filledPrice: number | null = null
+
+        // Look backward for the most recent valid price
+        if (previousPrice !== null) {
+          filledPrice = previousPrice
+        } else {
+          // No previous price yet, look forward
+          for (let j = i + 1; j < sortedTimestamps.length; j++) {
+            const futurePrice = validPricesByTimestamp.get(sortedTimestamps[j]!)
+            if (futurePrice !== undefined) {
+              filledPrice = futurePrice
+              break
+            }
+          }
         }
 
-        const existing = aggregatedMap.get(timestamp)!
-        existing.sum += item.price
-        existing.count++
+        // If we found a price to use, set it
+        if (filledPrice !== null) {
+          filledPrices.set(timestamp, filledPrice)
+          // Don't update previousPrice here as it's not a "real" price
+        }
       }
+    }
+
+    processedTickers.push({
+      filledPrices,
+      hasAnyData: hasAnyValidData,
     })
   })
 
-  // Convert map to sorted LineData array
+  // Filter to only tickers with data
+  const tickersWithData = processedTickers.filter((t) => t.hasAnyData)
+
+  if (tickersWithData.length === 0) {
+    return []
+  }
+
+  // Step 3: Create simple averaged result
   const result: LineData[] = []
-  aggregatedMap.forEach((value, timestamp) => {
-    if (value.count > 0) {
+
+  sortedTimestamps.forEach((timestamp) => {
+    let priceSum = 0
+    let validCount = 0
+
+    tickersWithData.forEach((ticker) => {
+      const price = ticker.filledPrices.get(timestamp)
+      if (price !== undefined && Number.isFinite(price)) {
+        priceSum += price
+        validCount++
+      }
+    })
+
+    // Only add if we have data from all tickers (they should all have filled data)
+    if (validCount === tickersWithData.length && validCount > 0) {
       result.push({
         time: timestamp as Time,
-        value: value.sum / value.count,
+        value: priceSum / validCount, // Simple average
       })
     }
   })
 
-  // Sort by time
-  return result.sort((a, b) => (a.time as number) - (b.time as number))
+  return result
 }
 
 /**
