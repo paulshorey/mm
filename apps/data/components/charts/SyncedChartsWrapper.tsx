@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { SyncedCharts } from './SyncedCharts'
 import { useChartControlsStore } from './state/useChartControlsStore'
+import Header from './components/Header'
 
 interface SyncedChartsWrapperProps {}
 
@@ -69,9 +70,12 @@ export default function SyncedChartsWrapper({}: SyncedChartsWrapperProps) {
   }
 
   return (
-    <SyncedCharts
-      availableWidth={dimensions.availableWidth}
-      availableHeight={dimensions.availableHeight}
-    />
+    <div>
+      <SyncedCharts
+        availableWidth={dimensions.availableWidth}
+        availableHeight={dimensions.availableHeight + 30}
+      />
+      <Header />
+    </div>
   )
 }

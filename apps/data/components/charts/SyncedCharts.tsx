@@ -12,7 +12,6 @@ import {
 } from './lib/chartUtils'
 import { applyCursorToAllCharts } from './lib/chartSync'
 
-import Header from './components/Header'
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 import { useChartControlsStore } from './state/useChartControlsStore'
@@ -67,8 +66,8 @@ export function SyncedCharts({
     const chartHeight = Math.floor(adjustedHeight / 2) // Always 2 charts
 
     const dimensions = {
-      width: Math.max(chartWidth, 320), // Minimum width of 320px
-      height: Math.max(chartHeight, 200), // Minimum height of 200px per chart
+      width: Math.max(chartWidth, 300), // Minimum width of 300px
+      height: Math.max(chartHeight, 100), // Minimum height of 100px per chart
     }
 
     return dimensions
@@ -275,9 +274,6 @@ export function SyncedCharts({
 
   return (
     <div className="pr-[10px] w-full">
-      {/* Master Controls */}
-      <Header />
-
       {/* Show loading or error state for all charts */}
       {loadingState && <LoadingState />}
       {error && !loadingState && <ErrorState error={error} />}

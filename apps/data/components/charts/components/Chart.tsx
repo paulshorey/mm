@@ -203,14 +203,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       <div
         key={name}
         id={`chart-${name}`}
-        className="relative overflow-x-auto"
+        className="relative overflow-x-auto overflow-y-hidden"
         style={{ marginBottom: '-30px' }}
       >
         {/* Chart container */}
         <div
           dir="rtl"
           ref={containerRef}
-          style={{ width, height: height }}
           className="border border-gray-200 rounded relative z-10"
         />
 
