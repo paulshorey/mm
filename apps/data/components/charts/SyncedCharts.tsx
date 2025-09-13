@@ -278,9 +278,9 @@ export function SyncedCharts({
                 <StrengthControl showLabel={false} />
                 <span
                   className="pt-1 pr-1 pl-1 opacity-60 text-sm"
-                  style={{
-                    textShadow: '0 0 1px rgba(0, 0, 0, 0.05)',
-                  }}
+                  // style={{
+                  //   textShadow: '0 0 1px rgba(0, 0, 0, 0.05)',
+                  // }}
                 >
                   Strength
                 </span>

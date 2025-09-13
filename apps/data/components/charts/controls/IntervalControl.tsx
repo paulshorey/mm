@@ -41,6 +41,8 @@ export default function IntervalControl({ showLabel = true }: Props) {
           styles={{
             input: {
               minWidth: '70px',
+              maxHeight: '30px',
+              overflow: 'hidden',
             },
           }}
           component="button"

@@ -21,6 +21,34 @@ export const intervalsOptions = [
 // Available tickers configuration
 export const tickersOptions = [
   {
+    label: 'BTC, ETH, SOL, XRP, SUI, BNB',
+    value: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'SUIUSD', 'BNBUSD'],
+  },
+  {
+    label: 'ETH',
+    value: ['ETHUSD'],
+  },
+  {
+    label: 'BTC',
+    value: ['BTCUSD'],
+  },
+  {
+    label: 'SOL',
+    value: ['SOLUSD'],
+  },
+  {
+    label: 'XRP',
+    value: ['XRPUSD'],
+  },
+  {
+    label: 'SUI',
+    value: ['SUIUSD'],
+  },
+  {
+    label: 'BNB',
+    value: ['BNBUSD'],
+  },
+  {
     label: 'ES1!, YM1!',
     value: ['ES1!', 'YM1!'],
   },
@@ -51,34 +79,6 @@ export const tickersOptions = [
   {
     label: 'PL1!',
     value: ['PL1!'],
-  },
-  {
-    label: 'BTC, ETH, SOL, XRP, SUI, BNB',
-    value: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'XRPUSD', 'SUIUSD', 'BNBUSD'],
-  },
-  {
-    label: 'ETH',
-    value: ['ETHUSD'],
-  },
-  {
-    label: 'BTC',
-    value: ['BTCUSD'],
-  },
-  {
-    label: 'SOL',
-    value: ['SOLUSD'],
-  },
-  {
-    label: 'XRP',
-    value: ['XRPUSD'],
-  },
-  {
-    label: 'SUI',
-    value: ['SUIUSD'],
-  },
-  {
-    label: 'BNB',
-    value: ['BNBUSD'],
   },
 ]
 
@@ -143,7 +143,7 @@ const getInitialState = (): State => {
   const defaultState: State = {
     // Control defaults
     hoursBack: '240h',
-    controlInterval: intervalsOptions[intervalsOptions.length - 1]!.value,
+    controlInterval: intervalsOptions[0]!.value,
     controlTickers: defaultTickers,
     // Default to "average" if multiple tickers, otherwise first ticker
     priceTicker: defaultTickers.length > 1 ? 'average' : defaultTickers[0]!,
