@@ -20,6 +20,7 @@ import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
+import { CHART_WIDTH } from '../constants'
 
 interface ChartProps {
   heading: string | React.ReactNode
@@ -71,10 +72,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       if (!containerRef.current || hasInitialized.current) return
 
       // Create chart
-      const chart = createChart(
-        containerRef.current,
-        getChartConfig(width, height)
-      )
+      const chart = createChart(containerRef.current, getChartConfig(height))
       chartRef.current = chart
       hasInitialized.current = true
 
@@ -201,7 +199,14 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const hasData = chartData !== null
 
     return (
-      <div key={name} id={`chart-${name}`} className={classes.Chart}>
+      <div
+        key={name}
+        id={`chart-${name}`}
+        className={classes.Chart}
+        style={{
+          width: CHART_WIDTH + 'px',
+        }}
+      >
         {/* Chart container */}
         <div
           ref={containerRef}

@@ -276,7 +276,7 @@ export function SyncedCharts({
   const loadingState = aggregatedStrengthData?.length === 0
 
   return (
-    <div className={`w-[${CHART_WIDTH}px] overflow-hidden`}>
+    <div className={`overflow-hidden`} style={{ width: CHART_WIDTH + 'px' }}>
       {/* Show loading or error state for all charts */}
       {loadingState && <LoadingState />}
       {error && !loadingState && <ErrorState error={error} />}

@@ -58,7 +58,7 @@ export default function StrengthControl({ showLabel = true }: Props) {
           rightSection={<IconChevronDown size={14} />}
           onClick={() => combobox.toggleDropdown()}
           rightSectionPointerEvents="none"
-          label={showLabel ? 'Average Strength:' : null}
+          label={showLabel ? 'True Strength:' : null}
         >
           {selectedOption ? (
             selectedOption.label
