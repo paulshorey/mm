@@ -13,12 +13,13 @@
     // margin-top: 0;
     .ChartTitleWrapperAbsolute {
       top: auto;
+      bottom: 62px;
     }
   }
   &:nth-child(2) {
     // margin-top: -30px;
     .ChartTitleWrapperAbsolute {
-      top: 5px;
+      top: 6px;
     }
   }
   table {

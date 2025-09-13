@@ -99,9 +99,6 @@ type State = {
   aggregatedStrengthData: LineData[] | null
   aggregatedPriceData: LineData[] | null
 
-  // Chart dimensions
-  chartDimensions: { width: number; height: number }
-
   // Hydration state for URL sync
   isHydrated: boolean
 }
@@ -122,9 +119,6 @@ type Actions = {
   setRawData: (data: (StrengthRowGet[] | null)[]) => void
   setAggregatedStrengthData: (data: LineData[] | null) => void
   setAggregatedPriceData: (data: LineData[] | null) => void
-
-  // Chart dimensions setter
-  setChartDimensions: (dimensions: { width: number; height: number }) => void
 
   // Utility actions
   resetToDefaults: () => void
@@ -163,9 +157,6 @@ const getInitialState = (): State => {
     rawData: [],
     aggregatedStrengthData: null,
     aggregatedPriceData: null,
-
-    // Chart dimensions defaults
-    chartDimensions: { width: 320, height: 200 },
 
     // Hydration state - will be set to true after persist middleware loads
     isHydrated: false,
@@ -272,11 +263,6 @@ export const useChartControlsStore = create<ChartControlsStore>()(
 
       setAggregatedPriceData: (data: LineData[] | null) => {
         set({ aggregatedPriceData: data })
-      },
-
-      // Chart dimensions setter
-      setChartDimensions: (dimensions: { width: number; height: number }) => {
-        set({ chartDimensions: dimensions })
       },
 
       // Utility actions

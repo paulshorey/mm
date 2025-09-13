@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef } from 'react'
 import { Time, ISeriesApi } from 'lightweight-charts'
 import { StrengthRowGet } from '@apps/common/sql/strength'
 
@@ -15,22 +15,21 @@ import { applyCursorToAllCharts } from './lib/chartSync'
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 import { useChartControlsStore } from './state/useChartControlsStore'
-import InlineControls from './controls/InlineControls'
 import { CHART_WIDTH } from './constants'
 import PriceControl from './controls/PriceControl'
 import StrengthControl from './controls/StrengthControl'
 
 export interface SyncedChartsProps {
-  availableWidth: number
   availableHeight: number
+  availableHeightCrop: number
 }
 
 /**
  * Inner component that renders charts with specific dimensions
  */
 export function SyncedCharts({
-  availableWidth,
   availableHeight,
+  availableHeightCrop,
 }: SyncedChartsProps) {
   // Chart refs
   const chartComponentRefs = useRef<(ChartRef | null)[]>([])
@@ -56,30 +55,7 @@ export function SyncedCharts({
     setRawData,
     setAggregatedStrengthData,
     setAggregatedPriceData,
-    setChartDimensions,
   } = useChartControlsStore()
-
-  // Calculate chart dimensions based on available space for 2 charts
-  const chartDimensions = useMemo(() => {
-    // Width = 100% of browser width minus padding
-    const chartWidth = availableWidth - 10 // 10px padding right edge
-
-    // Height = browser height divided by 2 (for 2 charts)
-    const adjustedHeight = availableHeight // make charts a bit taller to account for negative margin
-    const chartHeight = Math.floor(adjustedHeight / 2) // Always 2 charts
-
-    const dimensions = {
-      width: Math.max(chartWidth, 300), // Minimum width of 300px
-      height: Math.max(chartHeight, 100), // Minimum height of 100px per chart
-    }
-
-    return dimensions
-  }, [availableWidth, availableHeight])
-
-  // Update dimensions in store when they change
-  useEffect(() => {
-    setChartDimensions(chartDimensions)
-  }, [chartDimensions, setChartDimensions])
 
   // Always have exactly 2 chart refs (one for strength, one for price)
   useEffect(() => {
@@ -264,8 +240,6 @@ export function SyncedCharts({
     controlInterval,
   ])
 
-  // Dimension changes are now handled directly in SingleChart via props
-
   // Crosshair move handler
   const handleCrosshairMove = (time: Time | null) => {
     if (!isUpdatingCursor.current) {
@@ -274,6 +248,11 @@ export function SyncedCharts({
   }
 
   const loadingState = aggregatedStrengthData?.length === 0
+
+  const chart1Height =
+    Math.ceil((availableHeight * 1) / 2) + availableHeightCrop
+  const chart2Height =
+    Math.ceil((availableHeight * 1) / 2) - availableHeightCrop
 
   return (
     <div className={`overflow-hidden`} style={{ width: CHART_WIDTH + 'px' }}>
@@ -309,7 +288,7 @@ export function SyncedCharts({
             }
             chartData={aggregatedStrengthData}
             width={CHART_WIDTH}
-            height={chartDimensions.height}
+            height={chart1Height}
             onCrosshairMove={handleCrosshairMove}
             chartIndex={0}
             timeRange={timeRange}
@@ -332,7 +311,9 @@ export function SyncedCharts({
               </span>
             }
             width={CHART_WIDTH}
-            height={chartDimensions.height}
+            height={chart2Height}
+            heightCropTop={Math.ceil((chart1Height - chart2Height) * 0.5)}
+            heightCropBottom={Math.ceil((chart1Height - chart2Height) * 0.5)}
             onCrosshairMove={handleCrosshairMove}
             chartIndex={1}
             timeRange={timeRange}

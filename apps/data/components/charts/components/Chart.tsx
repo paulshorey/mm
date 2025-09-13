@@ -32,6 +32,8 @@ interface ChartProps {
   chartIndex: number
   timeRange?: { from: Time; to: Time } | null
   showZeroLine?: boolean
+  heightCropTop?: number
+  heightCropBottom?: number
 }
 
 export interface ChartRef {
@@ -51,6 +53,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       onCrosshairMove,
       timeRange,
       showZeroLine,
+      heightCropTop = 0,
+      heightCropBottom = 0,
     },
     ref
   ) => {
@@ -72,7 +76,10 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       if (!containerRef.current || hasInitialized.current) return
 
       // Create chart
-      const chart = createChart(containerRef.current, getChartConfig(height))
+      const chart = createChart(
+        containerRef.current,
+        getChartConfig(height + heightCropTop + heightCropBottom)
+      )
       chartRef.current = chart
       hasInitialized.current = true
 
@@ -149,7 +156,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       chartRef.current.applyOptions({
         width,
-        height,
+        height: height + heightCropTop + heightCropBottom,
       })
     }, [width, height])
 
@@ -205,13 +212,16 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         className={classes.Chart}
         style={{
           width: CHART_WIDTH + 'px',
+          overflow: 'hidden',
         }}
       >
         {/* Chart container */}
         <div
           ref={containerRef}
           className={`border border-gray-200 rounded z-10 pr-[10px]`}
-          style={{ marginBottom: '-3px' }}
+          style={{
+            marginTop: -heightCropTop + 'px',
+          }}
         />
 
         {/* Title floating at top left of chart */}

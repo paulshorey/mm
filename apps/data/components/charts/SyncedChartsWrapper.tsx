@@ -37,7 +37,7 @@ export default function SyncedChartsWrapper({}: SyncedChartsWrapperProps) {
 
         setDimensions({
           availableWidth: windowWidth,
-          availableHeight: Math.ceil(windowHeight * 1.05 + 30),
+          availableHeight: windowHeight,
         })
       }
     }
@@ -74,8 +74,8 @@ export default function SyncedChartsWrapper({}: SyncedChartsWrapperProps) {
     <div className={`overflow-auto w-full ${classes.Wrapper}`} dir="rtl">
       <Header />
       <SyncedCharts
-        availableWidth={dimensions.availableWidth}
         availableHeight={dimensions.availableHeight}
+        availableHeightCrop={40}
       />
     </div>
   )
