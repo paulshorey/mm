@@ -99,6 +99,24 @@ export function SyncedCharts({
           ? aggregatePriceData(rawData)
           : getSingleTickerPriceData(rawData, controlTickers, priceTicker)
 
+      // Log aggregation results for debugging
+      if (lastUpdateTime && prevAggregatedStrengthRef.current) {
+        const newStrengthPoints =
+          strengthData.length - (prevAggregatedStrengthRef.current?.length || 0)
+        const newPricePoints =
+          priceData.length - (prevAggregatedPriceRef.current?.length || 0)
+
+        if (newStrengthPoints > 0 || newPricePoints > 0) {
+          console.log('[SyncedCharts] Aggregation update:', {
+            timestamp: lastUpdateTime.toISOString(),
+            newStrengthPoints,
+            newPricePoints,
+            totalStrengthPoints: strengthData.length,
+            totalPricePoints: priceData.length,
+          })
+        }
+      }
+
       // Store previous data for comparison
       prevAggregatedStrengthRef.current = aggregatedStrengthData
       prevAggregatedPriceRef.current = aggregatedPriceData

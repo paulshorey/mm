@@ -135,43 +135,95 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
           // Initial data load - use setData
           seriesRef.current.setData(currentData)
         } else {
-          // Check if we need a full reset or can do incremental update
-          const needsFullReset =
+          // For real-time updates, we need to be careful with update()
+          // It can only update the last bar or add new ones after it
+
+          const lastPrevTime = prevData[prevData.length - 1]?.time as number
+          const lastCurrentTime = currentData[currentData.length - 1]
+            ?.time as number
+          const firstPrevTime = prevData[0]?.time as number
+          const firstCurrentTime = currentData[0]?.time as number
+
+          // Check if data structure changed significantly
+          if (
             currentData.length < prevData.length ||
-            (currentData.length > 0 &&
-              prevData.length > 0 &&
-              currentData[0].time !== prevData[0].time)
-
-          if (needsFullReset) {
-            // Data structure changed significantly, do full reset
+            firstCurrentTime !== firstPrevTime
+          ) {
+            // Data was truncated or shifted - need full reset
             seriesRef.current.setData(currentData)
-          } else {
-            // Incremental update - find new data points
-            const lastPrevTime = prevData[prevData.length - 1]?.time
-            if (lastPrevTime) {
-              // Find new data points after the last previous time
-              const newDataPoints = currentData.filter(
-                (point) => (point.time as number) > (lastPrevTime as number)
-              )
+          } else if (lastCurrentTime > lastPrevTime) {
+            // We have new data points after the existing ones
+            // This is the ideal case for incremental updates
 
-              // Update each new data point
-              newDataPoints.forEach((point) => {
-                seriesRef.current!.update(point)
-              })
+            // Find all new points
+            const newDataPoints = currentData.filter(
+              (point) => (point.time as number) > lastPrevTime
+            )
 
-              // Also update any modified existing points (same time, different value)
-              const modifiedPoints = currentData.filter((point) => {
-                const prevPoint = prevData.find((p) => p.time === point.time)
-                return prevPoint && prevPoint.value !== point.value
-              })
+            // Sort them to ensure chronological order
+            newDataPoints.sort(
+              (a, b) => (a.time as number) - (b.time as number)
+            )
 
-              modifiedPoints.forEach((point) => {
-                seriesRef.current!.update(point)
-              })
-            } else {
-              // Fallback to full data set
+            // Add each new point
+            let updateFailed = false
+            for (const point of newDataPoints) {
+              try {
+                seriesRef.current.update(point)
+              } catch (err) {
+                console.warn(
+                  'Incremental update failed, falling back to setData',
+                  {
+                    error: err,
+                    pointTime: new Date(
+                      (point.time as number) * 1000
+                    ).toISOString(),
+                    pointValue: point.value,
+                  }
+                )
+                updateFailed = true
+                break
+              }
+            }
+
+            // If any update failed, do a full reset
+            if (updateFailed) {
               seriesRef.current.setData(currentData)
             }
+          } else if (lastCurrentTime === lastPrevTime) {
+            // Same time range, check if last value changed
+            const lastCurrent = currentData[currentData.length - 1]
+            const lastPrev = prevData[prevData.length - 1]
+
+            if (
+              lastCurrent &&
+              lastPrev &&
+              lastCurrent.value !== lastPrev.value
+            ) {
+              // Last point value changed - update it
+              try {
+                seriesRef.current.update(lastCurrent)
+              } catch (err) {
+                console.warn('Failed to update last point, using setData', {
+                  error: err,
+                  time: new Date(
+                    (lastCurrent.time as number) * 1000
+                  ).toISOString(),
+                  oldValue: lastPrev.value,
+                  newValue: lastCurrent.value,
+                })
+                seriesRef.current.setData(currentData)
+              }
+            } else if (
+              JSON.stringify(currentData) !== JSON.stringify(prevData)
+            ) {
+              // Some other data changed in the middle - need full reset
+              seriesRef.current.setData(currentData)
+            }
+            // If data is identical, do nothing
+          } else {
+            // Fallback - use setData for any other case
+            seriesRef.current.setData(currentData)
           }
         }
 
@@ -196,7 +248,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
                 )
               }
             }
-          }, 10)
+          }, 100)
         }
       } catch (error) {
         console.warn('Failed to update chart data:', error)
