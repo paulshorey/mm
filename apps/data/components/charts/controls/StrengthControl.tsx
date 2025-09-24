@@ -4,7 +4,7 @@ import React from 'react'
 import { Combobox, InputBase, Input, useCombobox } from '@mantine/core'
 import {
   useChartControlsStore,
-  tickersOptions,
+  strengthOptions,
 } from '../state/useChartControlsStore'
 import { IconChevronDown } from '@tabler/icons-react'
 
@@ -23,7 +23,7 @@ export default function StrengthControl({ showLabel = true }: Props) {
   })
 
   // Find the selected option label
-  const selectedOption = tickersOptions.find(
+  const selectedOption = strengthOptions.find(
     (item) => JSON.stringify(item.value) === JSON.stringify(controlTickers)
   )
 
@@ -76,7 +76,7 @@ export default function StrengthControl({ showLabel = true }: Props) {
 
       <Combobox.Dropdown style={{ zIndex: 1000000000, minWidth: '125px' }}>
         <Combobox.Options>
-          {tickersOptions.map((option) => (
+          {strengthOptions.map((option) => (
             <Combobox.Option
               value={JSON.stringify(option.value)}
               key={JSON.stringify(option.value)}

@@ -22,8 +22,40 @@ export const intervalsOptions = [
 // Available hours back configuration
 export const hoursBackOptions = ['240h', '120h', '60h', '48h', '36h', '24h']
 
-// Available tickers configuration
-export const tickersOptions = [
+// Master selector - determines options for strength selector
+export const marketOptions = [
+  {
+    label: 'Crypto',
+    value: [
+      'CX',
+      'BTCUSD',
+      'ETHUSD',
+      'SOLUSD',
+      'XRPUSD',
+      'SUIUSD',
+      'BNBUSD',
+      'DOGEUSD',
+      'AVAXUSD',
+      'NEARUSD',
+      'XLMUSD',
+    ],
+  },
+  {
+    label: 'Metals',
+    value: ['GC1!', 'SI1!', 'PL1!'],
+  },
+  {
+    label: 'Equities',
+    value: ['ES1!', 'YM1!'],
+  },
+  {
+    label: 'Treasuries',
+    value: ['TN1!'],
+  },
+]
+
+// Select tickers to display in the strength chart
+export const strengthOptions = [
   {
     label: 'Crypto',
     value: [
@@ -171,7 +203,7 @@ const URL_SYNC_KEYS = [
 // Get initial values from URL if available
 const getInitialState = (): State => {
   // Start with defaults
-  const defaultTickers = tickersOptions[8]!.value
+  const defaultTickers = strengthOptions[8]!.value
   const defaultState: State = {
     // Control defaults
     hoursBack: hoursBackOptions[0]!,

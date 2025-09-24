@@ -12,3 +12,10 @@ SyncedCharts.tsx is a full-screen app that renders 2 financial data charts to co
 One chart is the strength (similar to the RSI number, but from -100 to 100 instead of 0 to 100). The other is price. The user controls which data to show in each chart.
 
 The folder and file names are self explanatory.
+
+- components - general UI
+- controls - dropdowns and selectors
+- lib - mainly utilities to configure the charts or filter data
+- state - Zustand store, synced with the URL query params
+
+Most of the logic is in SyncedCharts.tsx. We must be careful not to let it get huge and messy. Please try to separate and group logic into reusable functions, saved in a folder/file that makes the most sense.
