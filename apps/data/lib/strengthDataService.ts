@@ -142,11 +142,11 @@ export class StrengthDataService {
     // Validate that data is properly sorted
     for (let i = 1; i < sortedData.length; i++) {
       if (
-        sortedData[i].timenow.getTime() < sortedData[i - 1].timenow.getTime()
+        sortedData[i]!.timenow.getTime() < sortedData[i - 1]!.timenow.getTime()
       ) {
         console.error('Data not properly sorted after merge', {
-          current: sortedData[i].timenow,
-          previous: sortedData[i - 1].timenow,
+          current: sortedData[i]!.timenow,
+          previous: sortedData[i - 1]!.timenow,
         })
       }
     }
