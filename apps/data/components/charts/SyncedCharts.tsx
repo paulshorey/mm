@@ -14,7 +14,7 @@ import { applyCursorToAllCharts } from './lib/chartSync'
 
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
-import { RealtimeIndicator } from './components/RealtimeIndicator'
+import { UpdatedTime } from './components/UpdatedTime'
 import { useChartControlsStore } from './state/useChartControlsStore'
 import { AVERAGE_OPTION, CHART_WIDTH } from './constants'
 import PriceControl from './controls/PriceControl'
@@ -268,10 +268,7 @@ export function SyncedCharts({
       )}
 
       {/* Last updated time */}
-      <RealtimeIndicator
-        isRealtime={isRealtime}
-        lastUpdateTime={lastUpdateTime}
-      />
+      <UpdatedTime isRealtime={isRealtime} lastUpdateTime={lastUpdateTime} />
     </div>
   )
 }

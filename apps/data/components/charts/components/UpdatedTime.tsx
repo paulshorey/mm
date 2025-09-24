@@ -2,15 +2,12 @@
 
 import React from 'react'
 
-interface RealtimeIndicatorProps {
+interface UpdatedTimeProps {
   isRealtime: boolean
   lastUpdateTime: Date | null
 }
 
-export function RealtimeIndicator({
-  isRealtime,
-  lastUpdateTime,
-}: RealtimeIndicatorProps) {
+export function UpdatedTime({ isRealtime, lastUpdateTime }: UpdatedTimeProps) {
   if (!isRealtime || !lastUpdateTime) return null
 
   const formatTime = (date: Date) => {
