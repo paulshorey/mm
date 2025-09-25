@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@apps/common/lib/nextjs/formatResponse'
-import { strengthGets } from '@apps/common/sql/strength/gets'
+import { strengthGets } from '@/sql/strength/gets'
 import { cc } from '@apps/common/cc'
 
 export const maxDuration = 60
 
 export async function GET(request: NextRequest) {
-  const callId = Math.random().toString(36).substring(7)
+  // const callId = Math.random().toString(36).substring(7)
 
   try {
     // Parse query parameters
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const { rows, error } = await strengthGets({ where })
 
     if (error) {
-      cc.error(`API strengthGet [${callId}] ERROR:`, error)
+      cc.error(`API strengthGet ERROR:`, error)
       return formatResponse(
         {
           ok: false,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       rows: filteredRows || [],
     })
   } catch (error: any) {
-    cc.error(`API strengthGet [${callId}] CATCH ERROR:`, error)
+    cc.error(`API strengthGet CATCH ERROR:`, error)
     return formatResponse(
       {
         ok: false,

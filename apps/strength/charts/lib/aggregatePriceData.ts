@@ -1,4 +1,4 @@
-import { StrengthRowGet } from '@apps/common/sql/strength'
+import { StrengthRowGet } from '@/sql/strength'
 import { LineData, Time } from 'lightweight-charts'
 import {
   extractGlobalTimestamps,
@@ -76,7 +76,9 @@ export const aggregatePriceData = (
       // Apply forward-fill interpolation using the utility function
       const interpolatedPrices = forwardFillData(tickerPrices, sortedTimestamps)
 
-      console.log(`[aggregatePrice] Ticker ${tickerIndex}: ${tickerPrices.length} values -> ${interpolatedPrices.size} filled`)
+      console.log(
+        `[aggregatePrice] Ticker ${tickerIndex}: ${tickerPrices.length} values -> ${interpolatedPrices.size} filled`
+      )
 
       // Get the last filled price for normalization
       const lastFilledPrice = interpolatedPrices.get(

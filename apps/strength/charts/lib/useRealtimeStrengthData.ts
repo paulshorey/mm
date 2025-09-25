@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { StrengthRowGet } from '@apps/common/sql/strength'
+import { StrengthRowGet } from '@/sql/strength'
 import { StrengthDataService } from './strengthDataService'
 import { HOURS_BACK_INITIAL } from '../constants'
 

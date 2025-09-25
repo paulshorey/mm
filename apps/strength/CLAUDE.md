@@ -16,6 +16,9 @@ Chart 2: price. The user controls which data to show in each chart.
 - ./charts/lib - utilities to configure the charts or filter data
 - ./charts/state - Zustand store, synced with the URL query params
 
+- ./sql/strength - get and add strength data in the database
+- ./sql/strength/types.ts - refer to this to know what object properties and database row columns the app logic uses
+
 ## Data flow
 
 ### Selection Hierarchy
@@ -45,6 +48,8 @@ Chart 2: price. The user controls which data to show in each chart.
 
 ## Important Notes
 
-- See `CLAUDE_IMPROVEMENTS.md` for detailed explanation of the recent data flow optimization
-- Raw data is indexed the same as `marketTickers` array for consistent mapping
-- Aggregation functions receive filtered data subsets, not the full raw data
+- See `DATA_FLOW_ARCHITECTURE.md` for detailed explanation of the recent data flow optimization
+
+## Keeping notes and documenting changes
+
+- You are an AI agent, CLAUDE. You will read this file (CLAUDE.md) every time to remember important details about the codebase. Please update this file as needed, to help yourself remember how everything works. For example, you added DATA_FLOW_ARCHITECTURE.md file and mentioned it here. Great. In the future feel free to add other documentation files and edit existing ones. Mention the files here in CLAUDE.md to help yourself navigate the codebase next time.

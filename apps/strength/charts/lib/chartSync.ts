@@ -1,5 +1,5 @@
 import { ISeriesApi, Time, LineData } from 'lightweight-charts'
-import { StrengthRowGet } from '@apps/common/sql/strength'
+import { StrengthRowGet } from '@/sql/strength'
 import { getNearestSeriesValueAtTime } from './chartUtils'
 
 /**
