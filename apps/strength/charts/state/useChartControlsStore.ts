@@ -40,6 +40,10 @@ export const marketOptions = [
     ],
   },
   {
+    label: 'Futures',
+    value: ['GC1!', 'SI1!', 'PL1!', 'ES1!', 'YM1!', 'TN1!'],
+  },
+  {
     label: 'Metals',
     value: ['GC1!', 'SI1!', 'PL1!'],
   },

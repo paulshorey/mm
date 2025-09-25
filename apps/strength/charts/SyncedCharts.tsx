@@ -39,6 +39,7 @@ export function SyncedCharts({
     // State
     hoursBack,
     controlInterval,
+    marketTickers,
     controlTickers,
     priceTickers,
     timeRange,
@@ -59,12 +60,13 @@ export function SyncedCharts({
 
   /**
    * Use the real-time data hook to manage data fetching and updates
-   * This replaces the old data loading effect with automatic real-time updates
+   * Always fetch data for ALL market tickers to prevent refetching
+   * Data will be filtered based on controlTickers and priceTickers during aggregation
    */
   const { rawData, isLoading, error, lastUpdateTime, isRealtime } =
     useRealtimeStrengthData({
-      tickers: controlTickers,
-      enabled: controlTickers.length > 0,
+      tickers: marketTickers, // Always use marketTickers to avoid refetching
+      enabled: marketTickers.length > 0,
       maxDataHours: 240,
       updateIntervalMs: 60000, // Update every minute
     })
@@ -89,11 +91,16 @@ export function SyncedCharts({
    */
   useEffect(() => {
     if (rawData.length > 0 && rawData.some((data) => data !== null)) {
-      // Note: The rawData corresponds to controlTickers by index
-      // For now, we'll use all rawData and let the aggregation functions handle the filtering
-      // TODO: This logic needs to be updated when we have proper ticker-to-data mapping
-      const strengthData = aggregateStrengthData(rawData, controlInterval)
-      const priceData = aggregatePriceData(rawData)
+      // Filter raw data based on selected tickers
+      // rawData is ordered the same as marketTickers
+      const strengthIndices = controlTickers.map(ticker => marketTickers.indexOf(ticker)).filter(i => i >= 0)
+      const priceIndices = priceTickers.map(ticker => marketTickers.indexOf(ticker)).filter(i => i >= 0)
+
+      const strengthRawData = strengthIndices.map(i => rawData[i] || null)
+      const priceRawData = priceIndices.map(i => rawData[i] || null)
+
+      const strengthData = aggregateStrengthData(strengthRawData, controlInterval)
+      const priceData = aggregatePriceData(priceRawData)
 
       // Log aggregation results for debugging
       if (lastUpdateTime && prevAggregatedStrengthRef.current) {
@@ -122,7 +129,7 @@ export function SyncedCharts({
       setAggregatedStrengthData(strengthData.length > 0 ? strengthData : null)
       setAggregatedPriceData(priceData.length > 0 ? priceData : null)
     }
-  }, [controlInterval, priceTickers, rawData, controlTickers, lastUpdateTime])
+  }, [controlInterval, priceTickers, rawData, controlTickers, marketTickers, lastUpdateTime])
 
   /**
    * Time Range Effect
@@ -235,7 +242,7 @@ export function SyncedCharts({
 
           {/* Chart: Price Tickers */}
           <Chart
-            key={`price-${JSON.stringify(priceTickers)}`}
+            key="price-chart"
             ref={(el) => {
               chartComponentRefs.current[1] = el
             }}
