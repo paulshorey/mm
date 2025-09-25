@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Time, LineData } from 'lightweight-charts'
 import { createURLStorage, getQueryParams } from './lib/urlSync'
+import { CHART_WIDTH_INITIAL } from '../constants'
 
 // Available intervals configuration
 export const intervalsOptions = [
@@ -83,6 +84,7 @@ export const buildPriceOptions = (marketTickers: string[]) => [
 
 type State = {
   // Control states
+  maxChartWidth: number
   hoursBack: string
   controlInterval: string[]
   marketTickers: string[] // Selected market tickers (from marketOptions)
@@ -140,6 +142,7 @@ const getInitialState = (): State => {
   const defaultMarketTickers = marketOptions[0]!.value
   const defaultState: State = {
     // Control defaults
+    maxChartWidth: CHART_WIDTH_INITIAL,
     hoursBack: hoursBackOptions[0]!,
     controlInterval: intervalsOptions[0]!.value,
     marketTickers: defaultMarketTickers,

@@ -20,7 +20,7 @@ import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
-import { CHART_WIDTH } from '../constants'
+import { CHART_WIDTH_INITIAL } from '../constants'
 
 interface ChartProps {
   heading: string | React.ReactNode
@@ -132,25 +132,30 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         const currentData = chartData
 
         // Check if data actually changed - compare values, not just structure
-        const dataChanged = !prevData ||
+        const dataChanged =
+          !prevData ||
           prevData.length !== currentData.length ||
           prevData.some((item, index) => {
             const currentItem = currentData[index]
-            return !currentItem ||
+            return (
+              !currentItem ||
               item.time !== currentItem.time ||
-              Math.abs(item.value - currentItem.value) > 0.0001 // Use small epsilon for float comparison
+              Math.abs(item.value - currentItem.value) > 0.0001
+            ) // Use small epsilon for float comparison
           })
 
         if (!dataChanged) {
           // Data hasn't changed, no update needed
-          console.log(`[Chart] No data change detected for ${name}, skipping update`)
+          console.log(
+            `[Chart] No data change detected for ${name}, skipping update`
+          )
           return
         }
 
         if (!prevData || prevData.length === 0) {
           // Initial data load - use setData
           console.log(`[Chart] Initial data load for ${name}`, {
-            dataPoints: currentData.length
+            dataPoints: currentData.length,
           })
           seriesRef.current.setData(currentData)
         } else {
@@ -172,14 +177,18 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
             if (newDataPoints.length > 0) {
               // We have new points to add
-              console.log(`[Chart] Adding ${newDataPoints.length} new points to ${name}`)
+              console.log(
+                `[Chart] Adding ${newDataPoints.length} new points to ${name}`
+              )
               let updateFailed = false
 
               for (const point of newDataPoints) {
                 try {
                   seriesRef.current.update(point)
                 } catch (err) {
-                  console.warn(`[Chart] Incremental update failed for ${name}, using setData`)
+                  console.warn(
+                    `[Chart] Incremental update failed for ${name}, using setData`
+                  )
                   updateFailed = true
                   break
                 }
@@ -194,40 +203,61 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
               const lastPrev = prevData[prevData.length - 1]
 
               // Check if all other values are the same
-              const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
-                const prevItem = prevData[index]
-                return prevItem &&
-                  item.time === prevItem.time &&
-                  Math.abs(item.value - prevItem.value) < 0.0001
-              })
-
-              if (onlyLastChanged && lastCurrent && lastPrev &&
-                  Math.abs(lastCurrent.value - lastPrev.value) > 0.0001) {
-                console.log(`[Chart] Updating only last point value for ${name}`, {
-                  time: new Date((lastCurrent.time as number) * 1000).toISOString(),
-                  oldValue: lastPrev.value,
-                  newValue: lastCurrent.value
+              const onlyLastChanged = currentData
+                .slice(0, -1)
+                .every((item, index) => {
+                  const prevItem = prevData[index]
+                  return (
+                    prevItem &&
+                    item.time === prevItem.time &&
+                    Math.abs(item.value - prevItem.value) < 0.0001
+                  )
                 })
+
+              if (
+                onlyLastChanged &&
+                lastCurrent &&
+                lastPrev &&
+                Math.abs(lastCurrent.value - lastPrev.value) > 0.0001
+              ) {
+                console.log(
+                  `[Chart] Updating only last point value for ${name}`,
+                  {
+                    time: new Date(
+                      (lastCurrent.time as number) * 1000
+                    ).toISOString(),
+                    oldValue: lastPrev.value,
+                    newValue: lastCurrent.value,
+                  }
+                )
                 try {
                   seriesRef.current.update(lastCurrent)
                 } catch (err) {
-                  console.error(`[Chart] Failed to update last point for ${name}`, err)
+                  console.error(
+                    `[Chart] Failed to update last point for ${name}`,
+                    err
+                  )
                   seriesRef.current.setData(currentData)
                 }
               } else {
                 // Multiple values changed - need full reset
-                console.log(`[Chart] Multiple values changed for ${name}, full reset`)
+                console.log(
+                  `[Chart] Multiple values changed for ${name}, full reset`
+                )
                 seriesRef.current.setData(currentData)
               }
             }
           } else {
             // This is a ticker change or data structure change - full reset
-            console.log(`[Chart] Ticker or data structure change for ${name}, full reset`, {
-              prevLength: prevData.length,
-              currentLength: currentData.length,
-              firstTimeChanged: firstCurrentTime !== firstPrevTime,
-              lastTimeChanged: lastCurrentTime !== lastPrevTime
-            })
+            console.log(
+              `[Chart] Ticker or data structure change for ${name}, full reset`,
+              {
+                prevLength: prevData.length,
+                currentLength: currentData.length,
+                firstTimeChanged: firstCurrentTime !== firstPrevTime,
+                lastTimeChanged: lastCurrentTime !== lastPrevTime,
+              }
+            )
             seriesRef.current.setData(currentData)
           }
         }
@@ -327,7 +357,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         id={`chart-${name}`}
         className={classes.Chart}
         style={{
-          width: CHART_WIDTH + 'px',
+          width: CHART_WIDTH_INITIAL + 'px',
           overflow: 'hidden',
         }}
       >

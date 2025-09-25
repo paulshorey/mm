@@ -31,7 +31,7 @@ export default function MarketControl({ showLabel = true }: Props) {
       offset={2}
       store={combobox}
       withinPortal={true}
-      position="bottom-start"
+      position="top-start"
       onOptionSubmit={(val) => {
         setMarketTickers(JSON.parse(val) as string[])
         combobox.closeDropdown()
@@ -39,7 +39,6 @@ export default function MarketControl({ showLabel = true }: Props) {
       styles={{
         dropdown: {
           boxShadow: '1px 1px 4px 0 rgba(0, 0, 0, 0.1)',
-          marginTop: '-22.5vh',
           maxHeight: '45vh',
           overflowY: 'auto',
         },

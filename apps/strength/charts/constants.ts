@@ -1,2 +1,2 @@
-export const CHART_WIDTH = 1000
-export const MAX_DATA_HOURS = 48
+export const CHART_WIDTH_INITIAL = 3600
+export const HOURS_BACK_INITIAL = 240

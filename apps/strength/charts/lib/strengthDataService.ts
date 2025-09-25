@@ -1,5 +1,5 @@
 import { StrengthRowGet } from '@apps/common/sql/strength'
-import { MAX_DATA_HOURS } from '../constants'
+import { HOURS_BACK_INITIAL } from '../constants'
 
 export interface FetchStrengthDataParams {
   ticker: string
@@ -100,7 +100,7 @@ export class StrengthDataService {
   /**
    * Get the date for initial data load
    */
-  static getInitialDataDate(hoursBack: number = MAX_DATA_HOURS): Date {
+  static getInitialDataDate(hoursBack: number = HOURS_BACK_INITIAL): Date {
     const date = new Date(Date.now() - hoursBack * 60 * 60 * 1000)
     return this.prepareDate(date)
   }

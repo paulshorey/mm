@@ -5,7 +5,7 @@ import {
   LineStyleOptions,
   SeriesOptionsCommon,
 } from 'lightweight-charts'
-import { CHART_WIDTH } from '../constants'
+import { CHART_WIDTH_INITIAL } from '../constants'
 
 function timeFormatter(time: Time) {
   // Convert the time (which is in seconds since epoch) to milliseconds
@@ -23,7 +23,7 @@ function timeFormatter(time: Time) {
  * Get base chart configuration
  */
 export const getChartConfig = (height: number): DeepPartial<ChartOptions> => ({
-  width: CHART_WIDTH,
+  width: CHART_WIDTH_INITIAL,
   height: height, // Use full height passed from parent
   localization: {
     timeFormatter,

@@ -4,6 +4,7 @@ import React from 'react'
 import { ControlsDropdown } from '../controls/ControlsDropdown'
 import InlineControls from '../controls/InlineControls'
 import classes from '../classes.module.scss'
+import MarketControl from '../controls/MarketControl'
 
 export default function Header() {
   return (
