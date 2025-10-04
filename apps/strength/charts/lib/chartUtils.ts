@@ -92,42 +92,6 @@ export const calculateTimeRange = (
   return null
 }
 
-/**
- * Get price data for a single ticker
- * Creates a chart data series for the price values of a specific ticker
- */
-export const getSingleTickerPriceData = (
-  allRawData: (StrengthRowGet[] | null)[],
-  controlTickers: string[],
-  selectedTicker: string
-): LineData[] => {
-  // Find the index of the selected ticker
-  const tickerIndex = controlTickers.indexOf(selectedTicker)
-  if (tickerIndex === -1 || !allRawData[tickerIndex]) {
-    return []
-  }
-
-  const tickerData = allRawData[tickerIndex]!
-  const result: LineData[] = []
-
-  // Process the selected ticker's data
-  tickerData.forEach((item) => {
-    if (
-      item.price !== null &&
-      item.price !== undefined &&
-      item.price !== 0 &&
-      Number.isFinite(item.price)
-    ) {
-      result.push({
-        time: (new Date(item.timenow).getTime() / 1000) as Time,
-        value: item.price,
-      })
-    }
-  })
-
-  // Sort by time
-  return result.sort((a, b) => (a.time as number) - (b.time as number))
-}
 
 /**
  * Get nearest series value at a specific time using binary search

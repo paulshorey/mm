@@ -22,36 +22,17 @@ This project is the "strength" app. It renders a single chart with dual y-axes t
 
 ## Data flow
 
-### Selection Hierarchy
+### Simplified Architecture
 
-1. **Data Pool** - User selects the market type (Crypto, Equities, Metals, Treasuries) from a selector. Each option value is an array of tickers. This determines which data to fetch (`dataPoolTickers`).
-2. **Strength tickers** - From the data pool, user selects which tickers to display in the Strength chart (`strengthTickers`). This filters the cached data.
-3. **Price tickers** - Also from the data pool, user selects which tickers to display in the Price chart (`priceTickers`). This filters the cached data.
-
-### Behavior
-
-- When user changes the **Data Pool** (market selection), both Strength and Price reset to show all tickers from the new pool, and new data is fetched
-- When user selects new **Strength tickers**, it:
-  1. Updates the Strength chart with filtered cached data
-  2. Also updates Price tickers to match (Strength acts as master selector)
-  3. Both charts update to show the same ticker selection
-- When user selects new **Price tickers**, it:
-  1. Updates only the Price chart with filtered cached data
-  2. Does NOT affect Strength selection (Price can be changed independently)
-  3. Only the Price chart updates
-
-### Selector Hierarchy
-
-1. **Market** → Resets both Strength and Price, fetches new data pool
-2. **Strength** → Sets both Strength and Price to the same selection
-3. **Price** → Changes only Price (independent selection)
+- **Single ticker selection** - User selects which tickers to display (`chartTickers`)
+- **Both charts use same data** - Strength and Price charts display the same tickers
+- **Data fetching and display** - When tickers change, new data is fetched and both charts update
 
 ### Technical Implementation
 
-- **Data fetching**: `useRealtimeStrengthData` hook always fetches data for `dataPoolTickers`
-- **Data filtering**: In `SyncedCharts.tsx`, raw data is filtered based on `strengthTickers` and `priceTickers` before aggregation
-- **Chart updates**: Each chart receives filtered aggregated data and updates independently
-- **No refetching** occurs when changing Strength or Price selections - only filtering of cached data
+- **Data fetching**: `useRealtimeStrengthData` hook fetches data for `chartTickers`
+- **Data aggregation**: Both strength and price data are aggregated from the same raw data
+- **Chart updates**: Both charts update together when tickers change
 - **Forward-fill logic** handles missing values at both real-time and aggregation layers
 
 ### Performance
@@ -70,10 +51,17 @@ This project is the "strength" app. It renders a single chart with dual y-axes t
 
 ## Recent Refactoring (October 2025)
 
+### Phase 1 - Initial Cleanup
 - **Variable Naming**: Renamed `marketTickers` → `dataPoolTickers`, `controlTickers` → `strengthTickers` for clarity
 - **Store Cleanup**: Simplified Zustand store with better organization and documentation
 - **Forward-Fill Enhancement**: Added real-time forward-fill logic to handle missing strength intervals
-- **Documentation**: Created comprehensive forward-fill documentation and updated all AGENTS.md files
+- **Documentation**: Created comprehensive forward-fill documentation
+
+### Phase 2 - Major Simplification
+- **Consolidated Tickers**: Combined `dataPoolTickers`, `strengthTickers`, and `priceTickers` into single `chartTickers`
+- **Simplified URL Sync**: Changed URL params from `controlInterval`→`interval`, removed separate ticker params
+- **Removed Unused Code**: Deleted `getSingleTickerPriceData` function and experimental `PopupTickerSelector`
+- **Unified Data Flow**: Both strength and price charts now use the same ticker selection
 
 ## Keeping notes and documenting changes
 

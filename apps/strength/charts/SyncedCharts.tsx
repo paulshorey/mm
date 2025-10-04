@@ -31,10 +31,8 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const {
     // State
     hoursBack,
-    controlInterval,
-    dataPoolTickers,   // Renamed from marketTickers for clarity
-    strengthTickers,   // Renamed from controlTickers for clarity
-    priceTickers,
+    interval,
+    chartTickers,  // Single consolidated ticker list
     timeRange,
     aggregatedStrengthData,
     aggregatedPriceData,
@@ -46,13 +44,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   /**
    * Use the real-time data hook to manage data fetching and updates
-   * Always fetch data for ALL dataPoolTickers to prevent refetching when switching views
-   * Data will be filtered based on strengthTickers and priceTickers during aggregation
+   * Fetches data for all selected chartTickers
    */
   const { rawData, isLoading, error, lastUpdateTime, isRealtime } =
     useRealtimeStrengthData({
-      tickers: dataPoolTickers, // Always use dataPoolTickers to avoid refetching
-      enabled: dataPoolTickers.length > 0,
+      tickers: chartTickers,
+      enabled: chartTickers.length > 0,
       maxDataHours: HOURS_BACK_INITIAL,
       updateIntervalMs: 60000, // Update every minute
     })
@@ -66,39 +63,24 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
    *
    * This effect recalculates the aggregated chart data whenever:
    * - rawData changes (new data fetched or real-time updates)
-   * - controlInterval changes (different intervals selected for averaging)
-   * - priceTickers changes (different tickers selected for price chart)
-   * - controlTickers changes (different tickers selected for strength chart)
+   * - interval changes (different intervals selected for averaging)
    * - lastUpdateTime changes (indicates new real-time data)
    *
    * The aggregation creates two data series:
-   * 1. Strength data: average of selected intervals across selected strength tickers
-   * 2. Price data: normalized average of selected price tickers
+   * 1. Strength data: average of selected intervals across all tickers
+   * 2. Price data: normalized average of all tickers
    */
   useEffect(() => {
     if (rawData.length > 0 && rawData.some((data) => data !== null)) {
-      // Filter raw data based on selected tickers
-      // rawData is ordered the same as dataPoolTickers
-      const strengthIndices = strengthTickers
-        .map((ticker) => dataPoolTickers.indexOf(ticker))
-        .filter((i) => i >= 0)
-      const priceIndices = priceTickers
-        .map((ticker) => dataPoolTickers.indexOf(ticker))
-        .filter((i) => i >= 0)
-
-      const strengthRawData = strengthIndices.map((i) => rawData[i] || null)
-      const priceRawData = priceIndices.map((i) => rawData[i] || null)
-
-      // Always use ALL market data for timestamp extraction to ensure consistency
-      // This prevents issues when switching between Average and individual tickers
+      // Use all raw data for both charts (no filtering needed)
       const strengthData = aggregateStrengthData(
-        strengthRawData,
-        controlInterval,
-        rawData // Pass all market data for consistent timestamps
+        rawData,
+        interval,
+        rawData // Pass same data for consistent timestamps
       )
       const priceData = aggregatePriceData(
-        priceRawData,
-        rawData // Pass all market data for consistent timestamps
+        rawData,
+        rawData // Pass same data for consistent timestamps
       )
 
       // Log aggregation results for debugging
@@ -115,8 +97,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
             newPricePoints,
             totalStrengthPoints: strengthData.length,
             totalPricePoints: priceData.length,
-            strengthTickers,
-            priceTickers,
+            chartTickers,
           })
         }
       }
@@ -133,12 +114,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       prevAggregatedPriceRef.current = newPriceData
     }
   }, [
-    controlInterval,
-    priceTickers,
+    interval,
     rawData,
-    strengthTickers,
-    dataPoolTickers,
+    chartTickers,
     lastUpdateTime,
+    setAggregatedStrengthData,
+    setAggregatedPriceData,
   ])
 
   /**

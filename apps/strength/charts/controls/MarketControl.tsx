@@ -14,7 +14,7 @@ interface Props {
 
 export default function MarketControl({ showLabel = true }: Props) {
   // Get state and actions from Zustand store
-  const { dataPoolTickers, setAllTickers } = useChartControlsStore()
+  const { chartTickers, setChartTickers } = useChartControlsStore()
 
   // ComboBox for ticker selector
   const combobox = useCombobox({
@@ -25,7 +25,7 @@ export default function MarketControl({ showLabel = true }: Props) {
   let selectedOption: { label: string; value: string[] } | undefined
   for (const market of tickersByMarket) {
     const found = market.tickers.find(
-      (ticker) => JSON.stringify(ticker.value) === JSON.stringify(dataPoolTickers)
+      (ticker) => JSON.stringify(ticker.value) === JSON.stringify(chartTickers)
     )
     if (found) {
       selectedOption = found
@@ -33,11 +33,10 @@ export default function MarketControl({ showLabel = true }: Props) {
     }
   }
 
-  // Handler that updates all three ticker selections at once
+  // Handler that updates the ticker selection
   const handleTickerSelect = (val: string) => {
     const tickers = JSON.parse(val) as string[]
-    // Use the convenience method to update all ticker selections
-    setAllTickers(tickers)
+    setChartTickers(tickers)
     combobox.closeDropdown()
   }
 

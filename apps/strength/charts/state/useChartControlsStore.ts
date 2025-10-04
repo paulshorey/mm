@@ -96,18 +96,17 @@ export const tickersByMarket = [
 
 /**
  * Store state for chart controls and data management
+ * Simplified: Single chartTickers for both data fetching and display
  */
 type State = {
   // Time range configuration
   hoursBack: string
 
   // Interval selection for strength data aggregation
-  controlInterval: string[]
+  interval: string[]
 
-  // Ticker selections
-  dataPoolTickers: string[] // Tickers for which data is fetched (formerly marketTickers)
-  strengthTickers: string[] // Tickers displayed in strength chart (formerly controlTickers)
-  priceTickers: string[] // Tickers displayed in price chart
+  // Single ticker selection for both fetching and display
+  chartTickers: string[]
 
   // Time and cursor states
   timeRange: { from: Time; to: Time } | null
@@ -123,19 +122,15 @@ type State = {
 
 /**
  * Store actions for updating state
+ * Simplified: Fewer setter methods needed
  */
 type Actions = {
   // Configuration setters
   setHoursBack: (hours: string) => void
-  setControlInterval: (intervals: string[]) => void
+  setInterval: (intervals: string[]) => void
 
-  // Ticker selection setters
-  setDataPoolTickers: (tickers: string[]) => void
-  setStrengthTickers: (tickers: string[]) => void
-  setPriceTickers: (tickers: string[]) => void
-
-  // Convenience method to update all ticker selections at once
-  setAllTickers: (tickers: string[]) => void
+  // Single ticker setter for all purposes
+  setChartTickers: (tickers: string[]) => void
 
   // Time and cursor setters
   setTimeRange: (range: { from: Time; to: Time } | null) => void
@@ -158,14 +153,12 @@ export type ChartControlsStore = State & Actions
 
 /**
  * Keys to sync with URL query parameters
- * Note: Using legacy names for backward compatibility
+ * Simplified URL structure
  */
 const URL_SYNC_KEYS = [
   'hoursBack',
-  'controlInterval',
-  'marketTickers', // Maps to dataPoolTickers
-  'controlTickers', // Maps to strengthTickers
-  'priceTickers',
+  'interval',
+  'tickers',
 ]
 
 // ============================================================================
@@ -181,10 +174,8 @@ const getInitialState = (): State => {
 
   const defaultState: State = {
     hoursBack: hoursBackOptions[0]!,
-    controlInterval: intervalsOptions[0]!.value,
-    dataPoolTickers: defaultTickers,
-    strengthTickers: defaultTickers,
-    priceTickers: defaultTickers,
+    interval: intervalsOptions[0]!.value,
+    chartTickers: defaultTickers,
     timeRange: null,
     cursorTime: null,
     aggregatedStrengthData: null,
@@ -200,31 +191,12 @@ const getInitialState = (): State => {
       defaultState.hoursBack = urlParams.hoursBack
     }
 
-    if (urlParams.controlInterval !== undefined) {
-      defaultState.controlInterval = urlParams.controlInterval
+    if (urlParams.interval !== undefined) {
+      defaultState.interval = urlParams.interval
     }
 
-    // Map legacy URL param names to new state names
-    if (urlParams.marketTickers !== undefined) {
-      defaultState.dataPoolTickers = urlParams.marketTickers
-    }
-
-    if (urlParams.controlTickers !== undefined) {
-      // Ensure strengthTickers are subset of dataPoolTickers
-      const validTickers = urlParams.controlTickers.filter((ticker: string) =>
-        defaultState.dataPoolTickers.includes(ticker)
-      )
-      defaultState.strengthTickers =
-        validTickers.length > 0 ? validTickers : defaultState.dataPoolTickers
-    }
-
-    if (urlParams.priceTickers !== undefined) {
-      // Ensure priceTickers are subset of dataPoolTickers
-      const validTickers = urlParams.priceTickers.filter((ticker: string) =>
-        defaultState.dataPoolTickers.includes(ticker)
-      )
-      defaultState.priceTickers =
-        validTickers.length > 0 ? validTickers : defaultState.dataPoolTickers
+    if (urlParams.tickers !== undefined) {
+      defaultState.chartTickers = urlParams.tickers
     }
   }
 
@@ -245,32 +217,14 @@ export const useChartControlsStore = create<ChartControlsStore>()(
         set({ hoursBack: hours })
       },
 
-      setControlInterval: (intervals: string[]) => {
+      setInterval: (intervals: string[]) => {
         // Ensure new array reference for React effect triggering
-        set({ controlInterval: [...intervals] })
+        set({ interval: [...intervals] })
       },
 
-      // Ticker selection setters
-      setDataPoolTickers: (tickers: string[]) => {
-        set({ dataPoolTickers: [...tickers] })
-      },
-
-      setStrengthTickers: (tickers: string[]) => {
-        set({ strengthTickers: [...tickers] })
-      },
-
-      setPriceTickers: (tickers: string[]) => {
-        set({ priceTickers: [...tickers] })
-      },
-
-      setAllTickers: (tickers: string[]) => {
-        // Convenience method to update all ticker selections at once
-        // Used when changing markets
-        set({
-          dataPoolTickers: [...tickers],
-          strengthTickers: [...tickers],
-          priceTickers: [...tickers],
-        })
+      // Single ticker setter
+      setChartTickers: (tickers: string[]) => {
+        set({ chartTickers: [...tickers] })
       },
 
       // Time and cursor setters
@@ -304,13 +258,11 @@ export const useChartControlsStore = create<ChartControlsStore>()(
       name: 'chart-controls',
       storage: createJSONStorage(() => createURLStorage(URL_SYNC_KEYS)),
       partialize: (state) => {
-        // Map internal names to legacy URL param names for backward compatibility
+        // Direct mapping - no legacy names needed
         return {
           hoursBack: state.hoursBack,
-          controlInterval: state.controlInterval,
-          marketTickers: state.dataPoolTickers, // Map to legacy name
-          controlTickers: state.strengthTickers, // Map to legacy name
-          priceTickers: state.priceTickers,
+          interval: state.interval,
+          tickers: state.chartTickers,
         }
       },
       onRehydrateStorage: () => (state) => {
