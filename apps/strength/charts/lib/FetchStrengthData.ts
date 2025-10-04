@@ -149,36 +149,6 @@ export class FetchStrengthData {
       dataMap.set(timestamp, item)
     })
 
-    // Log what we're merging
-    const existingLast = existingData[existingData.length - 1]
-    const existingSecondLast = existingData[existingData.length - 2]
-
-    console.log('[mergeData] Merging data:', {
-      existingCount: existingData.length,
-      newCount: newData.length,
-      lastTwoExisting: [
-        existingSecondLast
-          ? {
-              time: existingSecondLast.timenow.toISOString(),
-              price: existingSecondLast.price,
-              strength1: existingSecondLast['1'],
-            }
-          : null,
-        existingLast
-          ? {
-              time: existingLast.timenow.toISOString(),
-              price: existingLast.price,
-              strength1: existingLast['1'],
-            }
-          : null,
-      ].filter(Boolean),
-      newData: newData.map((d) => ({
-        time: d.timenow.toISOString(),
-        price: d.price,
-        strength1: d['1'],
-      })),
-    })
-
     // Add or update with new data
     let updatedCount = 0
     let addedCount = 0
@@ -208,12 +178,6 @@ export class FetchStrengthData {
         addedCount++
       }
       dataMap.set(timestamp, item)
-    })
-
-    console.log('[mergeData] Merge result:', {
-      updatedPoints: updatedCount,
-      newPoints: addedCount,
-      sampleUpdates: updates.slice(0, 3),
     })
 
     // Convert back to array and sort by time (ascending order)

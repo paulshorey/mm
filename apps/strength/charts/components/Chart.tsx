@@ -11,7 +11,6 @@ import {
   IChartApi,
   LineData,
   LineSeries,
-  MouseEventParams,
   ISeriesApi,
   Time,
   IPriceLine,
@@ -28,7 +27,6 @@ interface ChartProps {
   priceData?: LineData[] | null
   width: number
   height: number
-  onCrosshairMove: (time: Time | null) => void
   timeRange?: { from: Time; to: Time } | null
   showZeroLine?: boolean
 }
@@ -49,7 +47,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       priceData,
       width,
       height,
-      onCrosshairMove,
       timeRange,
       showZeroLine,
     },
@@ -60,7 +57,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const strengthSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const zeroLineRef = useRef<IPriceLine | null>(null)
-    const isUpdatingCursor = useRef(false)
     const hasInitialized = useRef(false)
     const lastDataRef = useRef<LineData[] | null>(null)
     const lastSecondDataRef = useRef<LineData[] | null>(null)
@@ -97,17 +93,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         priceScaleId: 'right',
       })
       priceSeriesRef.current = priceSeries
-
-      // Add crosshair event handlers for cursor synchronization
-      chart.subscribeCrosshairMove((param: MouseEventParams) => {
-        if (isUpdatingCursor.current) return
-
-        if (param.time !== undefined && param.time !== null) {
-          onCrosshairMove(param.time)
-        } else {
-          onCrosshairMove(null)
-        }
-      })
 
       // Set initial data if available
       if (strengthData) {
@@ -164,16 +149,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
           })
 
         if (!dataChanged) {
-          console.log(
+          console.warn(
             `[Chart] No data change detected for ${name} (strength), skipping update`
           )
           return
         }
 
         // Simply use setData for all updates
-        console.log(`[Chart] Updating strength data for ${name}`, {
-          dataPoints: currentData.length,
-        })
         strengthSeriesRef.current.setData(currentData)
         lastDataRef.current = [...currentData]
 
@@ -224,16 +206,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
           })
 
         if (!dataChanged) {
-          console.log(
+          console.warn(
             `[Chart] No data change detected for ${name} (price), skipping update`
           )
           return
         }
 
         // Simply use setData for all updates
-        console.log(`[Chart] Updating price data for ${name}`, {
-          dataPoints: currentData.length,
-        })
         priceSeriesRef.current.setData(currentData)
         lastSecondDataRef.current = [...currentData]
       } catch (error) {
@@ -291,14 +270,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         zeroLineRef.current = zeroLine
       }
     }, [showZeroLine])
-
-    // Handle crosshair updates from other charts
-    useEffect(() => {
-      isUpdatingCursor.current = true
-      setTimeout(() => {
-        isUpdatingCursor.current = false
-      }, 0)
-    }, [onCrosshairMove])
 
     const hasData = strengthData !== null
 

@@ -86,8 +86,6 @@ export function useRealtimeStrengthData({
           logData.latestDataTime = (latestTimestamp as Date).toISOString()
         }
 
-        console.log('[useRealtimeStrengthData] Initial data loaded:', logData)
-
         setRawData(allTickerData)
         lastDataTimestampRef.current = latestTimestamp
         setLastUpdateTime(new Date())
@@ -132,17 +130,6 @@ export function useRealtimeStrengthData({
       const fromDate = new Date(previousInterval.getTime() - 30 * 1000) // 30 seconds before previous interval
       const toDate = new Date() // Current time
 
-      console.log(
-        '[useRealtimeStrengthData] Fetching last two 2-minute intervals:',
-        {
-          lastDataTimestamp: lastDataTimestampRef.current.toISOString(),
-          currentInterval: currentInterval.toISOString(),
-          previousInterval: previousInterval.toISOString(),
-          fetchingFrom: fromDate.toISOString(),
-          fetchingTo: toDate.toISOString(),
-        }
-      )
-
       const newTickerData = await FetchStrengthData.fetchMultipleTickersData(
         tickers,
         fromDate,
@@ -150,40 +137,6 @@ export function useRealtimeStrengthData({
       )
 
       if (isMountedRef.current) {
-        // Analyze what we received
-        const dataAnalysis = newTickerData
-          .map((data, idx) => {
-            if (!data || data.length === 0) return null
-
-            // Check if we have data for the expected intervals
-            const timestamps = data.map((d) => d.timenow)
-            const hasCurrentInterval = timestamps.some(
-              (t) => Math.abs(t.getTime() - currentInterval.getTime()) < 1000
-            )
-            const hasPreviousInterval = timestamps.some(
-              (t) => Math.abs(t.getTime() - previousInterval.getTime()) < 1000
-            )
-
-            return {
-              ticker: tickers[idx],
-              count: data.length,
-              timestamps: timestamps.map((t) => t.toISOString()),
-              hasCurrentInterval,
-              hasPreviousInterval,
-              lastPrice: data[data.length - 1]?.price,
-              lastStrength1: data[data.length - 1]?.['1'],
-            }
-          })
-          .filter(Boolean)
-
-        console.log('[useRealtimeStrengthData] Received realtime data:', {
-          expectedIntervals: {
-            current: currentInterval.toISOString(),
-            previous: previousInterval.toISOString(),
-          },
-          dataAnalysis,
-        })
-
         setRawData((prevData) => {
           // Track the latest timestamp after merge
           let newLatestTimestamp = lastDataTimestampRef.current
@@ -206,18 +159,6 @@ export function useRealtimeStrengthData({
               ) {
                 newLatestTimestamp = lastItem.timenow
               }
-            }
-
-            if (newData.length > 0) {
-              console.log(
-                `[useRealtimeStrengthData] Ticker ${tickers[index]} merged:`,
-                {
-                  existingLength: existingData.length,
-                  newLength: newData.length,
-                  mergedLength: merged.length,
-                  newPoints: merged.length - existingData.length,
-                }
-              )
             }
 
             return merged

@@ -281,7 +281,7 @@ const getInitialState = (): State => {
 
 export const useChartControlsStore = create<ChartControlsStore>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       ...getInitialState(),
 
       // Control setters
@@ -297,9 +297,6 @@ export const useChartControlsStore = create<ChartControlsStore>()(
       setMarketTickers: (tickers: string[]) => {
         // Update market tickers (used for data fetching)
         const newTickers = [...tickers]
-        console.log('[Store] Market tickers changed:', {
-          newTickers,
-        })
         set({
           marketTickers: newTickers,
         })
@@ -307,9 +304,6 @@ export const useChartControlsStore = create<ChartControlsStore>()(
 
       setControlTickers: (tickers: string[]) => {
         // Update control tickers (used for strength chart)
-        console.log('[Store] Strength tickers changed:', {
-          newTickers: tickers,
-        })
         set({
           controlTickers: [...tickers],
         })
@@ -317,9 +311,6 @@ export const useChartControlsStore = create<ChartControlsStore>()(
 
       setPriceTickers: (tickers: string[]) => {
         // Update price tickers (used for price chart)
-        console.log('[Store] Price tickers changed:', {
-          newPriceTickers: tickers,
-        })
         set({ priceTickers: [...tickers] })
       },
 

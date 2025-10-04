@@ -35,7 +35,7 @@ export const aggregatePriceData = (
   let tickersWithData = 0
   let totalDataPoints = 0
 
-  allRawData.forEach((tickerData, tickerIndex) => {
+  allRawData.forEach((tickerData) => {
     const filledPrices = new Map<number, number>()
     let hasAnyValidData = false
     let lastKnownPrice = 0
@@ -46,7 +46,6 @@ export const aggregatePriceData = (
         lastValidPrice: 0,
         hasAnyData: false,
       })
-      console.log(`[aggregatePrice] Ticker ${tickerIndex}: No data`)
       return
     }
 
@@ -75,10 +74,6 @@ export const aggregatePriceData = (
 
       // Apply forward-fill interpolation using the utility function
       const interpolatedPrices = forwardFillData(tickerPrices, sortedTimestamps)
-
-      console.log(
-        `[aggregatePrice] Ticker ${tickerIndex}: ${tickerPrices.length} values -> ${interpolatedPrices.size} filled`
-      )
 
       // Get the last filled price for normalization
       const lastFilledPrice = interpolatedPrices.get(
@@ -110,20 +105,6 @@ export const aggregatePriceData = (
     time: point.time as Time,
     value: point.value,
   }))
-
-  // Log aggregation result for debugging
-  if (lineData.length > 0) {
-    const lastPoint = lineData[lineData.length - 1]
-    console.log('[aggregatePriceData] Final result:', {
-      inputTickers: allRawData.length,
-      tickersWithData,
-      totalDataPoints,
-      outputPoints: lineData.length,
-      firstTime: new Date((lineData[0]?.time as number) * 1000).toISOString(),
-      lastTime: new Date((lastPoint?.time as number) * 1000).toISOString(),
-      lastValue: lastPoint?.value,
-    })
-  }
 
   return lineData
 }
