@@ -24,8 +24,8 @@ import classes from '../classes.module.scss'
 interface ChartProps {
   heading: string | React.ReactNode
   name: string
-  chartData: LineData[] | null
-  secondSeriesData?: LineData[] | null
+  strengthData: LineData[] | null
+  priceData?: LineData[] | null
   width: number
   height: number
   onCrosshairMove: (time: Time | null) => void
@@ -35,8 +35,8 @@ interface ChartProps {
 
 export interface ChartRef {
   chart: IChartApi | null
-  series: ISeriesApi<'Line'> | null
-  secondSeries?: ISeriesApi<'Line'> | null
+  strengthSeries: ISeriesApi<'Line'> | null
+  priceSeries?: ISeriesApi<'Line'> | null
   container: HTMLDivElement | null
 }
 
@@ -45,8 +45,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     {
       heading,
       name,
-      chartData,
-      secondSeriesData,
+      strengthData,
+      priceData,
       width,
       height,
       onCrosshairMove,
@@ -57,8 +57,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
   ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const chartRef = useRef<IChartApi | null>(null)
-    const seriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-    const secondSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+    const strengthSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+    const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const zeroLineRef = useRef<IPriceLine | null>(null)
     const isUpdatingCursor = useRef(false)
     const hasInitialized = useRef(false)
@@ -67,8 +67,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     useImperativeHandle(ref, () => ({
       chart: chartRef.current,
-      series: seriesRef.current,
-      secondSeries: secondSeriesRef.current,
+      strengthSeries: strengthSeriesRef.current,
+      priceSeries: priceSeriesRef.current,
       container: containerRef.current,
     }))
 
@@ -84,17 +84,19 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add first series (strength) - uses LEFT price scale
       const strengthSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
+        color: '#ffa600d8',
         priceScaleId: 'left',
       })
-      seriesRef.current = strengthSeries
+      strengthSeriesRef.current = strengthSeries
 
       // Add second series (price) - uses RIGHT price scale (default)
       // Always create the series, even if data doesn't exist yet
       const priceSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
-        color: '#0076d0',
+        color: '#0091ff98',
+        priceScaleId: 'right',
       })
-      secondSeriesRef.current = priceSeries
+      priceSeriesRef.current = priceSeries
 
       // Add crosshair event handlers for cursor synchronization
       chart.subscribeCrosshairMove((param: MouseEventParams) => {
@@ -108,11 +110,11 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       })
 
       // Set initial data if available
-      if (chartData) {
-        strengthSeries.setData(chartData)
+      if (strengthData) {
+        strengthSeries.setData(strengthData)
       }
-      if (secondSeriesData && secondSeriesRef.current) {
-        secondSeriesRef.current.setData(secondSeriesData)
+      if (priceData && priceSeriesRef.current) {
+        priceSeriesRef.current.setData(priceData)
       }
 
       // Apply initial time range if provided
@@ -128,8 +130,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       return () => {
         chart.remove()
         chartRef.current = null
-        seriesRef.current = null
-        secondSeriesRef.current = null
+        strengthSeriesRef.current = null
+        priceSeriesRef.current = null
         zeroLineRef.current = null
         hasInitialized.current = false
       }
@@ -137,11 +139,16 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     // Update first series (strength) data
     useEffect(() => {
-      if (!seriesRef.current || !chartData || !hasInitialized.current) return
+      if (
+        !strengthSeriesRef.current ||
+        !strengthData ||
+        !hasInitialized.current
+      )
+        return
 
       try {
         const prevData = lastDataRef.current
-        const currentData = chartData
+        const currentData = strengthData
 
         // Check if data actually changed
         const dataChanged =
@@ -167,7 +174,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         console.log(`[Chart] Updating strength data for ${name}`, {
           dataPoints: currentData.length,
         })
-        seriesRef.current.setData(currentData)
+        strengthSeriesRef.current.setData(currentData)
         lastDataRef.current = [...currentData]
 
         // Reapply time range after data update
@@ -192,20 +199,16 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       } catch (error) {
         console.warn('Failed to update strength data:', error)
       }
-    }, [chartData, timeRange, name])
+    }, [strengthData, timeRange, name])
 
     // Update second series (price) data
     useEffect(() => {
-      if (
-        !secondSeriesRef.current ||
-        !secondSeriesData ||
-        !hasInitialized.current
-      )
+      if (!priceSeriesRef.current || !priceData || !hasInitialized.current)
         return
 
       try {
         const prevData = lastSecondDataRef.current
-        const currentData = secondSeriesData
+        const currentData = priceData
 
         // Check if data actually changed
         const dataChanged =
@@ -231,12 +234,12 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         console.log(`[Chart] Updating price data for ${name}`, {
           dataPoints: currentData.length,
         })
-        secondSeriesRef.current.setData(currentData)
+        priceSeriesRef.current.setData(currentData)
         lastSecondDataRef.current = [...currentData]
       } catch (error) {
         console.warn('Failed to update price data:', error)
       }
-    }, [secondSeriesData, name])
+    }, [priceData, name])
 
     // Update chart dimensions when they change
     useEffect(() => {
@@ -267,17 +270,17 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     // Handle showZeroLine changes
     useEffect(() => {
-      if (!seriesRef.current || !hasInitialized.current) return
+      if (!strengthSeriesRef.current || !hasInitialized.current) return
 
       // Remove existing zero line if it exists
       if (zeroLineRef.current) {
-        seriesRef.current.removePriceLine(zeroLineRef.current)
+        strengthSeriesRef.current.removePriceLine(zeroLineRef.current)
         zeroLineRef.current = null
       }
 
       // Add zero line if requested
       if (showZeroLine) {
-        const zeroLine = seriesRef.current.createPriceLine({
+        const zeroLine = strengthSeriesRef.current.createPriceLine({
           price: 0,
           color: '#666666',
           lineWidth: 1,
@@ -297,7 +300,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       }, 0)
     }, [onCrosshairMove])
 
-    const hasData = chartData !== null
+    const hasData = strengthData !== null
 
     return (
       <div

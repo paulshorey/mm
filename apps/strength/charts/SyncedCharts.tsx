@@ -23,9 +23,7 @@ export interface SyncedChartsProps {
 /**
  * Component that renders a single chart with dual y-axes for strength and price
  */
-export function SyncedCharts({
-  availableHeight,
-}: SyncedChartsProps) {
+export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   // Chart ref for single chart
   const chartRef = useRef<ChartRef | null>(null)
 
@@ -221,12 +219,15 @@ export function SyncedCharts({
           heading={
             <span className="flex flex-row pl-[5px]">
               <span className="pt-1 pr-1 pl-1 opacity-90 text-sm">
-                Strength (left) & Price (right)
+                <span className="text-blue-500">Price</span>
+                <span className="text-gray-500"> follows </span>
+                <span className="text-orange-500">Strength</span>
+                <span className="text-gray-500"> trend</span>
               </span>
             </span>
           }
-          chartData={aggregatedStrengthData}
-          secondSeriesData={aggregatedPriceData}
+          strengthData={aggregatedStrengthData}
+          priceData={aggregatedPriceData}
           width={typeof window !== 'undefined' ? window.innerWidth : 1200}
           height={availableHeight}
           onCrosshairMove={handleCrosshairMove}

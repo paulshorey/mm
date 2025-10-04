@@ -22,6 +22,7 @@ function timeFormatter(time: Time) {
  * Get base chart configuration
  */
 export const getChartConfig = (height: number): DeepPartial<ChartOptions> => ({
+  overlayPriceScales: {},
   height: height, // Use full height passed from parent
   localization: {
     timeFormatter,
@@ -37,11 +38,11 @@ export const getChartConfig = (height: number): DeepPartial<ChartOptions> => ({
   },
   // Y-Axis - Enable both left and right scales for dual series
   rightPriceScale: {
-    visible: true,
+    visible: false,
     minimumWidth: 80,
   },
   leftPriceScale: {
-    visible: true,
+    visible: false,
     minimumWidth: 80,
   },
   // X-Axis
@@ -64,7 +65,7 @@ export const getChartConfig = (height: number): DeepPartial<ChartOptions> => ({
     },
   },
   // Disable zoom/scroll but allow crosshair interactions
-  handleScroll: false,
+  handleScroll: true,
   handleScale: false,
 })
 

@@ -216,7 +216,7 @@ const URL_SYNC_KEYS = [
 // Get initial values from URL if available
 const getInitialState = (): State => {
   // Start with defaults - use first ticker option from first market (Crypto Average)
-  const defaultTickers = tickersByMarket[0]!.tickers[0]!.value
+  const defaultTickers = tickersByMarket[3]!.tickers[1]!.value
   const defaultState: State = {
     // Control defaults
     hoursBack: hoursBackOptions[0]!,
