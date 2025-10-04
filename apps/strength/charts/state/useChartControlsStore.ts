@@ -38,7 +38,7 @@ export const tickersByMarket = [
     ],
   },
   {
-    market: '',
+    market: '----------',
     tickers: [
       {
         label: 'US Equities',
@@ -55,7 +55,7 @@ export const tickersByMarket = [
     ],
   },
   {
-    market: '',
+    market: '----------',
     tickers: [
       {
         label: 'Metals',
@@ -84,7 +84,7 @@ export const tickersByMarket = [
     ],
   },
   {
-    market: '',
+    market: '----------',
     tickers: [
       {
         label: 'Crypto Average',

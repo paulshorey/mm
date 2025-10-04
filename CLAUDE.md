@@ -5,8 +5,9 @@ This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo t
 Before running any terminal npm or pnpm command, make sure to be in the correct folder, depending on the app or utility library that we're working with.
 
 - ./apps/log - logging and observability for all data types
+- ./apps/trade - day trading and investment positions management
 - ./apps/strength - financial charts and data analysis
-- ./apps/trade - day trading and investment positions management. Also an API endpoint for saving strength data from an indicator for future analysis.
+- ./apps/strength/charts - code to setup and render the financial strength charts and interact with UI
 
 - ./apps/common - common files imported by other apps, mostly helping with user and database management, but also containing useful utilities, functions, components, and server actions to accomplish various tasks and integrate with 3rd party services
 
