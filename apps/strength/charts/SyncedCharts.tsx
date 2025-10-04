@@ -180,9 +180,9 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           heading={
             <span className="flex flex-row pl-[5px]">
               <span className="pt-1 pr-1 pl-1 opacity-90 text-sm">
-                <span className="text-blue-500">Price</span>
+                <span className="text-[#0084ff]">Price</span>
                 <span className="text-gray-500"> follows </span>
-                <span className="text-orange-500">Strength</span>
+                <span className="text-[#ff8800]">Strength</span>
                 <span className="text-gray-500"> trend</span>
               </span>
             </span>
