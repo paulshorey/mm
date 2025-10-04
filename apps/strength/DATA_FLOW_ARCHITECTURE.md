@@ -1,7 +1,5 @@
 # Strength App - Data Flow Architecture
 
-NOTE: This file may need to be updated. It may not represent the latest code. As you read the codebase, always update this file and any other md files with latest minimal concise instructions.
-
 ## Overview
 
 The Strength app displays two synchronized financial charts (Strength and Price) with real-time data updates. Data flows from API → Raw Storage → Aggregation → Chart Display.
