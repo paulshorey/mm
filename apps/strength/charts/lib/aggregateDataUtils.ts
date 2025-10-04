@@ -6,10 +6,9 @@
  * Forward-fill missing values in price data
  * Uses aggressive interpolation to fill all timestamps with the most recent valid value
  */
-export function forwardFillData<T extends { timestamp: number; value?: number }>(
-  data: T[],
-  sortedTimestamps: number[]
-): Map<number, number> {
+export function forwardFillData<
+  T extends { timestamp: number; value?: number },
+>(data: T[], sortedTimestamps: number[]): Map<number, number> {
   const filledData = new Map<number, number>()
 
   // First pass: collect all valid values by timestamp
@@ -96,7 +95,7 @@ export function extractGlobalTimestamps<T extends { timenow: Date }>(
   if (invalidTimestamps.length > 0) {
     console.warn('[extractGlobalTimestamps] Found invalid timestamps:', {
       count: invalidTimestamps.length,
-      samples: invalidTimestamps.slice(0, 5)
+      samples: invalidTimestamps.slice(0, 5),
     })
   }
 
@@ -177,7 +176,9 @@ export function normalizeMultipleTickerData(
  * Forward-fill missing values for strength data aggregation
  * Similar to forwardFillData but handles strength data aggregation structure
  */
-export function aggregateStrengthDataWithInterpolation<T extends { timenow: Date }>(
+export function aggregateStrengthDataWithInterpolation<
+  T extends { timenow: Date },
+>(
   allRawData: (T[] | null)[],
   sortedTimestamps: number[],
   getStrengthValue: (item: T, intervals: string[]) => number | null,
@@ -195,7 +196,6 @@ export function aggregateStrengthDataWithInterpolation<T extends { timenow: Date
   allRawData.forEach((tickerData, tickerIndex) => {
     if (!tickerData || tickerData.length === 0) {
       tickerInterpolatedData[tickerIndex] = new Map()
-      console.log(`[aggregateStrength] Ticker ${tickerIndex}: No data`)
       return
     }
     tickersWithData++
@@ -203,14 +203,15 @@ export function aggregateStrengthDataWithInterpolation<T extends { timenow: Date
     // Convert ticker data to timestamp/value pairs for interpolation
     // Skip entries where ALL interval values are null (empty pre-created rows)
     const tickerValues = tickerData
-      .map(item => {
+      .map((item) => {
         const value = getStrengthValue(item, controlIntervals)
         // Only include if we have actual data (not empty pre-created rows)
         if (value === null || value === 0) {
           // Check if this is an empty row (all strength values are null)
-          const hasAnyData = controlIntervals.some(interval =>
-            item[interval as keyof typeof item] !== null &&
-            item[interval as keyof typeof item] !== undefined
+          const hasAnyData = controlIntervals.some(
+            (interval) =>
+              item[interval as keyof typeof item] !== null &&
+              item[interval as keyof typeof item] !== undefined
           )
           if (!hasAnyData) {
             return null // Skip empty pre-created rows
@@ -218,16 +219,18 @@ export function aggregateStrengthDataWithInterpolation<T extends { timenow: Date
         }
         return {
           timestamp: new Date(item.timenow).getTime() / 1000,
-          value
+          value,
         }
       })
-      .filter(item => item !== null && item.value !== null) as Array<{ timestamp: number; value: number }>
+      .filter((item) => item !== null && item.value !== null) as Array<{
+      timestamp: number
+      value: number
+    }>
 
     // Apply forward-fill interpolation
     const filledData = forwardFillData(tickerValues, sortedTimestamps)
     tickerInterpolatedData[tickerIndex] = filledData
 
-    console.log(`[aggregateStrength] Ticker ${tickerIndex}: ${tickerValues.length} values -> ${filledData.size} filled`)
     totalDataPoints += tickerValues.length
 
     // Add interpolated values to aggregated map
@@ -255,8 +258,6 @@ export function aggregateStrengthDataWithInterpolation<T extends { timenow: Date
 
   // Sort by time
   const sorted = result.sort((a, b) => a.time - b.time)
-
-  console.log(`[aggregateStrength] Final result: ${tickersWithData} tickers with ${totalDataPoints} total points -> ${sorted.length} aggregated points`)
 
   return sorted
 }

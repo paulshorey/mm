@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Time, LineData } from 'lightweight-charts'
+import { LineData } from 'lightweight-charts'
 import { useRealtimeStrengthData } from './lib/useRealtimeStrengthData'
 
 import { calculateTimeRange } from './lib/chartUtils'
@@ -31,10 +31,8 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const {
     // State
     hoursBack,
-    controlInterval,
-    marketTickers,
-    controlTickers,
-    priceTickers,
+    interval,
+    chartTickers,  // Single consolidated ticker list
     timeRange,
     aggregatedStrengthData,
     aggregatedPriceData,
@@ -46,13 +44,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   /**
    * Use the real-time data hook to manage data fetching and updates
-   * Always fetch data for ALL market tickers to prevent refetching
-   * Data will be filtered based on controlTickers and priceTickers during aggregation
+   * Fetches data for all selected chartTickers
    */
   const { rawData, isLoading, error, lastUpdateTime, isRealtime } =
     useRealtimeStrengthData({
-      tickers: marketTickers, // Always use marketTickers to avoid refetching
-      enabled: marketTickers.length > 0,
+      tickers: chartTickers,
+      enabled: chartTickers.length > 0,
       maxDataHours: HOURS_BACK_INITIAL,
       updateIntervalMs: 60000, // Update every minute
     })
@@ -66,73 +63,24 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
    *
    * This effect recalculates the aggregated chart data whenever:
    * - rawData changes (new data fetched or real-time updates)
-   * - controlInterval changes (different intervals selected for averaging)
-   * - priceTickers changes (different tickers selected for price chart)
-   * - controlTickers changes (different tickers selected for strength chart)
+   * - interval changes (different intervals selected for averaging)
    * - lastUpdateTime changes (indicates new real-time data)
    *
    * The aggregation creates two data series:
-   * 1. Strength data: average of selected intervals across selected strength tickers
-   * 2. Price data: normalized average of selected price tickers
+   * 1. Strength data: average of selected intervals across all tickers
+   * 2. Price data: normalized average of all tickers
    */
   useEffect(() => {
-    console.log('[SyncedCharts] Aggregation effect triggered', {
-      hasRawData: rawData.length > 0,
-      lastUpdateTime: lastUpdateTime?.toISOString(),
-      controlTickers,
-      priceTickers,
-    })
-
     if (rawData.length > 0 && rawData.some((data) => data !== null)) {
-      // Filter raw data based on selected tickers
-      // rawData is ordered the same as marketTickers
-      const strengthIndices = controlTickers
-        .map((ticker) => marketTickers.indexOf(ticker))
-        .filter((i) => i >= 0)
-      const priceIndices = priceTickers
-        .map((ticker) => marketTickers.indexOf(ticker))
-        .filter((i) => i >= 0)
-
-      const strengthRawData = strengthIndices.map((i) => rawData[i] || null)
-      const priceRawData = priceIndices.map((i) => rawData[i] || null)
-
-      // Log data filtering for debugging
-      console.log('[SyncedCharts] Data filtering:', {
-        marketTickers,
-        controlTickers,
-        priceTickers,
-        strengthIndices,
-        priceIndices,
-        rawDataLengths: rawData.map((d) => d?.length || 0),
-        strengthRawDataLengths: strengthRawData.map((d) => d?.length || 0),
-        priceRawDataLengths: priceRawData.map((d) => d?.length || 0),
-      })
-
-      // Additional debug: check if we're actually getting the right data
-      strengthRawData.forEach((data, idx) => {
-        if (data && data.length > 0) {
-          const tickerIndex = strengthIndices[idx]
-          const ticker =
-            tickerIndex !== undefined ? marketTickers[tickerIndex] : 'unknown'
-          console.log(
-            `[SyncedCharts] Strength data[${idx}] (${ticker}): ${
-              data.length
-            } points, first: ${data[0]?.timenow}, last: ${data[data.length - 1]
-              ?.timenow}`
-          )
-        }
-      })
-
-      // Always use ALL market data for timestamp extraction to ensure consistency
-      // This prevents issues when switching between Average and individual tickers
+      // Use all raw data for both charts (no filtering needed)
       const strengthData = aggregateStrengthData(
-        strengthRawData,
-        controlInterval,
-        rawData // Pass all market data for consistent timestamps
+        rawData,
+        interval,
+        rawData // Pass same data for consistent timestamps
       )
       const priceData = aggregatePriceData(
-        priceRawData,
-        rawData // Pass all market data for consistent timestamps
+        rawData,
+        rawData // Pass same data for consistent timestamps
       )
 
       // Log aggregation results for debugging
@@ -149,8 +97,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
             newPricePoints,
             totalStrengthPoints: strengthData.length,
             totalPricePoints: priceData.length,
-            controlTickers,
-            priceTickers,
+            chartTickers,
           })
         }
       }
@@ -167,12 +114,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       prevAggregatedPriceRef.current = newPriceData
     }
   }, [
-    controlInterval,
-    priceTickers,
+    interval,
     rawData,
-    controlTickers,
-    marketTickers,
+    chartTickers,
     lastUpdateTime,
+    setAggregatedStrengthData,
+    setAggregatedPriceData,
   ])
 
   /**
@@ -197,11 +144,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     }
   }, [hoursBack, rawData])
 
-  // Simple crosshair handler (no sync needed - single chart)
-  const handleCrosshairMove = (time: Time | null) => {
-    // Currently no action needed - could be used for future features
-  }
-
   return (
     <div className="relative w-full">
       {/* Show loading or error state */}
@@ -219,9 +161,9 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           heading={
             <span className="flex flex-row pl-[5px]">
               <span className="pt-1 pr-1 pl-1 opacity-90 text-sm">
-                <span className="text-blue-500">Price</span>
+                <span className="text-[#0084ff]">Price</span>
                 <span className="text-gray-500"> follows </span>
-                <span className="text-orange-500">Strength</span>
+                <span className="text-[#ff8800]">Strength</span>
                 <span className="text-gray-500"> trend</span>
               </span>
             </span>
@@ -230,7 +172,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           priceData={aggregatedPriceData}
           width={typeof window !== 'undefined' ? window.innerWidth : 1200}
           height={availableHeight}
-          onCrosshairMove={handleCrosshairMove}
           timeRange={timeRange}
           showZeroLine={true}
         />

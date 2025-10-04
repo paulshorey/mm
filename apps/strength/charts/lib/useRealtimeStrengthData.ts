@@ -86,8 +86,6 @@ export function useRealtimeStrengthData({
           logData.latestDataTime = (latestTimestamp as Date).toISOString()
         }
 
-        console.log('[useRealtimeStrengthData] Initial data loaded:', logData)
-
         setRawData(allTickerData)
         lastDataTimestampRef.current = latestTimestamp
         setLastUpdateTime(new Date())
@@ -102,6 +100,34 @@ export function useRealtimeStrengthData({
       }
     }
   }, [tickers, enabled, maxDataHours])
+
+  /**
+   * Forward-fill missing strength values from historical data
+   * @param currentRow The row to forward-fill (should be index 1)
+   * @param historicalRow The row to use for filling (should be index 2)
+   * @returns The forward-filled row
+   */
+  const forwardFillStrengthData = (
+    currentRow: StrengthRowGet,
+    historicalRow: StrengthRowGet
+  ): StrengthRowGet => {
+    const filled = { ...currentRow }
+
+    // Forward-fill each strength interval if null
+    const strengthIntervals = ['1', '4', '12', '60', '240'] as const
+    strengthIntervals.forEach(interval => {
+      if (filled[interval] === null && historicalRow[interval] !== null) {
+        filled[interval] = historicalRow[interval]
+      }
+    })
+
+    // Forward-fill price if needed (though it usually has its own algorithm)
+    if (filled.price === 0 || filled.price === null) {
+      filled.price = historicalRow.price || 0
+    }
+
+    return filled
+  }
 
   /**
    * Fetch incremental updates for real-time data
@@ -132,65 +158,54 @@ export function useRealtimeStrengthData({
       const fromDate = new Date(previousInterval.getTime() - 30 * 1000) // 30 seconds before previous interval
       const toDate = new Date() // Current time
 
-      console.log(
-        '[useRealtimeStrengthData] Fetching last two 2-minute intervals:',
-        {
-          lastDataTimestamp: lastDataTimestampRef.current.toISOString(),
-          currentInterval: currentInterval.toISOString(),
-          previousInterval: previousInterval.toISOString(),
-          fetchingFrom: fromDate.toISOString(),
-          fetchingTo: toDate.toISOString(),
-        }
-      )
-
       const newTickerData = await FetchStrengthData.fetchMultipleTickersData(
         tickers,
         fromDate,
         toDate
       )
+      console.log('[newTickerData before forward-fill]', newTickerData)
+
+      // Process each ticker's data to forward-fill missing values
+      const processedTickerData = newTickerData.map((tickerData) => {
+        if (!tickerData || tickerData.length < 2) {
+          // Not enough data to process
+          return tickerData
+        }
+
+        // Sort by timenow descending (newest first)
+        const sortedData = [...tickerData].sort(
+          (a, b) => b.timenow.getTime() - a.timenow.getTime()
+        )
+
+        // We need at least 2 rows to forward-fill
+        // Index 0: Latest row (unreliable placeholder, ignore)
+        // Index 1: Current real-time update (may have missing values)
+        // Index 2: Historical data (usually complete)
+        if (sortedData.length >= 3 && sortedData[1] && sortedData[2]) {
+          // Forward-fill index 1 from index 2
+          const filledRow = forwardFillStrengthData(sortedData[1], sortedData[2])
+
+          // Return only the filled row for merging (ignore the unreliable latest)
+          return [filledRow]
+        } else if (sortedData.length === 2 && sortedData[1]) {
+          // If we only have 2 rows, use the older one (index 1)
+          return [sortedData[1]]
+        } else {
+          // Only one row, use it as is
+          return sortedData
+        }
+      })
+
+      console.log('[newTickerData after forward-fill]', processedTickerData)
 
       if (isMountedRef.current) {
-        // Analyze what we received
-        const dataAnalysis = newTickerData
-          .map((data, idx) => {
-            if (!data || data.length === 0) return null
-
-            // Check if we have data for the expected intervals
-            const timestamps = data.map((d) => d.timenow)
-            const hasCurrentInterval = timestamps.some(
-              (t) => Math.abs(t.getTime() - currentInterval.getTime()) < 1000
-            )
-            const hasPreviousInterval = timestamps.some(
-              (t) => Math.abs(t.getTime() - previousInterval.getTime()) < 1000
-            )
-
-            return {
-              ticker: tickers[idx],
-              count: data.length,
-              timestamps: timestamps.map((t) => t.toISOString()),
-              hasCurrentInterval,
-              hasPreviousInterval,
-              lastPrice: data[data.length - 1]?.price,
-              lastStrength1: data[data.length - 1]?.['1'],
-            }
-          })
-          .filter(Boolean)
-
-        console.log('[useRealtimeStrengthData] Received realtime data:', {
-          expectedIntervals: {
-            current: currentInterval.toISOString(),
-            previous: previousInterval.toISOString(),
-          },
-          dataAnalysis,
-        })
-
         setRawData((prevData) => {
           // Track the latest timestamp after merge
           let newLatestTimestamp = lastDataTimestampRef.current
 
           // Merge new data with existing data for each ticker
           const mergedData = prevData.map((existingData, index) => {
-            const newData = newTickerData[index]
+            const newData = processedTickerData[index]
             if (!newData || newData.length === 0) return existingData
             if (!existingData) return newData
 
@@ -206,18 +221,6 @@ export function useRealtimeStrengthData({
               ) {
                 newLatestTimestamp = lastItem.timenow
               }
-            }
-
-            if (newData.length > 0) {
-              console.log(
-                `[useRealtimeStrengthData] Ticker ${tickers[index]} merged:`,
-                {
-                  existingLength: existingData.length,
-                  newLength: newData.length,
-                  mergedLength: merged.length,
-                  newPoints: merged.length - existingData.length,
-                }
-              )
             }
 
             return merged

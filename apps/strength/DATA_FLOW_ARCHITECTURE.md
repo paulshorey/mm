@@ -1,10 +1,14 @@
 # Strength App - Data Flow Architecture
 
-NOTE: This file may need to be updated. It may not represent the latest code. As you read the codebase, always update this file and any other md files with latest minimal concise instructions.
-
 ## Overview
 
 The Strength app displays two synchronized financial charts (Strength and Price) with real-time data updates. Data flows from API → Raw Storage → Aggregation → Chart Display.
+
+## Terminology
+
+### Simplified Ticker Management
+
+- **`chartTickers`**: Single list of tickers for both data fetching and display. Both strength and price charts use the same tickers.
 
 ## Data Structure
 
@@ -42,35 +46,32 @@ The Strength app displays two synchronized financial charts (Strength and Price)
 
 ### 1. Data Fetching Layer (`useRealtimeStrengthData` hook)
 
-**Purpose**: Manages raw data fetching and real-time updates for all market tickers
+**Purpose**: Manages raw data fetching and real-time updates for selected tickers
 
 **Key Behaviors**:
 
-- Fetches data for ALL `marketTickers` (not just selected tickers)
+- Fetches data for `chartTickers`
 - Initial load: Fetches up to `MAX_DATA_HOURS` of historical data
 - Real-time updates: Every 60 seconds, fetches only new data points
 - Merges new data with existing data, handling duplicates
+- Forward-fills missing strength values in real-time updates
 
 **Data Structure**:
 
 ```typescript
-rawData: (StrengthRowGet[] | null)[]  // Array indexed by marketTickers
+rawData: (StrengthRowGet[] | null)[]  // Array indexed by chartTickers
 ```
 
-### 2. Data Selection Layer (`SyncedCharts` component)
+### 2. Data Aggregation Layer (`SyncedCharts` component)
 
-**Purpose**: Filters raw data based on user selections
+**Purpose**: Aggregates raw data for chart display
 
 **Process**:
 
 ```typescript
-// Map selected tickers to their indices in marketTickers
-const strengthIndices = controlTickers
-  .map((ticker) => marketTickers.indexOf(ticker))
-  .filter((i) => i >= 0)
-
-// Extract only the data for selected tickers
-const strengthRawData = strengthIndices.map((i) => rawData[i] || null)
+// Use all raw data for both charts
+const strengthData = aggregateStrengthData(rawData, interval, rawData)
+const priceData = aggregatePriceData(rawData, rawData)
 ```
 
 ### 3. Data Aggregation Layer (`aggregateStrengthData`, `aggregatePriceData`)
@@ -165,48 +166,25 @@ const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
 
 ## Ticker Selection Change Flow
 
-### Selector Hierarchy
+### Simplified Selection
 
-1. **Market Selector** (Top Level):
-
-   - Changes available ticker options
-   - Resets both Strength and Price to "Average" (all tickers)
-   - Triggers new data fetch for all market tickers
-
-2. **Strength Selector** (Master):
-
-   - Updates `controlTickers` in store
-   - ALSO updates `priceTickers` to match
-   - Both charts update to show same selection
-   - Does NOT trigger new data fetch (uses cached data)
-
-3. **Price Selector** (Independent):
-   - Updates only `priceTickers` in store
-   - Does NOT affect `controlTickers`
-   - Only Price chart updates
-   - Does NOT trigger new data fetch (uses cached data)
+**Market Selector**:
+   - Changes ticker selection (`chartTickers`)
+   - Triggers new data fetch for selected tickers
+   - Both strength and price charts update together
 
 ### Implementation Details
 
 1. **User Changes Selection**:
+   - Updates `chartTickers` in store
+   - Triggers new data fetch
 
-   - Updates appropriate tickers in store
-   - Does NOT trigger new data fetch (except Market)
+2. **Data Aggregation**:
+   - Uses all fetched raw data
+   - Creates aggregated arrays for both charts
 
-2. **Filter Raw Data**:
-
-   - Maps selected tickers to indices in `marketTickers`
-   - Extracts subset of `rawData` for aggregation
-
-3. **Re-aggregate**:
-
-   - Uses ALL market timestamps for consistency
-   - Aggregates only the filtered ticker data
-   - Creates new aggregated arrays
-
-4. **Full Chart Update**:
-   - `Chart` detects multiple values changed
-   - Uses `setData()` for complete refresh
+3. **Chart Update**:
+   - Both charts update with new data
    - Maintains chart instance (no remounting)
 
 ## Critical Implementation Details
@@ -283,11 +261,11 @@ if (onlyLastChanged) {
 
 ## Testing Checklist
 
-1. ✅ Switch from Average to individual ticker → Historical data updates
-2. ✅ Switch between individual tickers → Charts update smoothly
+1. ✅ Switch between different ticker selections → New data fetched
+2. ✅ Both charts update together with same tickers
 3. ✅ Real-time updates continue after ticker changes
 4. ✅ Zoom/pan state preserved during real-time updates
-5. ✅ No unnecessary data fetching when changing selections
+5. ✅ URL parameters reflect simplified structure
 
 ## Future Improvements
 

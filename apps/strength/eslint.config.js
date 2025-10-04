@@ -5,4 +5,9 @@ import { nextJsConfig } from '@repo/config/eslint/next-js'
 export default {
   ...mantine,
   ...nextJsConfig,
+  rules: {
+    ...mantine.rules,
+    ...nextJsConfig.rules,
+    'no-console': 'warn',
+  },
 }

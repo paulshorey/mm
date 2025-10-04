@@ -11,7 +11,7 @@ interface Props {
 
 export default function IntervalControl({ showLabel = true }: Props) {
   // Get state and actions from Zustand store
-  const { controlInterval, setControlInterval } = useChartControlsStore()
+  const { interval, setInterval } = useChartControlsStore()
 
   // ComboBox for interval selector
   const combobox = useCombobox({
@@ -19,7 +19,7 @@ export default function IntervalControl({ showLabel = true }: Props) {
   })
 
   // Convert array to string for value comparison
-  const currentInterval = JSON.stringify(controlInterval)
+  const currentInterval = JSON.stringify(interval)
 
   // Find the selected option label
   const selectedOption = intervalsOptions.find(
@@ -32,7 +32,7 @@ export default function IntervalControl({ showLabel = true }: Props) {
       store={combobox}
       withinPortal={false}
       onOptionSubmit={(val) => {
-        setControlInterval(JSON.parse(val) as string[])
+        setInterval(JSON.parse(val) as string[])
         combobox.closeDropdown()
       }}
     >
