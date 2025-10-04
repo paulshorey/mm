@@ -1,5 +1,7 @@
 # Strength App - Data Flow Architecture
 
+NOTE: This file may need to be updated. It may not represent the latest code. As you read the codebase, always update this file and any other md files with latest minimal concise instructions.
+
 ## Overview
 
 The Strength app displays two synchronized financial charts (Strength and Price) with real-time data updates. Data flows from API → Raw Storage → Aggregation → Chart Display.
@@ -7,6 +9,7 @@ The Strength app displays two synchronized financial charts (Strength and Price)
 ## Data Structure
 
 ### Database Row (StrengthRowGet)
+
 ```typescript
 {
   timenow: Date      // CRITICAL: Even minutes only (0, 2, 4...), no seconds
@@ -22,6 +25,7 @@ The Strength app displays two synchronized financial charts (Strength and Price)
 ```
 
 ### Timestamp Requirements
+
 - **Even Minutes Only**: All timestamps MUST be at even minutes (0, 2, 4, 6...)
 - **No Seconds/Milliseconds**: Seconds and milliseconds must be 0
 - **2-Minute Intervals**: Data points are spaced exactly 2 minutes apart
@@ -41,12 +45,14 @@ The Strength app displays two synchronized financial charts (Strength and Price)
 **Purpose**: Manages raw data fetching and real-time updates for all market tickers
 
 **Key Behaviors**:
+
 - Fetches data for ALL `marketTickers` (not just selected tickers)
 - Initial load: Fetches up to `MAX_DATA_HOURS` of historical data
 - Real-time updates: Every 60 seconds, fetches only new data points
 - Merges new data with existing data, handling duplicates
 
 **Data Structure**:
+
 ```typescript
 rawData: (StrengthRowGet[] | null)[]  // Array indexed by marketTickers
 ```
@@ -56,14 +62,15 @@ rawData: (StrengthRowGet[] | null)[]  // Array indexed by marketTickers
 **Purpose**: Filters raw data based on user selections
 
 **Process**:
+
 ```typescript
 // Map selected tickers to their indices in marketTickers
-const strengthIndices = controlTickers.map(ticker =>
-  marketTickers.indexOf(ticker)
-).filter(i => i >= 0)
+const strengthIndices = controlTickers
+  .map((ticker) => marketTickers.indexOf(ticker))
+  .filter((i) => i >= 0)
 
 // Extract only the data for selected tickers
-const strengthRawData = strengthIndices.map(i => rawData[i] || null)
+const strengthRawData = strengthIndices.map((i) => rawData[i] || null)
 ```
 
 ### 3. Data Aggregation Layer (`aggregateStrengthData`, `aggregatePriceData`)
@@ -71,17 +78,19 @@ const strengthRawData = strengthIndices.map(i => rawData[i] || null)
 **Purpose**: Combines multiple ticker data into single chart series
 
 **Key Features**:
+
 - Uses timestamps from ALL market data (not just selected tickers)
 - Applies forward-fill interpolation for missing values
 - Averages values across selected tickers
 - Normalizes price data for equal contribution
 
 **Critical**: Always passes full `rawData` as second parameter for consistent timestamps:
+
 ```typescript
 const strengthData = aggregateStrengthData(
-  strengthRawData,      // Filtered data to aggregate
-  controlInterval,      // Intervals to average
-  rawData              // ALL market data for timestamps
+  strengthRawData, // Filtered data to aggregate
+  controlInterval, // Intervals to average
+  rawData // ALL market data for timestamps
 )
 ```
 
@@ -90,30 +99,36 @@ const strengthData = aggregateStrengthData(
 **Purpose**: Renders data with efficient updates
 
 **Update Strategies**:
+
 - **Initial Load**: Uses `setData()` to set all data
 - **Real-time Update**: Uses `update()` for last point only
 - **Ticker Change**: Uses `setData()` for complete refresh
 
 **Change Detection**:
+
 ```typescript
 // Detects if only last point changed (real-time) vs multiple changes (ticker switch)
 const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
   const prevItem = prevData[index]
-  return prevItem &&
+  return (
+    prevItem &&
     item.time === prevItem.time &&
     Math.abs(item.value - prevItem.value) < 0.0001
+  )
 })
 ```
 
 ## Real-time Update Flow
 
 ### Important: 2-Minute Interval Behavior
+
 - Database saves data every minute but to 2-minute intervals (even minutes only)
 - Database pre-creates empty rows with just timestamps (no data)
 - The same timestamp (e.g., 14:02) might be updated multiple times as data arrives
 - Must handle both new data points AND updates to existing points
 
 1. **Fetch** (every 60 seconds):
+
    - `fetchRealtimeUpdate()` fetches the LAST TWO 2-minute intervals
    - Current interval: Might be empty (pre-created) or partially filled
    - Previous interval: Might still be receiving updates
@@ -124,6 +139,7 @@ const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
    - Empty pre-created rows are filtered out during aggregation
 
 2. **Merge** (at raw data level):
+
    - `StrengthDataService.mergeData()` combines with existing data
    - Uses `timenow.getTime()` as unique key for deduplication
    - Updates existing points if timestamps match exactly
@@ -132,6 +148,7 @@ const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
    - Triggers `setRawData()` which updates the state
 
 3. **Re-aggregate** (triggered by state change):
+
    - `useEffect` in `SyncedCharts` detects `lastUpdateTime` change
    - Re-runs aggregation functions with updated raw data
    - Preserves exact timestamps from `timenow` field
@@ -151,11 +168,13 @@ const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
 ### Selector Hierarchy
 
 1. **Market Selector** (Top Level):
+
    - Changes available ticker options
    - Resets both Strength and Price to "Average" (all tickers)
    - Triggers new data fetch for all market tickers
 
 2. **Strength Selector** (Master):
+
    - Updates `controlTickers` in store
    - ALSO updates `priceTickers` to match
    - Both charts update to show same selection
@@ -170,14 +189,17 @@ const onlyLastChanged = currentData.slice(0, -1).every((item, index) => {
 ### Implementation Details
 
 1. **User Changes Selection**:
+
    - Updates appropriate tickers in store
    - Does NOT trigger new data fetch (except Market)
 
 2. **Filter Raw Data**:
+
    - Maps selected tickers to indices in `marketTickers`
    - Extracts subset of `rawData` for aggregation
 
 3. **Re-aggregate**:
+
    - Uses ALL market timestamps for consistency
    - Aggregates only the filtered ticker data
    - Creates new aggregated arrays
@@ -217,37 +239,44 @@ const filledData = forwardFillData(tickerValues, sortedTimestamps)
 
 ```typescript
 if (onlyLastChanged) {
-  seriesRef.current.update(lastCurrent)  // Efficient
+  seriesRef.current.update(lastCurrent) // Efficient
 } else {
-  seriesRef.current.setData(currentData)  // Full refresh
+  seriesRef.current.setData(currentData) // Full refresh
 }
 ```
 
 ## Common Issues and Solutions
 
 ### Issue: Historical data not updating when switching tickers
+
 **Cause**: Chart thinks it's a real-time update when timestamps match
 **Solution**: Properly detect when multiple values have changed
 
 ### Issue: Real-time updates stop working
+
 **Cause**: Chart component remounting disrupts update cycle
 **Solution**: Use stable chart keys, rely on data change detection
 
 ### Issue: Different data shown for Average vs Individual
+
 **Cause**: Using different timestamp sets for aggregation
 **Solution**: Always use full market data timestamps
 
 ### Issue: Chart data becomes corrupted after real-time updates
+
 **Cause**: Timestamps not properly aligned to 2-minute intervals
 **Solution**:
+
 - Ensure all timestamps are at even minutes with 0 seconds
 - Use `timenow` directly without modification
 - Validate timestamps when fetching data
 - Log warnings for misaligned timestamps
 
 ### Issue: Duplicate or missing data points
+
 **Cause**: Incorrect timestamp conversion or merging logic
 **Solution**:
+
 - Use `timenow.getTime()` as unique key for merging
 - Convert to chart format: `timenow.getTime() / 1000`
 - Never modify the original timestamp

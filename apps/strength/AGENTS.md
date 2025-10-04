@@ -64,9 +64,10 @@ This project is the "strength" app. It renders a single chart with dual y-axes t
 - See `DATA_FLOW_ARCHITECTURE.md` for detailed explanation of the recent data flow optimization
 - SQL types and database functions are in `./sql/strength/` folder
 - All timestamps MUST be at even minutes (0, 2, 4...) with no seconds
-- The `timenow` field from database is used directly as chart x-axis timestamp
+- The `timenow` field from database is used as chart x-axis timestamp
 
 ## Keeping notes and documenting changes
 
-- You are an AI agent. You will read AGENTS.md file in any relevant folder every time you think about a prompt. AGENTS.md in any folder will serve as documentation about the files in that folder, and how this folder relates to the app as a whole. Please update any existing AGENTS.md files as you make changes and understand the codebase better, to help yourself remember how everything works. Feel free to modify any existing AGENTS.md files in the codebase, and if a folder does not have a AGENTS.md file, please create one with notes that will help you next time. Please note only general concepts that are not easily explained as comment blocks in each file above each function. AGENTS.md is to help you understand the codebase, and how each folder relates to other folders, so you will know how to find the correct file or function.
+- You are an AI agent. You will read AGENTS.md file in any relevant folder every time you think about a prompt. AGENTS.md files will serve as documentation about the files and code concepts in that folder, how this folder relates to the app as a whole. Add or edit AGENTS.md files as you make changes. This will help you remember which folder or file to open next time when you are starting work on a similar topic.
+- When writing documentation to AGENTS.md or any other CUSTOM_INSTRUCTIONS.md files, be very concise and minimal. These md documentation files should be only a hint to help you find relevant files in the codebase. The real documentation should be kept in comment blocks above each file or function.
 - If adding a new AGENTS.md file, also add a file `CLAUDE.md` in the same folder, with contents `@AGENTS.md`. This is required so the non-standard Claude Code agent can read the AGENTS.md file also, by importing it from its own special CLAUDE.md instructions file.
