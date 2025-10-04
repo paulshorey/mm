@@ -15,7 +15,7 @@ export interface FetchStrengthDataResult {
 /**
  * Service for fetching strength data from the API
  */
-export class StrengthDataService {
+export class FetchStrengthData {
   private static baseUrl = '/api/v1/strength'
 
   /**
@@ -59,7 +59,7 @@ export class StrengthDataService {
               timenow: timenow.toISOString(),
               minutes,
               seconds,
-              milliseconds
+              milliseconds,
             })
           }
 
@@ -157,22 +157,26 @@ export class StrengthDataService {
       existingCount: existingData.length,
       newCount: newData.length,
       lastTwoExisting: [
-        existingSecondLast ? {
-          time: existingSecondLast.timenow.toISOString(),
-          price: existingSecondLast.price,
-          strength1: existingSecondLast['1']
-        } : null,
-        existingLast ? {
-          time: existingLast.timenow.toISOString(),
-          price: existingLast.price,
-          strength1: existingLast['1']
-        } : null
+        existingSecondLast
+          ? {
+              time: existingSecondLast.timenow.toISOString(),
+              price: existingSecondLast.price,
+              strength1: existingSecondLast['1'],
+            }
+          : null,
+        existingLast
+          ? {
+              time: existingLast.timenow.toISOString(),
+              price: existingLast.price,
+              strength1: existingLast['1'],
+            }
+          : null,
       ].filter(Boolean),
-      newData: newData.map(d => ({
+      newData: newData.map((d) => ({
         time: d.timenow.toISOString(),
         price: d.price,
-        strength1: d['1']
-      }))
+        strength1: d['1'],
+      })),
     })
 
     // Add or update with new data
@@ -195,7 +199,9 @@ export class StrengthDataService {
         const priceChanged = existingItem.price !== item.price
 
         if (strengthChanged || priceChanged) {
-          updates.push(`${item.timenow.toISOString()}: strength=${strengthChanged}, price=${priceChanged}`)
+          updates.push(
+            `${item.timenow.toISOString()}: strength=${strengthChanged}, price=${priceChanged}`
+          )
         }
         updatedCount++
       } else {
@@ -207,7 +213,7 @@ export class StrengthDataService {
     console.log('[mergeData] Merge result:', {
       updatedPoints: updatedCount,
       newPoints: addedCount,
-      sampleUpdates: updates.slice(0, 3)
+      sampleUpdates: updates.slice(0, 3),
     })
 
     // Convert back to array and sort by time (ascending order)

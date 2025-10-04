@@ -93,6 +93,8 @@ export const strengthGets = async function ({
       ticker: strength.ticker,
       timenow: new Date(strength.timenow),
       price: Number(strength.price),
+      high: Number(strength.high),
+      low: Number(strength.low),
       volume: Number(strength.volume),
       server_name: strength.server_name || '',
       app_name: strength.app_name || '',

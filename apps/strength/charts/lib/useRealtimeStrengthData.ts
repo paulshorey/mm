@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { StrengthRowGet } from '@/sql/strength'
-import { StrengthDataService } from './strengthDataService'
+import { FetchStrengthData } from './FetchStrengthData'
 import { HOURS_BACK_INITIAL } from '../constants'
 
 export interface UseRealtimeStrengthDataOptions {
@@ -49,8 +49,8 @@ export function useRealtimeStrengthData({
     setError(null)
 
     try {
-      const initialDate = StrengthDataService.getInitialDataDate(maxDataHours)
-      const allTickerData = await StrengthDataService.fetchMultipleTickersData(
+      const initialDate = FetchStrengthData.getInitialDataDate(maxDataHours)
+      const allTickerData = await FetchStrengthData.fetchMultipleTickersData(
         tickers,
         initialDate
       )
@@ -117,27 +117,33 @@ export function useRealtimeStrengthData({
       // We go back 4 minutes to ensure we capture both intervals
       const now = new Date()
       const currentMinute = now.getMinutes()
-      const currentEvenMinute = currentMinute % 2 === 0 ? currentMinute : currentMinute - 1
+      const currentEvenMinute =
+        currentMinute % 2 === 0 ? currentMinute : currentMinute - 1
 
       // Calculate the two intervals we want to fetch
       const currentInterval = new Date(now)
       currentInterval.setMinutes(currentEvenMinute, 0, 0)
 
-      const previousInterval = new Date(currentInterval.getTime() - 2 * 60 * 1000)
+      const previousInterval = new Date(
+        currentInterval.getTime() - 2 * 60 * 1000
+      )
 
       // Fetch from before the previous interval to ensure we get both
       const fromDate = new Date(previousInterval.getTime() - 30 * 1000) // 30 seconds before previous interval
       const toDate = new Date() // Current time
 
-      console.log('[useRealtimeStrengthData] Fetching last two 2-minute intervals:', {
-        lastDataTimestamp: lastDataTimestampRef.current.toISOString(),
-        currentInterval: currentInterval.toISOString(),
-        previousInterval: previousInterval.toISOString(),
-        fetchingFrom: fromDate.toISOString(),
-        fetchingTo: toDate.toISOString(),
-      })
+      console.log(
+        '[useRealtimeStrengthData] Fetching last two 2-minute intervals:',
+        {
+          lastDataTimestamp: lastDataTimestampRef.current.toISOString(),
+          currentInterval: currentInterval.toISOString(),
+          previousInterval: previousInterval.toISOString(),
+          fetchingFrom: fromDate.toISOString(),
+          fetchingTo: toDate.toISOString(),
+        }
+      )
 
-      const newTickerData = await StrengthDataService.fetchMultipleTickersData(
+      const newTickerData = await FetchStrengthData.fetchMultipleTickersData(
         tickers,
         fromDate,
         toDate
@@ -145,35 +151,37 @@ export function useRealtimeStrengthData({
 
       if (isMountedRef.current) {
         // Analyze what we received
-        const dataAnalysis = newTickerData.map((data, idx) => {
-          if (!data || data.length === 0) return null
+        const dataAnalysis = newTickerData
+          .map((data, idx) => {
+            if (!data || data.length === 0) return null
 
-          // Check if we have data for the expected intervals
-          const timestamps = data.map(d => d.timenow)
-          const hasCurrentInterval = timestamps.some(t =>
-            Math.abs(t.getTime() - currentInterval.getTime()) < 1000
-          )
-          const hasPreviousInterval = timestamps.some(t =>
-            Math.abs(t.getTime() - previousInterval.getTime()) < 1000
-          )
+            // Check if we have data for the expected intervals
+            const timestamps = data.map((d) => d.timenow)
+            const hasCurrentInterval = timestamps.some(
+              (t) => Math.abs(t.getTime() - currentInterval.getTime()) < 1000
+            )
+            const hasPreviousInterval = timestamps.some(
+              (t) => Math.abs(t.getTime() - previousInterval.getTime()) < 1000
+            )
 
-          return {
-            ticker: tickers[idx],
-            count: data.length,
-            timestamps: timestamps.map(t => t.toISOString()),
-            hasCurrentInterval,
-            hasPreviousInterval,
-            lastPrice: data[data.length - 1]?.price,
-            lastStrength1: data[data.length - 1]?.['1']
-          }
-        }).filter(Boolean)
+            return {
+              ticker: tickers[idx],
+              count: data.length,
+              timestamps: timestamps.map((t) => t.toISOString()),
+              hasCurrentInterval,
+              hasPreviousInterval,
+              lastPrice: data[data.length - 1]?.price,
+              lastStrength1: data[data.length - 1]?.['1'],
+            }
+          })
+          .filter(Boolean)
 
         console.log('[useRealtimeStrengthData] Received realtime data:', {
           expectedIntervals: {
             current: currentInterval.toISOString(),
-            previous: previousInterval.toISOString()
+            previous: previousInterval.toISOString(),
           },
-          dataAnalysis
+          dataAnalysis,
         })
 
         setRawData((prevData) => {
@@ -187,7 +195,7 @@ export function useRealtimeStrengthData({
             if (!existingData) return newData
 
             // Merge and deduplicate data
-            const merged = StrengthDataService.mergeData(existingData, newData)
+            const merged = FetchStrengthData.mergeData(existingData, newData)
 
             // Update latest timestamp
             if (merged.length > 0) {
