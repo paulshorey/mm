@@ -2,9 +2,6 @@
   "name": "@lib/common",
   "version": "1.0.0",
   "private": true,
-  "exports": {
-    "./*": "./*"
-  },
   "dependencies": {
     "@mantine/core": "7.17.8",
     "@mantine/hooks": "7.17.8",
