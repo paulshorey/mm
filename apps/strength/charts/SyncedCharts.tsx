@@ -32,7 +32,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     // State
     hoursBack,
     interval,
-    chartTickers,  // Single consolidated ticker list
+    chartTickers, // Single consolidated ticker list
     timeRange,
     aggregatedStrengthData,
     aggregatedPriceData,
@@ -164,7 +164,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
                 <span className="text-[#0084ff]">Price</span>
                 <span className="text-gray-500"> follows </span>
                 <span className="text-[#ff8800]">Strength</span>
-                <span className="text-gray-500"> trend</span>
+                {/* <span className="text-gray-500"> trend</span> */}
               </span>
             </span>
           }
