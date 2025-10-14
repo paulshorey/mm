@@ -67,7 +67,8 @@ export const tickersByMarket = [
   {
     market: '----------',
     tickers: [
-      { label: 'Crypto Index', value: ['CX'] },
+      { label: 'Forex', value: ['Forex'] },
+      { label: 'Crypto', value: ['CX'] },
       { label: 'BTCUSD', value: ['BTCUSD'] },
       { label: 'ETHUSD', value: ['ETHUSD'] },
       { label: 'SOLUSD', value: ['SOLUSD'] },
