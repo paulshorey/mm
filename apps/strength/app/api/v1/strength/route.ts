@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
-import { strengthGets } from '@/sql/strength/gets'
+import { strengthGets } from '@lib/common/sql/strength/gets'
 import { cc } from '@lib/common/cc'
 
 export const dynamic = 'force-dynamic'

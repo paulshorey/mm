@@ -10,6 +10,7 @@ export type StrengthRowGet = {
   "1": number | null;
   "4": number | null;
   "12": number | null;
+  "30": number | null;
   "60": number | null;
   "240": number | null;
   created_at: Date; // DateTime as ISO string

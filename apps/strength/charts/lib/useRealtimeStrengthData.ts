@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { StrengthRowGet } from '@/sql/strength'
+import { StrengthRowGet } from '@lib/common/sql/strength'
 import { FetchStrengthData } from './FetchStrengthData'
 import { HOURS_BACK_INITIAL } from '../constants'
 
@@ -115,7 +115,7 @@ export function useRealtimeStrengthData({
 
     // Forward-fill each strength interval if null
     const strengthIntervals = ['1', '4', '12', '60', '240'] as const
-    strengthIntervals.forEach(interval => {
+    strengthIntervals.forEach((interval) => {
       if (filled[interval] === null && historicalRow[interval] !== null) {
         filled[interval] = historicalRow[interval]
       }
@@ -183,7 +183,10 @@ export function useRealtimeStrengthData({
         // Index 2: Historical data (usually complete)
         if (sortedData.length >= 3 && sortedData[1] && sortedData[2]) {
           // Forward-fill index 1 from index 2
-          const filledRow = forwardFillStrengthData(sortedData[1], sortedData[2])
+          const filledRow = forwardFillStrengthData(
+            sortedData[1],
+            sortedData[2]
+          )
 
           // Return only the filled row for merging (ignore the unreliable latest)
           return [filledRow]

@@ -12,13 +12,12 @@ import { createURLStorage, getQueryParams } from './lib/urlSync'
  * Each option represents a set of intervals to average together
  */
 export const intervalsOptions = [
-  { value: ['4', '12', '60', '240'], label: 'multi' },
-  { value: ['1', '4', '12', '60', '240'], label: 'all' },
-  { value: ['12', '60', '240'], label: 'long' },
+  { value: ['4', '12', '30', '60', '240'], label: 'all' },
+  { value: ['30', '60', '240'], label: 'long' },
   { value: ['1', '4', '12'], label: 'short' },
-  { value: ['1'], label: '1m' },
   { value: ['4'], label: '5m' },
   { value: ['12'], label: '15m' },
+  { value: ['30'], label: '30m' },
   { value: ['60'], label: '1h' },
   { value: ['240'], label: '4h' },
 ]
@@ -40,7 +39,8 @@ export const tickersByMarket = [
   {
     market: '----------',
     tickers: [
-      { label: 'US Equities', value: ['ES1!', 'YM1!'] },
+      { label: 'US Equities', value: ['RTY1!', 'ES1!', 'YM1!'] },
+      { label: 'RTY1!', value: ['RTY1!'] },
       { label: 'ES1!', value: ['ES1!'] },
       { label: 'YM1!', value: ['YM1!'] },
     ],
@@ -48,34 +48,26 @@ export const tickersByMarket = [
   {
     market: '----------',
     tickers: [
-      { label: 'Metals', value: ['HG1!', 'GC1!', 'SI1!', 'PL1!'] },
       { label: 'Precious Metals', value: ['GC1!', 'SI1!', 'PL1!'] },
       { label: 'GC1!', value: ['GC1!'] },
       { label: 'SI1!', value: ['SI1!'] },
       { label: 'PL1!', value: ['PL1!'] },
-      { label: 'HG1!', value: ['HG1!'] },
     ],
   },
   {
     market: '----------',
     tickers: [
-      {
-        label: 'Crypto Average',
-        value: [
-          'CX',
-          'BTCUSD',
-          'ETHUSD',
-          'SOLUSD',
-          'XRPUSD',
-          'SUIUSD',
-          'BNBUSD',
-          'DOGEUSD',
-          'AVAXUSD',
-          'NEARUSD',
-          'XLMUSD',
-        ],
-      },
-      { label: 'CX', value: ['CX'] },
+      { label: 'HG1!', value: ['HG1!'] },
+      { label: 'XC1!', value: ['XC1!'] },
+      { label: 'XW1!', value: ['XW1!'] },
+      { label: 'SB1!', value: ['SB1!'] },
+      { label: 'ZL1!', value: ['ZL1!'] },
+    ],
+  },
+  {
+    market: '----------',
+    tickers: [
+      { label: 'Crypto Index', value: ['CX'] },
       { label: 'BTCUSD', value: ['BTCUSD'] },
       { label: 'ETHUSD', value: ['ETHUSD'] },
       { label: 'SOLUSD', value: ['SOLUSD'] },
@@ -84,7 +76,6 @@ export const tickersByMarket = [
       { label: 'BNBUSD', value: ['BNBUSD'] },
       { label: 'DOGEUSD', value: ['DOGEUSD'] },
       { label: 'AVAXUSD', value: ['AVAXUSD'] },
-      { label: 'NEARUSD', value: ['NEARUSD'] },
       { label: 'XLMUSD', value: ['XLMUSD'] },
     ],
   },
@@ -155,11 +146,7 @@ export type ChartControlsStore = State & Actions
  * Keys to sync with URL query parameters
  * Simplified URL structure
  */
-const URL_SYNC_KEYS = [
-  'hoursBack',
-  'interval',
-  'tickers',
-]
+const URL_SYNC_KEYS = ['hoursBack', 'interval', 'tickers']
 
 // ============================================================================
 // INITIALIZATION LOGIC
@@ -170,7 +157,7 @@ const URL_SYNC_KEYS = [
  */
 const getInitialState = (): State => {
   // Default to CX (Crypto Index) ticker
-  const defaultTickers = tickersByMarket[3]!.tickers[1]!.value
+  const defaultTickers = tickersByMarket[1]!.tickers[2]!.value
 
   const defaultState: State = {
     hoursBack: hoursBackOptions[0]!,

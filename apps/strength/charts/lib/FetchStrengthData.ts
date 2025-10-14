@@ -1,4 +1,4 @@
-import { StrengthRowGet } from '@/sql/strength'
+import { StrengthRowGet } from '@lib/common/sql/strength'
 import { HOURS_BACK_INITIAL } from '../constants'
 
 export interface FetchStrengthDataParams {

@@ -1,4 +1,4 @@
-import { StrengthRowGet } from '@/sql/strength'
+import { StrengthRowGet } from '@lib/common/sql/strength'
 import { LineData, Time } from 'lightweight-charts'
 import {
   aggregateStrengthDataWithInterpolation,
