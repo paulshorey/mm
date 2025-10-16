@@ -25,7 +25,7 @@ export const intervalsOptions = [
 /**
  * Available time range options for historical data
  */
-export const hoursBackOptions = ['240h', '120h', '60h', '48h', '36h', '24h']
+export const hoursBackOptions = ['120h', '96h', '72h', '48h', '24h']
 
 /**
  * Market categories and their ticker options
@@ -161,7 +161,7 @@ const getInitialState = (): State => {
   const defaultTickers = tickersByMarket[1]!.tickers[2]!.value
 
   const defaultState: State = {
-    hoursBack: hoursBackOptions[0]!,
+    hoursBack: hoursBackOptions[hoursBackOptions.length - 1]!,
     interval: intervalsOptions[0]!.value,
     chartTickers: defaultTickers,
     timeRange: null,

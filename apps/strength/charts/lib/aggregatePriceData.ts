@@ -4,6 +4,7 @@ import {
   extractGlobalTimestamps,
   forwardFillData,
   normalizeMultipleTickerData,
+  generateFutureTimestamps,
 } from './aggregateDataUtils'
 
 /**
@@ -105,6 +106,24 @@ export const aggregatePriceData = (
     time: point.time as Time,
     value: point.value,
   }))
+
+  // Extend data 12 hours into the future with the last known value
+  if (lineData.length > 0) {
+    const lastDataPoint = lineData[lineData.length - 1]!
+    const lastTimestamp = lastDataPoint.time as number
+    const lastValue = lastDataPoint.value
+
+    // Generate future timestamps (12 hours at 2-minute intervals)
+    const futureTimestamps = generateFutureTimestamps(lastTimestamp, 12)
+
+    // Add future data points with the last known value
+    futureTimestamps.forEach((timestamp) => {
+      lineData.push({
+        time: timestamp as Time,
+        value: lastValue,
+      })
+    })
+  }
 
   return lineData
 }

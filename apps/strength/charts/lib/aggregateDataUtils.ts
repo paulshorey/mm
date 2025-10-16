@@ -3,6 +3,27 @@
  */
 
 /**
+ * Generate future timestamps at 2-minute intervals
+ * @param lastTimestamp - The last timestamp from the real data (in seconds)
+ * @param hours - Number of hours to extend into the future
+ * @returns Array of future timestamps at 2-minute intervals (in seconds)
+ */
+export function generateFutureTimestamps(
+  lastTimestamp: number,
+  hours: number = 12
+): number[] {
+  const futureTimestamps: number[] = []
+  const intervalSeconds = 2 * 60 // 2 minutes in seconds
+  const totalIntervals = (hours * 60) / 2 // Total number of 2-minute intervals
+
+  for (let i = 1; i <= totalIntervals; i++) {
+    futureTimestamps.push(lastTimestamp + i * intervalSeconds)
+  }
+
+  return futureTimestamps
+}
+
+/**
  * Forward-fill missing values in price data
  * Uses aggressive interpolation to fill all timestamps with the most recent valid value
  */
