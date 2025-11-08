@@ -12,7 +12,7 @@ import { createURLStorage, getQueryParams } from './lib/urlSync'
  * Each option represents a set of intervals to average together
  */
 export const intervalsOptions = [
-  { value: ['4', '12', '30', '60', '240'], label: 'all' },
+  { value: ['4', '12', '30', '60'], label: 'all' },
   { value: ['30', '60', '240'], label: 'long' },
   { value: ['1', '4', '12'], label: 'short' },
   { value: ['4'], label: '5m' },

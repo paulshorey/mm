@@ -182,7 +182,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
       {/* Ticker control */}
       <div
-        className="fixed top-[33px] left-[9px] font-normal z-[10000]"
+        className="fixed top-[33px] left-[9px] font-normal z-[100]"
         dir="ltr"
       >
         <div className="flex flex-row relative">
