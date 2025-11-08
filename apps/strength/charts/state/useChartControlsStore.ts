@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Time, LineData } from 'lightweight-charts'
 import { createURLStorage, getQueryParams } from './lib/urlSync'
+import { MultipleStrengthSeries } from '../lib/aggregateStrengthData'
 
 // ============================================================================
 // CONFIGURATION CONSTANTS
@@ -12,7 +13,7 @@ import { createURLStorage, getQueryParams } from './lib/urlSync'
  * Each option represents a set of intervals to average together
  */
 export const intervalsOptions = [
-  { value: ['4', '12', '30', '60', '240'], label: 'all' },
+  { value: ['4', '12', '30', '60'], label: 'all' },
   { value: ['30', '60', '240'], label: 'long' },
   { value: ['1', '4', '12'], label: 'short' },
   { value: ['4'], label: '5m' },
@@ -25,7 +26,7 @@ export const intervalsOptions = [
 /**
  * Available time range options for historical data
  */
-export const hoursBackOptions = ['240h', '120h', '96h', '72h', '48h', '24h']
+export const hoursBackOptions = ['120h', '96h', '72h', '48h', '24h']
 
 /**
  * Market categories and their ticker options
@@ -109,7 +110,7 @@ type State = {
   cursorTime: Time | null
 
   // Aggregated data for charts
-  aggregatedStrengthData: LineData[] | null
+  aggregatedStrengthData: MultipleStrengthSeries | null
   aggregatedPriceData: LineData[] | null
 
   // Hydration state for URL sync
@@ -133,7 +134,7 @@ type Actions = {
   setCursorTime: (time: Time | null) => void
 
   // Data setters
-  setAggregatedStrengthData: (data: LineData[] | null) => void
+  setAggregatedStrengthData: (data: MultipleStrengthSeries | null) => void
   setAggregatedPriceData: (data: LineData[] | null) => void
 
   // Utility actions
@@ -165,7 +166,7 @@ const getInitialState = (): State => {
   const defaultTickers = tickersByMarket[1]!.tickers[2]!.value
 
   const defaultState: State = {
-    hoursBack: hoursBackOptions[hoursBackOptions.length - 2]!,
+    hoursBack: hoursBackOptions[0]!,
     interval: intervalsOptions[0]!.value,
     chartTickers: defaultTickers,
     timeRange: null,
@@ -229,7 +230,7 @@ export const useChartControlsStore = create<ChartControlsStore>()(
       },
 
       // Data setters
-      setAggregatedStrengthData: (data: LineData[] | null) => {
+      setAggregatedStrengthData: (data: MultipleStrengthSeries | null) => {
         set({ aggregatedStrengthData: data })
       },
 

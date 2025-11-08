@@ -19,11 +19,12 @@ import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
+import { MultipleStrengthSeries } from '../lib/aggregateStrengthData'
 
 interface ChartProps {
   heading: string | React.ReactNode
   name: string
-  strengthData: LineData[] | null
+  strengthData: MultipleStrengthSeries | null
   priceData?: LineData[] | null
   width: number
   height: number
@@ -33,7 +34,8 @@ interface ChartProps {
 
 export interface ChartRef {
   chart: IChartApi | null
-  strengthSeries: ISeriesApi<'Line'> | null
+  intervalSeries: Map<string, ISeriesApi<'Line'>> | null
+  averageSeries: ISeriesApi<'Line'> | null
   priceSeries?: ISeriesApi<'Line'> | null
   container: HTMLDivElement | null
 }
@@ -54,16 +56,19 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
   ) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const chartRef = useRef<IChartApi | null>(null)
-    const strengthSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+    const intervalSeriesRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map())
+    const averageSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const zeroLineRef = useRef<IPriceLine | null>(null)
     const hasInitialized = useRef(false)
-    const lastDataRef = useRef<LineData[] | null>(null)
+    const lastAverageDataRef = useRef<LineData[] | null>(null)
+    const lastIntervalDataRef = useRef<Map<string, LineData[]>>(new Map())
     const lastSecondDataRef = useRef<LineData[] | null>(null)
 
     useImperativeHandle(ref, () => ({
       chart: chartRef.current,
-      strengthSeries: strengthSeriesRef.current,
+      intervalSeries: intervalSeriesRef.current,
+      averageSeries: averageSeriesRef.current,
       priceSeries: priceSeriesRef.current,
       container: containerRef.current,
     }))
@@ -77,15 +82,15 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       chartRef.current = chart
       hasInitialized.current = true
 
-      // Add first series (strength) - uses LEFT price scale
-      const strengthSeries = chart.addSeries(LineSeries, {
+      // Add average series (strength) - uses LEFT price scale, full opacity
+      const averageSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
-        color: '#ff9d00d7',
+        color: '#ff9d00', // Full opacity for average (bright and prominent)
         priceScaleId: 'left',
       })
-      strengthSeriesRef.current = strengthSeries
+      averageSeriesRef.current = averageSeries
 
-      // Add second series (price) - uses RIGHT price scale (default)
+      // Add price series - uses RIGHT price scale (default)
       // Always create the series, even if data doesn't exist yet
       const priceSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
@@ -96,8 +101,25 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       // Set initial data if available
       if (strengthData) {
-        strengthSeries.setData(strengthData)
+        // Set average data
+        if (strengthData.averageSeries.length > 0) {
+          averageSeries.setData(strengthData.averageSeries)
+        }
+
+        // Create series for each interval (20% opacity - very light)
+        strengthData.intervalSeries.forEach(({ interval, data }) => {
+          const intervalSeries = chart.addSeries(LineSeries, {
+            ...getLineSeriesConfig(),
+            color: '#ff9d0033', // 20% opacity for individual intervals (very light)
+            priceScaleId: 'left',
+          })
+          intervalSeriesRef.current.set(interval, intervalSeries)
+          if (data.length > 0) {
+            intervalSeries.setData(data)
+          }
+        })
       }
+
       if (priceData && priceSeriesRef.current) {
         priceSeriesRef.current.setData(priceData)
       }
@@ -115,25 +137,26 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       return () => {
         chart.remove()
         chartRef.current = null
-        strengthSeriesRef.current = null
+        averageSeriesRef.current = null
+        intervalSeriesRef.current.clear()
         priceSeriesRef.current = null
         zeroLineRef.current = null
         hasInitialized.current = false
       }
     }, []) // Only run once on mount - removed all dependencies
 
-    // Update first series (strength) data
+    // Update average series data
     useEffect(() => {
       if (
-        !strengthSeriesRef.current ||
+        !averageSeriesRef.current ||
         !strengthData ||
         !hasInitialized.current
       )
         return
 
       try {
-        const prevData = lastDataRef.current
-        const currentData = strengthData
+        const prevData = lastAverageDataRef.current
+        const currentData = strengthData.averageSeries
 
         // Check if data actually changed
         const dataChanged =
@@ -150,14 +173,14 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
         if (!dataChanged) {
           console.warn(
-            `[Chart] No data change detected for ${name} (strength), skipping update`
+            `[Chart] No data change detected for ${name} (average), skipping update`
           )
           return
         }
 
         // Simply use setData for all updates
-        strengthSeriesRef.current.setData(currentData)
-        lastDataRef.current = [...currentData]
+        averageSeriesRef.current.setData(currentData)
+        lastAverageDataRef.current = [...currentData]
 
         // Reapply time range after data update
         if (timeRange && chartRef.current && timeRange.from < timeRange.to) {
@@ -179,9 +202,75 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
           }, 100)
         }
       } catch (error) {
-        console.warn('Failed to update strength data:', error)
+        console.warn('Failed to update average strength data:', error)
       }
     }, [strengthData, timeRange, name])
+
+    // Update interval series data
+    useEffect(() => {
+      if (!strengthData || !hasInitialized.current || !chartRef.current) return
+
+      try {
+        const currentIntervals = new Set(
+          strengthData.intervalSeries.map((s) => s.interval)
+        )
+        const existingIntervals = new Set(intervalSeriesRef.current.keys())
+
+        // Remove series for intervals that are no longer selected
+        existingIntervals.forEach((interval) => {
+          if (!currentIntervals.has(interval)) {
+            const series = intervalSeriesRef.current.get(interval)
+            if (series && chartRef.current) {
+              chartRef.current.removeSeries(series)
+              intervalSeriesRef.current.delete(interval)
+              lastIntervalDataRef.current.delete(interval)
+            }
+          }
+        })
+
+        // Add or update series for each interval
+        strengthData.intervalSeries.forEach(({ interval, data }) => {
+          const prevData = lastIntervalDataRef.current.get(interval)
+
+          // Check if data actually changed
+          const dataChanged =
+            !prevData ||
+            prevData.length !== data.length ||
+            prevData.some((item, index) => {
+              const currentItem = data[index]
+              return (
+                !currentItem ||
+                item.time !== currentItem.time ||
+                Math.abs(item.value - currentItem.value) > 0.0001
+              )
+            })
+
+          if (!dataChanged) {
+            return // Skip update if no change
+          }
+
+          // Get or create series for this interval
+          let series = intervalSeriesRef.current.get(interval)
+          if (!series && chartRef.current) {
+            // Create new series
+            series = chartRef.current.addSeries(LineSeries, {
+              ...getLineSeriesConfig(),
+              color: '#ff9d0033', // 20% opacity for individual intervals (very light)
+              priceScaleId: 'left',
+            })
+            intervalSeriesRef.current.set(interval, series)
+          }
+
+          // Update data
+          if (series && data.length > 0) {
+            series.setData(data)
+            lastIntervalDataRef.current.set(interval, [...data])
+          }
+        })
+      } catch (error) {
+        console.warn('Failed to update interval strength data:', error)
+      }
+    }, [strengthData, name])
 
     // Update second series (price) data
     useEffect(() => {
@@ -249,17 +338,17 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     // Handle showZeroLine changes
     useEffect(() => {
-      if (!strengthSeriesRef.current || !hasInitialized.current) return
+      if (!averageSeriesRef.current || !hasInitialized.current) return
 
       // Remove existing zero line if it exists
       if (zeroLineRef.current) {
-        strengthSeriesRef.current.removePriceLine(zeroLineRef.current)
+        averageSeriesRef.current.removePriceLine(zeroLineRef.current)
         zeroLineRef.current = null
       }
 
       // Add zero line if requested
       if (showZeroLine) {
-        const zeroLine = strengthSeriesRef.current.createPriceLine({
+        const zeroLine = averageSeriesRef.current.createPriceLine({
           price: 0,
           color: '#666666',
           lineWidth: 1,
@@ -271,7 +360,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       }
     }, [showZeroLine])
 
-    const hasData = strengthData !== null
+    const hasData =
+      strengthData !== null && strengthData.averageSeries.length > 0
 
     return (
       <div
