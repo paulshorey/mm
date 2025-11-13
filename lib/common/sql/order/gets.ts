@@ -97,7 +97,7 @@ export const orderGets = async function ({ where }: Props = {}): Promise<Output>
         stack: e.stack,
       };
       output.error = error;
-      cc.error("sql/order/gets Error", error);
+      cc.error("sql/order/gets Error: " + error.message, { where });
       //@ts-ignore
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (e: Error) {
