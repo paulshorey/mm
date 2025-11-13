@@ -13,45 +13,43 @@ import { consoleAction } from "./lib/consoleAction";
  * in addition to database logging, providing immediate alerts for critical issues.
  */
 export const cc = {
-  log: async function (message: string, data?: any, options: Record<string, any> = {}) {
+  log: async function (message: string, stack: Record<string, any> = {}) {
     try {
-      consoleAction("log", message, data);
-      await sqlLogAdd({ name: "log", message, stack: data, ...options });
+      consoleAction("log", message, stack);
+      await sqlLogAdd({ name: "log", message, stack });
     } catch (e) {
       console.error(e);
     }
   },
-  info: async function (message: string, data?: any, options: Record<string, any> = {}) {
+  info: async function (message: string, stack: Record<string, any> = {}) {
     try {
-      consoleAction("info", message, data);
-      await sqlLogAdd({ name: "info", message, stack: data, ...options });
+      consoleAction("info", message, stack);
+      await sqlLogAdd({ name: "info", message, stack });
     } catch (e) {
       console.error(e);
     }
   },
-  warn: async function (message: string, data?: any, options: Record<string, any> = {}) {
+  warn: async function (message: string, stack: Record<string, any> = {}) {
     try {
-      consoleAction("warn", message, data);
+      consoleAction("warn", message, stack);
       await sqlLogAdd({
         name: "warn",
         message,
-        stack: data,
         sms: true,
-        ...options,
+        stack,
       });
     } catch (e) {
       console.error(e);
     }
   },
-  error: async function (message: string, data?: any, options: Record<string, any> = {}) {
+  error: async function (message: string, stack: Record<string, any> = {}) {
     try {
-      consoleAction("error", message, data);
+      consoleAction("error", message, stack);
       await sqlLogAdd({
         name: "error",
         message,
-        stack: data,
         sms: true,
-        ...options,
+        stack,
       });
     } catch (e) {
       console.error(e);

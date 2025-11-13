@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       rows: filteredRows || [],
     })
   } catch (error: any) {
-    cc.error(`API strengthGet ERROR: ` + error.message, error)
+    cc.error(`API strengthGet CATCH ERROR: ` + error.message, error)
     return formatResponse(
       {
         ok: false,

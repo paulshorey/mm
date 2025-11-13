@@ -5,7 +5,7 @@ type Props = {
   closeDrawer: () => void
 }
 
-export function DrawerCalendar({ drawerOpened, closeDrawer }: Props) {
+export function DrawerNews({ drawerOpened, closeDrawer }: Props) {
   const width = 360
   const height = window.screen.availHeight + 2
   const backColor = '1e222d'
@@ -33,7 +33,7 @@ export function DrawerCalendar({ drawerOpened, closeDrawer }: Props) {
           }}
           width={width}
           height={height}
-          src={`https://feed.financialjuice.com/widgets/ecocal.aspx?wtype=ECOCAL&mode=standard&container=financialjuice-eco-widget-container&width=${width}px&height=${height}px&backC=${backColor}&fontC=${fontColor}&affurl=`}
+          src={`https://feed.financialjuice.com/widgets/headlines.aspx?wtype=NEWS&mode=Dark&container=financialjuice-news-widget-container&width=${width}px&height=${height}px&backC=${backColor}&fontC=${fontColor}&affurl=`}
         ></iframe>
       </div>
     </div>

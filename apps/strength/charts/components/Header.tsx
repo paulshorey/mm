@@ -6,14 +6,26 @@ import { ControlsDropdown } from '../controls/ControlsDropdown'
 import InlineControls from '../controls/InlineControls'
 import classes from '../classes.module.scss'
 import { DrawerCalendar } from '@/charts/components/DrawerCalendar'
+import { DrawerNews } from './DrawerNews'
 
 export default function Header() {
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+  const [drawerNewsOpened, { open: drawerNewsOpen, close: drawerNewsClose }] =
     useDisclosure(false)
+  const [
+    drawerCalendarOpened,
+    { open: drawerCalendarOpen, close: drawerCalendarClose },
+  ] = useDisclosure(false)
 
   return (
     <>
-      <DrawerCalendar drawerOpened={drawerOpened} closeDrawer={closeDrawer} />
+      <DrawerCalendar
+        drawerOpened={drawerCalendarOpened}
+        closeDrawer={drawerCalendarClose}
+      />
+      <DrawerNews
+        drawerOpened={drawerNewsOpened}
+        closeDrawer={drawerNewsClose}
+      />
 
       <div dir="ltr" className={classes.Header}>
         {/* Top bar */}
@@ -35,7 +47,10 @@ export default function Header() {
               <InlineControls />
             </div>
             <div className="pb-[3px] px-[4px] pt-[4px]">
-              <button onClick={openDrawer}>c</button>
+              <button onClick={drawerNewsOpen}>N</button>
+            </div>
+            <div className="pb-[3px] px-[4px] pt-[4px]">
+              <button onClick={drawerCalendarOpen}>C</button>
             </div>
             <ControlsDropdown />
           </div>

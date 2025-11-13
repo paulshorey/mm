@@ -58,5 +58,14 @@
         }
       ]
     }
-  ]
+  ],
+  "files.associations": {
+    ".fantomasignore": "ignore",
+    "*.d.ts": "typescript",
+    "*.haml": "html",
+    "*.tsx": "typescriptreact",
+    "*.ts": "typescript",
+    ".env*": "dotenv",
+    "*.pine": "pine"
+  }
 }

@@ -37,6 +37,8 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
   const server_name = process.env.SERVER_NAME || "";
   const app_name = process.env.APP_NAME || "";
   const addr = (await getCurrentIpAddress()) || {};
+  const category = row.stack?.category || null;
+  const tag = row.stack?.tag || null;
 
   const client = await getDb().connect();
   try {
@@ -44,17 +46,7 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
       INSERT INTO log_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`;
-    const values = [
-      row.name.toLowerCase(),
-      row.message,
-      JSON.stringify({ ...row.stack, ...addr }),
-      access_key,
-      server_name,
-      app_name,
-      node_env,
-      row.category,
-      row.tag,
-    ];
+    const values = [row.name.toLowerCase(), row.message, JSON.stringify({ ...row.stack, ...addr }), access_key, server_name, app_name, node_env, category, tag];
     await client.query(queryText, values);
   } catch (e: any) {
     try {
@@ -68,7 +60,7 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
         INSERT INTO log_v1(name, message, stack, access_key, server_name, app_name, node_env, category, tag)
         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`;
-      const values = ["error", message, JSON.stringify(errorStack), access_key, server_name, app_name, node_env, row.category, row.tag];
+      const values = ["error", message, JSON.stringify(errorStack), access_key, server_name, app_name, node_env, category, tag];
       await client.query(queryText, values);
     } catch (err: any) {
       // Error sending

@@ -1,0 +1,282 @@
+//@version=6
+indicator("vpt", overlay=false)
+
+price = input(close, title='Source')
+
+colorBlue = color.rgb(71, 114, 207)
+colorTeal = color.rgb(15, 141, 141)
+colorTealDark = color.rgb(0, 92, 100)
+colorGreen = color.rgb(95,190,95)
+colorAqua = color.rgb(2, 168, 184)
+colorAquaDark = color.rgb(5, 112, 131)
+colorPurple = color.rgb(182, 107, 195)
+colorPurpleDark = color.rgb(134, 76, 144)
+colorGray = color.new(color.silver,50)
+colorRed = color.rgb(255, 100, 55, 0)
+colorOrangeDark = color.rgb(222, 117, 0, 0)
+colorYellowDark = color.rgb(236, 224, 63, 40)
+
+colorBullish = #27b622
+colorBullishDark = #1d631a
+colorBearish = #e20f0f 
+colorBearishDark = #810f0f
+
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// UTILITIES
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+_up(series float src) =>
+    src[0]>src[1]
+
+_down(series float src) =>
+    src[0]<src[1]
+
+_hl(series float num, int l1, int l2) =>
+    ta.lowest(num, l1) >= ta.lowest(num[l1],l2)
+
+_hh(series float num, int l1, int l2) =>
+    ta.highest(num, l1) <= ta.highest(num[l1],l2)
+
+_next(series float num, int length=1) => 
+    num + (num[0]-num[1])*length
+
+_between(float num, float min, float max) =>
+    num >= min and num <= max
+
+// Returns: 1 = CCW (bullish), -1 = CW (bearish), 0 = flat
+_curve(l,step,directionless=true) =>
+    curvature = l[0] - 2 * l[step] + l[step*2]
+    curve = curvature > 0 ? 1 : curvature < 0 ? -1 : 0
+    if (directionless)
+        // moving any direction
+        curve
+    else if (curve==1) 
+        // moving down (or ignore)
+        l[0]<l[1] ? 1 : 0
+    else if (curve==-1) 
+        // moving up (or ignore)
+        l[0]>l[1] ? -1 : 0
+    
+_curve_color(lineCurve) =>
+    ccolor = color.gray
+    if (lineCurve==1)
+        ccolor := colorGreen
+    if (lineCurve==-1)
+        ccolor := colorRed
+    ccolor
+
+_high_rsi(period=3, timeframes=1) =>
+
+    egains = 0.0
+    elosses = 0.0
+    
+    for i = 1 to period
+        float prices1 = 0
+        float prices2 = 0
+
+        change = price[i*timeframes] - price[(i-1)*timeframes]
+        egains := change < 0 ? egains + change : egains
+        elosses := change > 0 ? elosses - change : elosses
+
+    eavgGain = ta.ema(egains, period)
+    eavgLoss = ta.ema(elosses, period)
+    
+    ers = eavgGain / eavgLoss
+    ersi = 100 - (100 / (1 + ers))
+    ersi
+    
+_valley(series float n) =>
+    n[0]>=n[1] and n[1]<=n[3] and n[1]<=n[7]
+
+_macd_200(x)=>
+    xx = ta.ema(ta.highest(x, 200), 200)
+    xMin = ta.ema(ta.lowest(x, 200), 200)
+    xNormal = (((x-xMin)/(xx-xMin))*200)-100
+    xNormal
+
+_tanh(x) =>
+    _x = x > 10 ? 10 : x < -10 ? -10 : x
+    ex  = math.exp(_x)
+    enx = math.exp(-_x)
+    (ex - enx) / (ex + enx)
+
+_clamp(x, lo, hi) =>
+    x > hi ? hi : x < lo ? lo : x
+
+_zlema(series float src, int length) =>
+    lagF = math.round((length - 1) * 0.5)
+    lag  = math.max(int(lagF), 1)
+    ta.ema(src + (src - src[lag]), length)
+
+_tema(src, int length) =>
+    ema1 = ta.ema(src, length)
+    ema2 = ta.ema(ema1, length)
+    ema3 = ta.ema(ema2, length)
+    3.0 * (ema1 - ema2) + ema3
+
+_smooth(src, float gain) =>
+    var float kf = 0.0
+    dk = src - nz(kf[1], src)
+    smooth = nz(kf[1], src) + dk * math.sqrt(gain * 2)
+    var float velo = 0.0
+    velo := nz(velo[1], 0) + gain * dk
+    kf := smooth + velo
+    kf
+
+_zscore(src, int length) =>
+    m = ta.sma(src, length)
+    s = ta.stdev(src, length)
+    (src - m) / (nz(s, 1e-9) + 1e-9)
+
+_squash(src, gain) => _tanh(src * gain)
+
+// Symmetric soft-cap to [-100, 100] with tunable aggressiveness c >= 0.
+// Identity near 0 (slope ≈ 1), increasingly compressive as |x|→100+.
+// Direct form: returns normalized value in [-100, 100]
+_normalize(x, cc) =>
+    c = math.max(cc, 0.0)
+    z = math.abs(x) / 100.0
+    num = z * z + z
+    den = z * z + c * z + 1.0
+    den := den == 0.0 ? 1e-10 : den
+    base = 100.0 * (num / den)          // in [0, 100)
+    math.sign(x) * base                  // restore sign -> [-100, 100)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TSI
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+tsiLo = ta.tsi(hlc3,2,10)*50
+tsiMid = ta.tsi(hlc3,7,18)*67
+tsiHi = ta.tsi(hlc3,13,25)*75
+
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VPT
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+_vpt(vptSignal, vptLong) => 
+    // vptSignal = 3 // Base for FastMA Periods
+    // vptLong = 27 // Buy to Sell Conv/Div Lookback
+    vmacd = true // Buy to Sell Convergence/Div OSC
+    vinv = false // Buy to Sell Conv/Div as cummulative
+    norm = false // Normalised (Filtered) Version
+
+    vol = volume > 0 ? volume : 1
+
+    // PRESSURE ALGORITHMS AND VARIABLES
+    TR = ta.atr(1)
+
+    // Bull And Bear "Power-Balance" by Vadim Gimelfarb Algorithm's
+    BP = close < open ? (close[1] < open ? math.max(high - close[1], close - low) : math.max(high - open, close - low)) :        close > open ? (close[1] > open ? high - low : math.max(open - close[1], high - low)) :        high - close > close - low ? (close[1] < open ? math.max(high - close[1], close - low) : high - open) :        high - close < close - low ? (close[1] > open ? high - low : math.max(open - close[1], high - low)) :        close[1] > open ? math.max(high - open, close - low) :        close[1] < open ? math.max(open - close[1], high - low) :        high - low
+
+    SP = close < open ? (close[1] > open ? math.max(close[1] - open, high - low) : high - low) :        close > open ? (close[1] > open ? math.max(close[1] - low, high - close) : math.max(open - low, high - close)) :        high - close > close - low ? (close[1] > open ? math.max(close[1] - open, high - low) : high - low) :        high - close < close - low ? (close[1] > open ? math.max(close[1] - low, high - close) : open - low) :        close[1] > open ? math.max(close[1] - open, high - low) :        close[1] < open ? math.max(open - low, high - close) :        high - low
+
+    TP = BP + SP
+
+    // RAW Pressure Volume Calculations
+    BPV = (BP / TP) * vol
+    SPV = (SP / TP) * vol
+    TPV = BPV + SPV
+    BPVavg = ta.ema(ta.ema(BPV, vptSignal), vptSignal)
+    SPVavg = ta.ema(ta.ema(SPV, vptSignal), vptSignal)
+    TPVavg = ta.ema(ta.wma(TPV, vptSignal), vptSignal)
+
+    // Karthik Marar's Pressure Volume Normalized Version (XeL-MOD.)
+    VN = vol / ta.ema(vol, vptLong)
+    BPN = ((BP / ta.ema(BP, vptLong)) * VN) * 100
+    SPN = ((SP / ta.ema(SP, vptLong)) * VN) * 100
+    TPN = BPN + SPN
+    nbf = ta.ema(ta.wma(BPN, vptSignal), vptSignal)
+    nsf = ta.ema(ta.wma(SPN, vptSignal), vptSignal)
+    tpf = ta.ema(ta.wma(TPN, vptSignal), vptSignal)
+    ndif = nbf - nsf
+
+    // Conditional Selectors for RAW/Norm
+    BPc1 = BPV > SPV ? BPV : -math.abs(BPV)
+    BPc2 = BPN > SPN ? BPN : -math.abs(BPN)
+    SPc1 = SPV > BPV ? SPV : -math.abs(SPV)
+    SPc2 = SPN > BPN ? SPN : -math.abs(SPN)
+    BPcon = norm ? BPc2 : BPc1
+    SPcon = norm ? SPc2 : SPc1
+    BPAcon = norm ? nbf : BPVavg
+    SPAcon = norm ? nsf : SPVavg
+    TPAcon = norm ? tpf : TPVavg
+
+    // Volume Pressure Convergence Divergence by XeL_Arjona
+    vpo1 = vinv ? (((BPVavg + vptLong) - (SPVavg + vptLong)) / (TPVavg + vptLong)) * 100 : ((BPVavg - SPVavg) / TPVavg) * 100
+    vpo2 = vinv ? (((nbf + vptLong) - (nsf + vptLong)) / (tpf + vptLong)) * 100 : ((nbf - nsf) / tpf) * 100
+    vph = na((vpo1 - vpo2)) ? 0 : (vpo1 - vpo2)
+
+    // Plot Indicator
+    histC = vph > vph[1] ? color.blue : color.new(#BA00AA, 0)
+    Vpo1C = vpo1 > 0 ? color.red : color.green
+    Vpo2C = vpo2 > 0 ? color.red : color.green
+
+    vmacd ? ((vpo1+vpo2)/2)*0.5+50 : na
+
+vptLo = _vpt(5,45) * ta.pvi
+vptMid = _vpt(7,63) * ta.pvi
+vptHi = _vpt(9,81) * ta.pvi
+plot(_clamp(vptMid,-150,150), "vptMid",color=color.new(color.white,33))
+plot(_clamp(vptHi,-150,150), "vptHi",color=color.new(color.orange,66))
+plot(_clamp(vptLo,-150,150), title="vptLo", color=color.new(color.aqua, 55))
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VOLUME STRENGTH
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Function to find average of two closest values
+_average_2_of_3(val1, val2, val3) =>
+    // Calculate differences between each pair
+    diff12 = math.abs(val1 - val2)
+    diff13 = math.abs(val1 - val3)
+    diff23 = math.abs(val2 - val3)
+    
+    // Find which pair has the smallest difference and return their average
+    result = if diff12 <= diff13 and diff12 <= diff23
+        // val1 and val2 are closest
+        (val1 + val2) / 2
+    else if diff13 <= diff12 and diff13 <= diff23
+        // val1 and val3 are closest
+        (val1 + val3) / 2
+    else
+        // val2 and val3 are closest
+        (val2 + val3) / 2
+    result
+
+_volume_strength(ssource, vsource) =>
+    source = close//ta.vwap(close)
+    length = input.int(20, minval=10, step=10)
+    mult = input.float(2, minval=0.5, maxval=50, step=0.5)
+
+    // Bollinger Bands for each signal
+    [sourceBase, sourceHigher, sourceLower] = ta.bb(source, length, mult)
+    [rsiBase, rsiHigher, rsiLower] = ta.bb(ssource, length, mult)
+    [pvtBase, pvtHigher, pvtLower] = ta.bb(vsource, length, mult)
+
+    // %B Calculations
+    sourcePercentB = (((source - sourceLower) / (sourceHigher - sourceLower))-0.5)*100
+    stregthPercentB = (((ssource - rsiLower) / (rsiHigher - rsiLower))-0.5)*100
+    volumePercentB = (((vsource - pvtLower) / (pvtHigher - pvtLower))-0.5)*100
+
+    volumeStrength = _average_2_of_3(volumePercentB,stregthPercentB,sourcePercentB)
+
+tsiStrengthMid = _volume_strength(tsiMid, vptMid)
+tsiStrengthLo = _volume_strength(tsiLo, vptLo)
+tsiStrengthHi = _volume_strength(tsiHi, vptHi)
+
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Plot
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// hline(50, "50", color=color.gray, linestyle=hline.style_solid)
+// hline(-50, "-50", color=color.gray, linestyle=hline.style_solid)
+
+// plot(_clamp((tsiStrengthLo+tsiStrengthHi)/2,-150,150), "tsiStrength",color=color.new(color.white,33), linewidth=1)
+// plot(_clamp(tsiStrengthMid,-150,150), "tsiStrengthMid",color=color.new(color.white,33))
+// plot(_clamp(tsiStrengthLo,-150,150), "tsiStrengthLo",color=color.new(color.orange,66))
+// plot(_clamp(tsiStrengthHi,-150,150), title="tsiStrengthHi", color=color.new(color.aqua, 55))

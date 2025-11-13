@@ -48,7 +48,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       if (output.size_original === undefined) {
         output.size_original = output.size_current
         output.size_intended = roundToCustomDecimal(input.position / output.price, output.precision, 'down')
-        cc.log('output.size_intended', output.size_intended)
+        cc.log('output.size_intended', { size_intended: output.size_intended })
       }
       // How much to add
       if (output.size_intended === output.size_current) {
@@ -58,7 +58,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       } else {
         output.size_unfilled = roundToCustomDecimal(output.size_intended - output.size_current, output.precision, 'up')
       }
-      cc.log('output.size_unfilled', output.size_unfilled)
+      cc.log('output.size_unfilled', { size_unfilled: output.size_unfilled })
       // Side
       if (output.size_unfilled > 0) {
         output.side = 'LONG'
@@ -68,7 +68,7 @@ ${input.ticker} $${input.position} ${input.sl ? '/' + input.sl : ''}`,
       // Filled to top
       const unfilled = Math.abs(output.size_unfilled)
       output.order_is_filled = unfilled < output.precision || unfilled * output.price < 15
-      cc.log('output.order_is_filled', output.order_is_filled)
+      cc.log('output.order_is_filled', { order_is_filled: output.order_is_filled })
     }
     async function updatePositionCheckMargin() {
       // Equity
