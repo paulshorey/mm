@@ -80,6 +80,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add first series (strength) - uses LEFT price scale
       const strengthSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
+        lineWidth: 2,
         color: '#ff9d00d7',
         priceScaleId: 'left',
       })
@@ -89,6 +90,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Always create the series, even if data doesn't exist yet
       const priceSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
+        lineWidth: 1,
         color: '#0091ff98',
         priceScaleId: 'right',
       })

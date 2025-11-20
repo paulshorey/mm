@@ -12,12 +12,13 @@ import { createURLStorage, getQueryParams } from './lib/urlSync'
  * Each option represents a set of intervals to average together
  */
 export const intervalsOptions = [
-  { value: ['1', '4', '12', '30', '60'], label: 'all' },
-  { value: ['4', '12', '30', '60'], label: 'multi' },
-  { value: ['12', '30', '60'], label: 'long' },
+  { value: ['4', '12', '30', '60', '240'], label: 'multi' },
+  { value: ['1', '4', '12', '30', '60', '240'], label: 'all' },
+  { value: ['12', '30', '60', '240'], label: 'long' },
   { value: ['1', '4', '12'], label: 'short' },
-  { value: ['4'], label: '5m' },
-  { value: ['12'], label: '15m' },
+  { value: ['1'], label: '1m' },
+  { value: ['4'], label: '4m' },
+  { value: ['12'], label: '12m' },
   { value: ['30'], label: '30m' },
   { value: ['60'], label: '1h' },
   { value: ['240'], label: '4h' },
@@ -26,7 +27,7 @@ export const intervalsOptions = [
 /**
  * Available time range options for historical data
  */
-export const hoursBackOptions = ['240h', '120h', '96h', '72h', '48h', '24h']
+export const hoursBackOptions = ['240h', '120h', '48h', '24h']
 
 /**
  * Market categories and their ticker options

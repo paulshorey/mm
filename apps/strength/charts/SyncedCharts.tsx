@@ -170,7 +170,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           }
           strengthData={aggregatedStrengthData}
           priceData={aggregatedPriceData}
-          width={typeof window !== 'undefined' ? window.innerWidth : 1200}
+          width={typeof window !== 'undefined' ? window.innerWidth * 2 : 1200}
           height={availableHeight}
           timeRange={timeRange}
           showZeroLine={true}

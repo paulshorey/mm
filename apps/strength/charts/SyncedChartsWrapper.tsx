@@ -36,8 +36,8 @@ export default function SyncedChartsWrapper({}: SyncedChartsWrapperProps) {
         const windowHeight = window.innerHeight
 
         setDimensions({
-          availableWidth: windowWidth,
-          availableHeight: windowHeight,
+          availableWidth: windowWidth * 2,
+          availableHeight: windowHeight * 2,
         })
       }
     }

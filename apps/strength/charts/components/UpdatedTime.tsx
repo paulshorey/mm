@@ -19,7 +19,7 @@ export function UpdatedTime({ isRealtime, lastUpdateTime }: UpdatedTimeProps) {
   }
 
   return (
-    <div className="fixed bottom-[0.125rem] right-1 z-[10001]" dir="ltr">
+    <div className="fixed bottom-[1.25rem] right-1 z-[10001]" dir="ltr">
       <span className="text-xs text-gray-600 bg-white">
         {formatTime(lastUpdateTime)}
       </span>

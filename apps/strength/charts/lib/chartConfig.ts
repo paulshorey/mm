@@ -79,7 +79,6 @@ export const getLineSeriesConfig = (): DeepPartial<
   LineStyleOptions & SeriesOptionsCommon
 > => ({
   color: '#e8850d',
-  lineWidth: 1 as any, // Cast to any to avoid type issues with LineWidth
   crosshairMarkerBackgroundColor: 'transparent',
   crosshairMarkerBorderColor: 'transparent',
   crosshairMarkerBorderWidth: 0,
