@@ -1,3 +1,9 @@
+/* Can't change REM until every width/padding/top uses rem */
+/* html {
+  font-size: 30px !important;
+  line-height: 1.4 !important;
+} */
+
 body {
   transform: scale(0.5);
   transform-origin: top left;

@@ -27,7 +27,7 @@ export const intervalsOptions = [
 /**
  * Available time range options for historical data
  */
-export const hoursBackOptions = ['240h', '120h', '48h', '24h']
+export const hoursBackOptions = ['120h', '96h', '72h', '48h', '24h']
 
 /**
  * Market categories and their ticker options
