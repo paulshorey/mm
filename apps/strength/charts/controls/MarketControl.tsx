@@ -48,9 +48,9 @@ export default function MarketControl({ showLabel = true }: Props) {
       position="top-start"
       onOptionSubmit={handleTickerSelect}
       // @ts-ignore
-      className="scale2x"
+      className="scaleInverse"
       classNames={{
-        dropdown: 'scale2x',
+        dropdown: 'scaleInverse',
       }}
       styles={{
         dropdown: {

@@ -3,10 +3,10 @@
 ```
 // app/global.css
 body {
-  transform: scale(0.5);
+  transform: scale(0.8);
   transform-origin: top left;
-  width: 200%;
-  height: 200%;
+  width: 125%;
+  height: 125%;
 }
 ```
 
@@ -14,12 +14,12 @@ An intended side-effect: this makes the lines much thinner. `lineWidth: 2` now l
 
 An un-intended side-effect however is added complexity around all UI elements, and even the cursor position in the window!
 
-### UI elements are shrunk 2x! This makes them too small. Some must be fixed:
+### UI elements are shrunk 1.25x! This makes them too small. Some must be fixed:
 
 ```
 // app/global.css
-.scale2x {
-  transform: scale(2);
+.scaleInverse {
+  transform: scale(1.25);
   transform-origin: top left;
 }
 ```
@@ -27,40 +27,40 @@ An un-intended side-effect however is added complexity around all UI elements, a
 ```
 // apps/strength/charts/controls/MarketControl.tsx
       // @ts-ignore
-      className="scale2x"
+      className="scaleInverse"
       classNames={{
-        dropdown: 'scale2x',
+        dropdown: 'scaleInverse',
       }}
 ```
 
 ```
 // apps/strength/charts/components/DrawerCalendar.tsx
 // apps/strength/charts/components/DrawerNews.tsx
-className={`${classes.DrawerOverlay} scale2x`}
+className={`${classes.DrawerOverlay} scaleInverse`}
 ```
 
 ```
 // apps/strength/charts/SyncedChartsWrapper.tsx
         setDimensions({
-          availableWidth: windowWidth * 2,
-          availableHeight: windowHeight * 2,
+          availableWidth: windowWidth * 1.25,
+          availableHeight: windowHeight * 1.25,
         })
 ```
 
 ```
 // apps/strength/charts/SyncedCharts.tsx
-width={typeof window !== 'undefined' ? window.innerWidth * 2 : 1200}
+width={typeof window !== 'undefined' ? window.innerWidth * 1.25 : 1200}
 ```
 
-### The cursor position is broken, only covers 0.5 of the screen width/height. Fix:
+### The cursor position is broken, only covers 0.8 of the screen width/height. Fix:
 
 ```
 // apps/strength/charts/components/Chart.tsx
 
-      // --- Fix for zoom: 0.5 ---
-      // Intercept mouse events to correct coordinates for the 2x width
-      // Since the body is scaled by 0.5 and chart width is 2x, we need to double the mouse coordinates
-      // so the chart (which thinks it's 2x wide) gets the correct relative position.
+      // --- Fix for zoom: 0.8 ---
+      // Intercept mouse events to correct coordinates for the 1.25x width
+      // Since the body is scaled by 0.8 and chart width is 1.25x, we need to multiply the mouse coordinates
+      // so the chart (which thinks it's 1.25x wide) gets the correct relative position.
       const container = containerRef.current
       const events = [
         'mousemove',
@@ -79,7 +79,7 @@ width={typeof window !== 'undefined' ? window.innerWidth * 2 : 1200}
         // e.preventDefault() // Optional, might interfere with other things
 
         const rect = container.getBoundingClientRect()
-        const scale = 2 // Inverse of zoom: 0.5
+        const scale = 1.25 // Inverse of zoom: 0.8
 
         // Calculate corrected coordinates relative to the container
         const relativeX = e.clientX - rect.left

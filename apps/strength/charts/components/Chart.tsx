@@ -77,10 +77,10 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       chartRef.current = chart
       hasInitialized.current = true
 
-      // --- Fix for zoom: 0.5 ---
-      // Intercept mouse events to correct coordinates for the 2x width
-      // Since the body is scaled by 0.5 and chart width is 2x, we need to double the mouse coordinates
-      // so the chart (which thinks it's 2x wide) gets the correct relative position.
+      // --- Fix for zoom: 0.8 ---
+      // Intercept mouse events to correct coordinates for the 1.25x width
+      // Since the body is scaled by 0.8 and chart width is 1.25x, we need to multiply the mouse coordinates
+      // so the chart (which thinks it's 1.25x wide) gets the correct relative position.
       const container = containerRef.current
       const events = [
         'mousemove',
@@ -99,7 +99,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         // e.preventDefault() // Optional, might interfere with other things
 
         const rect = container.getBoundingClientRect()
-        const scale = 2 // Inverse of zoom: 0.5
+        const scale = 1.25 // Inverse of zoom: 0.8
 
         // Calculate corrected coordinates relative to the container
         const relativeX = e.clientX - rect.left

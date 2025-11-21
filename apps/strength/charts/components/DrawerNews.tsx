@@ -12,7 +12,7 @@ export function DrawerNews({ drawerOpened, closeDrawer }: Props) {
   const fontColor = 'cccccc'
   return (
     <div
-      className={`${classes.DrawerOverlay} scale2x`}
+      className={`${classes.DrawerOverlay} scaleInverse`}
       onClick={closeDrawer}
       style={{
         width: drawerOpened ? '100vw' : 0,

@@ -1,11 +1,11 @@
 body {
-  transform: scale(0.5);
+  transform: scale(0.8);
   transform-origin: top left;
-  width: 200%;
-  height: 200%;
+  width: 125%;
+  height: 125%;
 }
-.scale2x {
-  transform: scale(2);
+.scaleInverse {
+  transform: scale(1.25);
   transform-origin: top left;
 }
 
