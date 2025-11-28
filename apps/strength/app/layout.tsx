@@ -1,3 +1,4 @@
+import { SCALE_FACTOR } from '@/charts/constants'
 import './global.css'
 
 export const metadata = {
@@ -15,7 +16,15 @@ export default async function RootLayout({ children }: { children: any }) {
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
       </head>
-      <body suppressHydrationWarning className="overflow-hidden">
+      <body
+        suppressHydrationWarning
+        className="overflow-hidden"
+        style={{
+          transform: `scale(${1 / SCALE_FACTOR})`,
+          width: `${100 * SCALE_FACTOR}%`,
+          height: `${100 * SCALE_FACTOR}%`,
+        }}
+      >
         {children}
       </body>
     </html>

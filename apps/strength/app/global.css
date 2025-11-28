@@ -5,10 +5,7 @@
 } */
 
 body {
-  transform: scale(0.5);
   transform-origin: top left;
-  width: 200%;
-  height: 200%;
 }
 .scale2x {
   transform: scale(2);
