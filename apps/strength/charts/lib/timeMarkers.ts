@@ -90,7 +90,7 @@ export const TIME_RANGE_HIGHLIGHTS: TimeRangeConfig[] = [
   {
     id: 'us-equities',
     startUtcHour: 14, // 8 Central
-    startUtcMinute: 30,
+    startUtcMinute: 0,
     endUtcHour: 21, // 15 Central
     endUtcMinute: 0,
     color: 'rgba(34, 197, 94, 0.08)', // Green

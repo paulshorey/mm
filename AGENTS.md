@@ -5,6 +5,7 @@ This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo t
 Before running any terminal npm or pnpm command, make sure to be in the correct folder, depending on the app or utility library that we're working with.
 
 **Apps:**
+
 - ./apps/log - logging and observability for all data types
 - ./apps/trade - day trading and investment positions management
 - ./apps/strength - financial charts and data analysis
@@ -13,6 +14,7 @@ Before running any terminal npm or pnpm command, make sure to be in the correct 
 - ./apps/facts - (additional app in monorepo)
 
 **Shared Libraries:**
+
 - ./lib/common - shared utilities imported by all apps:
   - ./lib/common/sql - database functions for log, order, and strength tables
   - ./lib/common/twillio - Twilio integration for SMS alerts
@@ -42,3 +44,8 @@ Note "fe" means "front end", and "be" means "back end". Several apps have this n
 ### Questions:
 
 If I present you with a contradictory or confusing request, if you do not understand what I mean, please ask me to clarify.
+
+### AI agent memory:
+
+You are an AI agent. You will read AGENTS.md file in any relevant folder every time you think about a prompt. AGENTS.md files will serve as documentation about the files and code concepts in that folder, how this folder relates to the app as a whole. Add or edit AGENTS.md files as you make changes. This will help you remember which folder or file to open next time when you are starting work on a similar topic.
+When writing documentation to AGENTS.md or any other CUSTOM_INSTRUCTIONS.md files, be very concise and minimal. These md documentation files should be only a hint to help you find relevant files in the codebase. The real documentation should be kept in comment blocks above each file or function.

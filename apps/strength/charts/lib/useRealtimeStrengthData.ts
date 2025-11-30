@@ -163,7 +163,6 @@ export function useRealtimeStrengthData({
         fromDate,
         toDate
       )
-      console.log('[newTickerData before forward-fill]', newTickerData)
 
       // Process each ticker's data to forward-fill missing values
       const processedTickerData = newTickerData.map((tickerData) => {
@@ -198,8 +197,6 @@ export function useRealtimeStrengthData({
           return sortedData
         }
       })
-
-      console.log('[newTickerData after forward-fill]', processedTickerData)
 
       if (isMountedRef.current) {
         setRawData((prevData) => {

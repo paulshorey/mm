@@ -37,7 +37,6 @@ export class FetchStrengthData {
         { method: 'GET' }
       )
       const data = await response.json()
-      console.log('data', data)
 
       if (data.error) {
         return { rows: null, error: data.error }

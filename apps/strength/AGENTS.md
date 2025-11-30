@@ -49,20 +49,6 @@ This project is the "strength" app. It renders a single chart with dual y-axes t
 - All timestamps MUST be at even minutes (0, 2, 4...) with no seconds
 - The `timenow` field from database is used as chart x-axis timestamp
 
-## Recent Refactoring (October 2025)
-
-### Phase 1 - Initial Cleanup
-- **Variable Naming**: Renamed `marketTickers` → `dataPoolTickers`, `controlTickers` → `strengthTickers` for clarity
-- **Store Cleanup**: Simplified Zustand store with better organization and documentation
-- **Forward-Fill Enhancement**: Added real-time forward-fill logic to handle missing strength intervals
-- **Documentation**: Created comprehensive forward-fill documentation
-
-### Phase 2 - Major Simplification
-- **Consolidated Tickers**: Combined `dataPoolTickers`, `strengthTickers`, and `priceTickers` into single `chartTickers`
-- **Simplified URL Sync**: Changed URL params from `controlInterval`→`interval`, removed separate ticker params
-- **Removed Unused Code**: Deleted `getSingleTickerPriceData` function and experimental `PopupTickerSelector`
-- **Unified Data Flow**: Both strength and price charts now use the same ticker selection
-
 ## Keeping notes and documenting changes
 
 - You are an AI agent. You will read AGENTS.md file in any relevant folder every time you think about a prompt. AGENTS.md files will serve as documentation about the files and code concepts in that folder, how this folder relates to the app as a whole. Add or edit AGENTS.md files as you make changes. This will help you remember which folder or file to open next time when you are starting work on a similar topic.

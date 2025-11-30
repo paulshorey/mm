@@ -1,10 +1,23 @@
-# Files
+# Charts Library Files
 
-charts/lib/aggregatePriceData.ts - filter and format line data from multiple tickers for the price series (right y-axis)
-charts/lib/aggregateStrengthData.ts - filter and format line data from multiple tickers for the strength series (left y-axis)
-charts/lib/aggregateDataUtils.ts - utilities for aggregatePriceData and aggregateStrengthData
-charts/lib/chartConfig.ts - set up the chart options, dual y-axes (left and right), and inputs
-charts/lib/chartUtils.ts - utilities for x-axis, converting, and formatting chart data
-charts/lib/strengthDataService.ts - fetch strength/price data
-charts/lib/urlSync.ts - sync chart state with URL query parameters
-charts/lib/useRealtimeStrengthData.ts - polls for new data every minute
+## Data Fetching & Processing
+- `FetchStrengthData.ts` - API client for fetching strength data from backend
+- `useRealtimeStrengthData.ts` - React hook: polls for new data every minute, handles forward-fill
+- `forwardFillData.ts` - Fills time gaps to ensure continuous 2-minute intervals
+
+## Data Aggregation
+- `aggregateStrengthData.ts` - Combine multiple tickers for strength series (left y-axis)
+- `aggregatePriceData.ts` - Combine multiple tickers for price series (right y-axis)
+- `aggregateDataUtils.ts` - Shared aggregation utilities
+
+## Chart Configuration
+- `chartConfig.ts` - Chart options, dual y-axes configuration
+- `chartUtils.ts` - Time range calculations, data formatting
+- `urlSync.ts` - Sync chart state with URL query parameters
+
+## Custom Primitives
+- `TimeRangeHighlight.ts` - Shaded background regions for market hours
+- `VerticalLinePrimitive.ts` - Vertical line markers for events
+- `timeMarkers.ts` - Configuration for time ranges and markers
+
+See `TIME_RANGE_HIGHLIGHTING.md` for details on the highlighting implementation.

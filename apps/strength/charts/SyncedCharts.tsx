@@ -55,10 +55,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       updateIntervalMs: 60000, // Update every minute
     })
 
-  // Track previous aggregated data for incremental updates
-  const prevAggregatedStrengthRef = useRef<LineData[] | null>(null)
-  const prevAggregatedPriceRef = useRef<LineData[] | null>(null)
-
   /**
    * Data Aggregation Effect with Real-time Updates
    *
@@ -84,35 +80,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         rawData // Pass same data for consistent timestamps
       )
 
-      // Log aggregation results for debugging
-      if (lastUpdateTime && prevAggregatedStrengthRef.current) {
-        const newStrengthPoints =
-          strengthData.length - (prevAggregatedStrengthRef.current?.length || 0)
-        const newPricePoints =
-          priceData.length - (prevAggregatedPriceRef.current?.length || 0)
-
-        if (newStrengthPoints > 0 || newPricePoints > 0) {
-          console.log('[SyncedCharts] Aggregation update:', {
-            timestamp: lastUpdateTime.toISOString(),
-            newStrengthPoints,
-            newPricePoints,
-            totalStrengthPoints: strengthData.length,
-            totalPricePoints: priceData.length,
-            chartTickers,
-          })
-        }
-      }
-
       // Always create new array references to ensure React detects changes
       const newStrengthData = strengthData.length > 0 ? [...strengthData] : null
       const newPriceData = priceData.length > 0 ? [...priceData] : null
 
       setAggregatedStrengthData(newStrengthData)
       setAggregatedPriceData(newPriceData)
-
-      // Store current data for next comparison (after setting state)
-      prevAggregatedStrengthRef.current = newStrengthData
-      prevAggregatedPriceRef.current = newPriceData
     }
   }, [
     interval,

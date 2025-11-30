@@ -27,6 +27,10 @@ import {
   markerConfigToOptions,
 } from '../lib/timeMarkers'
 import { TimeRangeHighlightPrimitive } from '../lib/TimeRangeHighlight'
+import {
+  forwardFillData,
+  getTimeRangeBoundaries,
+} from '../lib/forwardFillData'
 import { SCALE_FACTOR } from '@/constants'
 
 interface ChartProps {
@@ -237,6 +241,27 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       markersInitialized.current = true
     }
 
+    /**
+     * Apply forward-fill to ensure data exists at all required timestamps.
+     * This is essential for time range highlighting to work correctly.
+     */
+    const prepareDataWithForwardFill = (data: LineData[]): LineData[] => {
+      if (data.length === 0) return data
+
+      const dataStartTime = data[0]!.time as number
+      const dataEndTime = data[data.length - 1]!.time as number
+
+      // Get all time range boundaries that need to exist in the data
+      const requiredTimestamps = getTimeRangeBoundaries(
+        TIME_RANGE_HIGHLIGHTS,
+        dataStartTime,
+        dataEndTime
+      )
+
+      // Forward-fill the data to ensure no gaps
+      return forwardFillData(data, 120, requiredTimestamps)
+    }
+
     // Update first series (strength) data
     useEffect(() => {
       if (
@@ -248,7 +273,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       try {
         const prevData = lastDataRef.current
-        const currentData = strengthData
+        
+        // Apply forward-fill to ensure time range boundaries exist
+        const currentData = prepareDataWithForwardFill(strengthData)
 
         // Check if data actually changed
         const dataChanged =
@@ -312,7 +339,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       try {
         const prevData = lastSecondDataRef.current
-        const currentData = priceData
+        
+        // Apply forward-fill to ensure time range boundaries exist
+        const currentData = prepareDataWithForwardFill(priceData)
 
         // Check if data actually changed
         const dataChanged =
