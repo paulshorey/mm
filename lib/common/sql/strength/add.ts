@@ -3,6 +3,15 @@
 import { StrengthDataAdd } from "./types";
 import { getDb } from "../../lib/db/neon";
 import { cc } from "../../cc";
+import {
+  STRENGTH_INTERVALS,
+  FORWARD_FILL_DEPTH,
+  forwardFillAllIntervals,
+  calculateAverage,
+  extractIntervalValues,
+  StrengthRow,
+  StrengthInterval,
+} from "./utils";
 
 /**
  * Adds strength record to `strength_v1` table.
@@ -11,19 +20,17 @@ import { cc } from "../../cc";
  * for each 1-minute period. It creates exactly one row per minute and updates it with
  * different interval values as they come in.
  *
- * The function normalizes the current time to every minute (seconds set to 00).
+ * Key features:
+ * 1. Normalizes current time to every minute (seconds set to 00)
+ * 2. Pre-creates current and next rows to prevent race conditions
+ * 3. Forward-fills missing interval values from previous rows (up to 3 rows back)
+ * 4. Calculates and stores the average of all interval columns
  *
- * To prevent race conditions where multiple concurrent requests try to create or update
- * the same rows, this function pre-creates BOTH the current 1-minute interval row AND
- * the next 1-minute interval row (without data) before processing. This ensures both rows
- * always exist, eliminating any race conditions during data insertion. The database's
- * UNIQUE constraint on (ticker, timenow) prevents duplicate rows, and ON CONFLICT DO NOTHING
- * safely handles simultaneous creation attempts.
- *
- * After pre-creating the rows, the function always performs an UPDATE:
- * - If the interval column is empty (NULL), it sets the new value
- * - If the interval column already has a value, it averages the existing value with the new value
- * - Price and volume use COALESCE to preserve existing values when NULL is provided
+ * The forward-fill ensures that the average is always accurate, not missing any data.
+ * When a new interval value arrives, the function:
+ * - Updates that interval column
+ * - Forward-fills any other missing intervals from historical data
+ * - Recalculates the average with all available values
  *
  * @param data - A `StrengthDataAdd` object containing the strength details.
  * @returns The result of the SQL query, which includes the newly inserted or updated row.
@@ -68,54 +75,24 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
     }
 
     // Pre-create both current and future rows to avoid race conditions
-    // This ensures both rows exist before we start processing data
-    // The UNIQUE constraint on (ticker, timenow) will prevent duplicates
+    await preCreateRows(client, data.ticker, normalizedTimenow, futureTimenow);
 
-    // Pre-create current row
-    try {
-      const currentInsertQuery = `
-        INSERT INTO strength_v1("ticker", "timenow")
-        VALUES($1, $2)
-        ON CONFLICT (ticker, timenow) DO NOTHING
-        RETURNING *
-      `;
-      await client.query(currentInsertQuery, [data.ticker, normalizedTimenow]);
-    } catch (preCreateError: any) {
-      // If there's a conflict (another request created it), that's fine - continue
-      cc.log(`Pre-creating current row (expected occasional conflicts): ${preCreateError.message}`);
-    }
+    // Fetch recent rows for forward-filling (current + FORWARD_FILL_DEPTH previous rows)
+    const recentRows = await fetchRecentRows(client, data.ticker, normalizedTimenow, FORWARD_FILL_DEPTH + 1);
 
-    // Pre-create future row
-    try {
-      const futureInsertQuery = `
-        INSERT INTO strength_v1("ticker", "timenow")
-        VALUES($1, $2)
-        ON CONFLICT (ticker, timenow) DO NOTHING
-        RETURNING *
-      `;
-      await client.query(futureInsertQuery, [data.ticker, futureTimenow]);
-    } catch (preCreateError: any) {
-      // If there's a conflict (another request created it), that's fine - continue
-      cc.log(`Pre-creating future row (expected occasional conflicts): ${preCreateError.message}`);
-    }
+    // Update the current row with new interval value and calculate average
+    const updatedRow = await updateRowWithForwardFill(
+      client,
+      data.ticker,
+      normalizedTimenow,
+      data.interval as StrengthInterval,
+      data.strength,
+      data.price ?? null,
+      data.volume ?? null,
+      recentRows
+    );
 
-    // Now update the row with the strength data
-    let res: any;
-    const values = [data.ticker, normalizedTimenow, data.strength, data.price ?? null, data.volume ?? null];
-
-    // UPDATE row values
-    // Use COALESCE to replace the value if new value is provided,
-    // otherwise keep the existing value (don't overwrite with null)
-    const sqlQuery = `
-      UPDATE strength_v1
-      SET "${data.interval}" = COALESCE($3, "${data.interval}"),
-          price = COALESCE($4, price),
-          volume = COALESCE($5, volume)
-      WHERE ticker = $1 AND timenow = $2
-      RETURNING *
-    `;
-    res = await client.query(sqlQuery, values);
-    return res.rows[0];
+    return updatedRow;
   } catch (e: any) {
     const error = {
       name: "Error strength/add.ts catch",
@@ -127,3 +104,148 @@ export const strengthAdd = async function (data: StrengthDataAdd) {
     client.release();
   }
 };
+
+/**
+ * Pre-create current and future rows to prevent race conditions.
+ * Uses ON CONFLICT DO NOTHING to safely handle simultaneous creation attempts.
+ */
+async function preCreateRows(client: any, ticker: string, currentTime: Date, futureTime: Date): Promise<void> {
+  const insertQuery = `
+    INSERT INTO strength_v1("ticker", "timenow")
+    VALUES($1, $2)
+    ON CONFLICT (ticker, timenow) DO NOTHING
+  `;
+
+  try {
+    await client.query(insertQuery, [ticker, currentTime]);
+  } catch (error: any) {
+    cc.log(`Pre-creating current row (expected occasional conflicts): ${error.message}`);
+  }
+
+  try {
+    await client.query(insertQuery, [ticker, futureTime]);
+  } catch (error: any) {
+    cc.log(`Pre-creating future row (expected occasional conflicts): ${error.message}`);
+  }
+}
+
+/**
+ * Fetch recent rows for a ticker, sorted by timenow DESC (newest first).
+ * Used for forward-filling missing values.
+ */
+async function fetchRecentRows(client: any, ticker: string, currentTime: Date, limit: number): Promise<StrengthRow[]> {
+  const query = `
+    SELECT id, ticker, timenow, "2", "4", "12", "30", "60", "240", average
+    FROM strength_v1
+    WHERE ticker = $1 AND timenow <= $2
+    ORDER BY timenow DESC
+    LIMIT $3
+  `;
+
+  const result = await client.query(query, [ticker, currentTime, limit]);
+  return result.rows as StrengthRow[];
+}
+
+/**
+ * Update a row with the new interval value, forward-fill missing intervals,
+ * and calculate the average.
+ */
+async function updateRowWithForwardFill(
+  client: any,
+  ticker: string,
+  timenow: Date,
+  interval: StrengthInterval,
+  strengthValue: number,
+  price: number | null,
+  volume: number | null,
+  recentRows: StrengthRow[]
+): Promise<any> {
+  // Get the current row (should be first in recentRows, or create empty object)
+  const currentRowIndex = recentRows.findIndex((row) => row.timenow.getTime() === timenow.getTime());
+  const currentRow = currentRowIndex >= 0 ? recentRows[currentRowIndex] : null;
+
+  // Build the current interval values, starting with existing values
+  const currentValues: Record<string, number | null> = {};
+  for (const int of STRENGTH_INTERVALS) {
+    currentValues[int] = currentRow?.[int] ?? null;
+  }
+
+  // Set the new interval value
+  currentValues[interval] = strengthValue;
+
+  // Forward-fill missing intervals from previous rows
+  if (recentRows.length > 0) {
+    // Create a modified rows array where current row has the new value
+    const modifiedRows = [...recentRows];
+    if (currentRowIndex >= 0) {
+      modifiedRows[currentRowIndex] = {
+        ...modifiedRows[currentRowIndex]!,
+        [interval]: strengthValue,
+      };
+    }
+
+    // Forward-fill each missing interval
+    for (const int of STRENGTH_INTERVALS) {
+      if (currentValues[int] === null) {
+        // Look back through previous rows to find a value
+        const startIdx = currentRowIndex >= 0 ? currentRowIndex : 0;
+        for (let i = startIdx + 1; i < Math.min(modifiedRows.length, startIdx + FORWARD_FILL_DEPTH + 1); i++) {
+          const prevValue = modifiedRows[i]?.[int];
+          if (prevValue !== null && prevValue !== undefined) {
+            currentValues[int] = prevValue;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate the average of all interval values
+  const average = calculateAverage(currentValues as Record<StrengthInterval, number | null>);
+
+  // Build the UPDATE query dynamically
+  const setClauses: string[] = [];
+  const values: any[] = [ticker, timenow];
+  let paramIndex = 3;
+
+  // Always update the specified interval
+  setClauses.push(`"${interval}" = $${paramIndex}`);
+  values.push(strengthValue);
+  paramIndex++;
+
+  // Update forward-filled intervals (only if they were null before)
+  for (const int of STRENGTH_INTERVALS) {
+    if (int !== interval && currentValues[int] !== null && (currentRow?.[int] === null || currentRow?.[int] === undefined)) {
+      setClauses.push(`"${int}" = COALESCE("${int}", $${paramIndex})`);
+      values.push(currentValues[int]);
+      paramIndex++;
+    }
+  }
+
+  // Always update average
+  setClauses.push(`"average" = $${paramIndex}`);
+  values.push(average);
+  paramIndex++;
+
+  // Update price and volume if provided
+  if (price !== null) {
+    setClauses.push(`price = COALESCE($${paramIndex}, price)`);
+    values.push(price);
+    paramIndex++;
+  }
+  if (volume !== null) {
+    setClauses.push(`volume = COALESCE($${paramIndex}, volume)`);
+    values.push(volume);
+    paramIndex++;
+  }
+
+  const updateQuery = `
+    UPDATE strength_v1
+    SET ${setClauses.join(", ")}
+    WHERE ticker = $1 AND timenow = $2
+    RETURNING *
+  `;
+
+  const result = await client.query(updateQuery, values);
+  return result.rows[0];
+}

@@ -13,6 +13,7 @@ export type StrengthRowGet = {
   "30": number | null;
   "60": number | null;
   "240": number | null;
+  average: number | null; // Average of all interval columns
   created_at: Date; // DateTime as ISO string
 };
 

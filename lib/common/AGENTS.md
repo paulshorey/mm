@@ -16,6 +16,7 @@ This package contains reusable utilities used by all apps in the monorepo.
   - `./sql/log` - Log data management
   - `./sql/order` - Trading order management
   - `./sql/strength` - Financial strength data management
+    - `./sql/strength/utils` - Forward-fill and average calculation utilities
   - `./sql/types.ts` - Shared SQL types
 - `./twillio` - Twilio integration for sending SMS alerts
 
