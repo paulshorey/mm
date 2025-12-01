@@ -21,8 +21,11 @@ export function calculateAverage(
   let count = 0;
 
   for (const interval of STRENGTH_INTERVALS) {
-    const value = intervalValues[interval];
-    if (value !== null && value !== undefined && !isNaN(value)) {
+    const rawValue = intervalValues[interval];
+    // Convert to number explicitly (PostgreSQL may return strings)
+    const value = rawValue !== null && rawValue !== undefined ? Number(rawValue) : null;
+    
+    if (value !== null && !isNaN(value) && isFinite(value)) {
       sum += value;
       count++;
     }
@@ -38,15 +41,22 @@ export function calculateAverage(
 
 /**
  * Build interval values object from a database row.
+ * Converts values to numbers (PostgreSQL may return strings).
  *
  * @param row - Database row with interval columns
- * @returns Object with just the interval values
+ * @returns Object with interval values converted to numbers
  */
 export function extractIntervalValues(row: Record<string, any>): Record<StrengthInterval, number | null> {
   const values: Record<string, number | null> = {};
 
   for (const interval of STRENGTH_INTERVALS) {
-    values[interval] = row[interval] ?? null;
+    const rawValue = row[interval];
+    if (rawValue !== null && rawValue !== undefined) {
+      const numValue = Number(rawValue);
+      values[interval] = !isNaN(numValue) && isFinite(numValue) ? numValue : null;
+    } else {
+      values[interval] = null;
+    }
   }
 
   return values as Record<StrengthInterval, number | null>;

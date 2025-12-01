@@ -165,9 +165,11 @@ async function updateRowWithForwardFill(
   const currentRow = currentRowIndex >= 0 ? recentRows[currentRowIndex] : null;
 
   // Build the current interval values, starting with existing values
+  // Convert to numbers explicitly (PostgreSQL may return strings)
   const currentValues: Record<string, number | null> = {};
   for (const int of STRENGTH_INTERVALS) {
-    currentValues[int] = currentRow?.[int] ?? null;
+    const rawValue = currentRow?.[int];
+    currentValues[int] = rawValue !== null && rawValue !== undefined ? Number(rawValue) : null;
   }
 
   // Set the new interval value
@@ -190,9 +192,10 @@ async function updateRowWithForwardFill(
         // Look back through previous rows to find a value
         const startIdx = currentRowIndex >= 0 ? currentRowIndex : 0;
         for (let i = startIdx + 1; i < Math.min(modifiedRows.length, startIdx + FORWARD_FILL_DEPTH + 1); i++) {
-          const prevValue = modifiedRows[i]?.[int];
-          if (prevValue !== null && prevValue !== undefined) {
-            currentValues[int] = prevValue;
+          const rawValue = modifiedRows[i]?.[int];
+          if (rawValue !== null && rawValue !== undefined) {
+            // Convert to number (PostgreSQL may return strings)
+            currentValues[int] = Number(rawValue);
             break;
           }
         }

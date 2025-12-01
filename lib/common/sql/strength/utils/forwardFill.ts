@@ -41,15 +41,18 @@ export function forwardFillInterval(
   maxDepth: number = FORWARD_FILL_DEPTH
 ): number | null {
   // First check if the current row already has a value
-  if (rows[rowIndex]?.[interval] !== null && rows[rowIndex]?.[interval] !== undefined) {
-    return rows[rowIndex]![interval];
+  const currentValue = rows[rowIndex]?.[interval];
+  if (currentValue !== null && currentValue !== undefined) {
+    // Convert to number (PostgreSQL may return strings)
+    return Number(currentValue);
   }
 
   // Look back through previous rows to find a value
   for (let i = rowIndex + 1; i < Math.min(rows.length, rowIndex + maxDepth + 1); i++) {
     const value = rows[i]?.[interval];
     if (value !== null && value !== undefined) {
-      return value;
+      // Convert to number (PostgreSQL may return strings)
+      return Number(value);
     }
   }
 
@@ -62,7 +65,7 @@ export function forwardFillInterval(
  * @param rows - Array of rows sorted by timenow DESC (newest first)
  * @param rowIndex - The index of the row to fill (0 = newest)
  * @param maxDepth - Maximum number of rows to look back
- * @returns Object with filled interval values
+ * @returns Object with filled interval values (all converted to numbers)
  */
 export function forwardFillAllIntervals(
   rows: StrengthRow[],
@@ -72,7 +75,9 @@ export function forwardFillAllIntervals(
   const filled: Record<string, number | null> = {};
 
   for (const interval of STRENGTH_INTERVALS) {
-    filled[interval] = forwardFillInterval(rows, interval, rowIndex, maxDepth);
+    const value = forwardFillInterval(rows, interval, rowIndex, maxDepth);
+    // Ensure value is a proper number or null
+    filled[interval] = value !== null && !isNaN(value) ? value : null;
   }
 
   return filled as Record<StrengthInterval, number | null>;
