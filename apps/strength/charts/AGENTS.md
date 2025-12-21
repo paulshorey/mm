@@ -24,17 +24,20 @@ charts/
 │   └── controls/             # Aggregation, date, ticker selectors
 │
 ├── lib/
-│   ├── FetchStrengthData.ts         # API client for strength data
-│   ├── useRealtimeStrengthData.ts   # Real-time data polling hook
-│   ├── aggregateStrengthData.ts     # Aggregate multiple tickers
-│   ├── aggregatePriceData.ts        # Price data aggregation
-│   ├── aggregateDataUtils.ts        # Shared aggregation utilities
+│   ├── data/                        # Data fetching
+│   │   ├── FetchStrengthData.ts     # API client for strength data
+│   │   └── useRealtimeStrengthData.ts # Real-time data polling hook
+│   ├── aggregation/                 # Data aggregation
+│   │   ├── aggregateDataUtils.ts    # Shared aggregation utilities
+│   │   ├── aggregatePriceData.ts    # Price data aggregation
+│   │   └── aggregateStrengthData.ts # Strength data aggregation
+│   ├── primitives/                  # Custom chart primitives
+│   │   ├── TimeRangeHighlight.ts    # Custom primitive: shaded regions
+│   │   ├── VerticalLinePrimitive.ts # Custom primitive: vertical lines
+│   │   ├── timeMarkers.ts           # Time range + marker config
+│   │   └── forwardFillData.ts       # Add required timestamps for time ranges
 │   ├── chartConfig.ts               # Chart styling config
-│   ├── chartUtils.ts                # Misc chart helpers
-│   ├── forwardFillData.ts           # Add required timestamps for time ranges
-│   ├── timeMarkers.ts               # Time range + marker config
-│   ├── TimeRangeHighlight.ts        # Custom primitive: shaded regions
-│   └── VerticalLinePrimitive.ts     # Custom primitive: vertical lines
+│   └── chartUtils.ts                # Misc chart helpers
 │
 └── state/
     ├── useChartControlsStore.ts     # Zustand store for UI controls
@@ -127,3 +130,5 @@ The normalization is computed in `processTickersForNormalization()` and shared b
 - `TIME_RANGE_HIGHLIGHTING.md` - Time range shading implementation
 - `state/AGENTS.md` - Zustand store details
 - `lib/AGENTS.md` - Library utilities
+
+@TIME_RANGE_HIGHLIGHTING.md

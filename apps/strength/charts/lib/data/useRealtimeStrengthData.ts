@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { StrengthRowGet } from '@lib/common/sql/strength'
 import { FetchStrengthData } from './FetchStrengthData'
-import { HOURS_BACK_INITIAL } from '../constants'
-import { strengthIntervals } from '../state/useChartControlsStore'
+import { HOURS_BACK_INITIAL } from '../../constants'
+import { strengthIntervals } from '../../state/useChartControlsStore'
 
 export interface UseRealtimeStrengthDataOptions {
   tickers: string[]
@@ -301,3 +301,4 @@ export function useRealtimeStrengthData({
     isRealtime,
   }
 }
+

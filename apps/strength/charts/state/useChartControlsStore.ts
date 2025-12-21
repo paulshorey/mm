@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Time, LineData } from 'lightweight-charts'
-import { createURLStorage, getQueryParams } from './lib/urlSync'
+import { createURLStorage, getQueryParams } from './urlSync'
 import { OLD_INTERVALS } from '@lib/common/sql/strength/constants'
 
 // ============================================================================

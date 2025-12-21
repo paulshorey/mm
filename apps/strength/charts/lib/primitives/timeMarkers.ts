@@ -1,7 +1,3 @@
-const COLOR_I = COLORS.neutral_i
-const COLOR_ASIA = COLORS.neutral
-const COLOR_US = COLORS.neutral
-
 /**
  * Time Markers Configuration
  *
@@ -10,9 +6,9 @@ const COLOR_US = COLORS.neutral
  * The chart will display them in the user's local timezone.
  */
 
-import { VerticalLineOptions } from '../lib/VerticalLinePrimitive'
-import { TimeRangeConfig } from '../lib/TimeRangeHighlight'
-import { COLORS } from '../constants'
+import { VerticalLineOptions } from './VerticalLinePrimitive'
+import { TimeRangeConfig } from './TimeRangeHighlight'
+import { COLORS } from '../../constants'
 
 export interface TimeMarkerConfig {
   /** Unique identifier for the marker */
@@ -36,6 +32,10 @@ export interface TimeMarkerConfig {
   /** Whether to show the label */
   showLabel: boolean
 }
+
+const COLOR_I = COLORS.neutral_i
+const COLOR_ASIA = COLORS.neutral
+const COLOR_US = COLORS.neutral
 
 /**
  * Configured time markers
@@ -255,3 +255,4 @@ export function markerConfigToOptions(
     lineStyle: config.lineStyle,
   }
 }
+

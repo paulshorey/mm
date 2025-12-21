@@ -1,5 +1,5 @@
 import { StrengthRowGet } from '@lib/common/sql/strength'
-import { HOURS_BACK_INITIAL } from '../constants'
+import { HOURS_BACK_INITIAL } from '../../constants'
 
 export interface FetchStrengthDataParams {
   ticker: string
@@ -169,3 +169,4 @@ export class FetchStrengthData {
     return sortedData
   }
 }
+

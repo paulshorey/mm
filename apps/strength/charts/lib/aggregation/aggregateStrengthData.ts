@@ -8,7 +8,7 @@ import {
 import {
   strengthIntervals,
   IntervalStrengthData,
-} from '../state/useChartControlsStore'
+} from '../../state/useChartControlsStore'
 
 /**
  * Aggregate strength data from all tickers with interpolation
@@ -142,3 +142,4 @@ export const aggregateStrengthByInterval = (
 
   return result
 }
+

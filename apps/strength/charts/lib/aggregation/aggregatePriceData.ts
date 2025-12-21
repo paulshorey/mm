@@ -6,7 +6,7 @@ import {
   generateFutureTimestamps,
   extendDataIntoFuture,
 } from './aggregateDataUtils'
-import { TickerPriceData } from '../state/useChartControlsStore'
+import { TickerPriceData } from '../../state/useChartControlsStore'
 
 // ============================================================================
 // TYPES
@@ -289,3 +289,4 @@ export const aggregatePriceByTicker = (
 
   return result
 }
+

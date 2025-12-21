@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useRealtimeStrengthData } from './lib/useRealtimeStrengthData'
+import { useRealtimeStrengthData } from './lib/data/useRealtimeStrengthData'
 import { calculateTimeRange } from './lib/chartUtils'
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
@@ -11,11 +11,11 @@ import { COLORS, HOURS_BACK_INITIAL } from './constants'
 import {
   aggregatePriceData,
   aggregatePriceByTicker,
-} from './lib/aggregatePriceData'
+} from './lib/aggregation/aggregatePriceData'
 import {
   aggregateStrengthData,
   aggregateStrengthByInterval,
-} from './lib/aggregateStrengthData'
+} from './lib/aggregation/aggregateStrengthData'
 import { SCALE_FACTOR } from '@/constants'
 
 export interface SyncedChartsProps {

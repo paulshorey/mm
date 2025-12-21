@@ -1,49 +1,52 @@
 # Charts Library Files
 
-## Data Fetching & Processing
+Utilities and functions for chart rendering, data processing, and real-time updates.
 
-- `FetchStrengthData.ts` - API client for fetching strength data from backend
-- `useRealtimeStrengthData.ts` - React hook: polls for new data every minute
-- `forwardFillData.ts` - Adds data points at required timestamps (time range boundaries only)
+## Folder Structure
 
-## Data Aggregation
+```
+lib/
+├── data/               # Data fetching (@data/AGENTS.md)
+│   ├── FetchStrengthData.ts
+│   └── useRealtimeStrengthData.ts
+├── aggregation/        # Data aggregation (@aggregation/AGENTS.md)
+│   ├── aggregateDataUtils.ts
+│   ├── aggregatePriceData.ts
+│   └── aggregateStrengthData.ts
+├── primitives/         # Custom chart primitives (@primitives/AGENTS.md)
+│   ├── TimeRangeHighlight.ts
+│   ├── VerticalLinePrimitive.ts
+│   ├── timeMarkers.ts
+│   └── forwardFillData.ts
+├── chartConfig.ts      # Chart styling and configuration
+└── chartUtils.ts       # Time range calculations, formatting
+```
 
-### aggregateStrengthData.ts
+## Data Fetching (@data/AGENTS.md)
 
-Strength data aggregation for left y-axis:
+- **FetchStrengthData.ts** - API client for fetching strength data
+- **useRealtimeStrengthData.ts** - React hook: polls for new data every minute
 
-- `aggregateStrengthData()` - Average selected intervals across all tickers
-- `aggregateStrengthByInterval()` - Separate line for each interval
+## Data Aggregation (@aggregation/AGENTS.md)
 
-### aggregatePriceData.ts
+- **aggregateStrengthData.ts** - Aggregate strength data across tickers/intervals
+- **aggregatePriceData.ts** - Aggregate and normalize price data
+- **aggregateDataUtils.ts** - Shared utilities (timestamps, forward-fill, extend future)
 
-Price data aggregation for right y-axis:
+## Custom Primitives (@primitives/AGENTS.md)
 
-- `aggregatePriceData()` - Normalized average of all tickers
-- `aggregatePriceByTicker()` - Separate normalized line for each ticker
-
-**Key**: Both functions share a normalization context (`processTickersForNormalization`)
-to ensure individual lines converge to the same point and are visually consistent.
-
-### aggregateDataUtils.ts
-
-Shared utilities:
-
-- `extractGlobalTimestamps()` - Get all unique timestamps from data
-- `forwardFillData()` - Fill missing values by forward-filling
-- `extendDataIntoFuture()` - Extend data 12 hours into future
-- `aggregateStrengthDataWithInterpolation()` - Interpolation for strength data
+- **TimeRangeHighlight.ts** - Shaded background regions for market hours
+- **VerticalLinePrimitive.ts** - Vertical line markers for events
+- **timeMarkers.ts** - Configuration for time ranges and markers
+- **forwardFillData.ts** - Add data points at time range boundaries
 
 ## Chart Configuration
 
-- `chartConfig.ts` - Chart options, dual y-axes configuration
-- `chartUtils.ts` - Time range calculations, data formatting
-- `urlSync.ts` - Sync chart state with URL query parameters
+- **chartConfig.ts** - Chart options, dual y-axes configuration
+- **chartUtils.ts** - Time range calculations, data formatting
 
-## Custom Primitives
+## Related Documentation
 
-- `TimeRangeHighlight.ts` - Shaded background regions for market hours
-- `VerticalLinePrimitive.ts` - Vertical line markers for events
-- `timeMarkers.ts` - Configuration for time ranges and markers
-
-See `TIME_RANGE_HIGHLIGHTING.md` for details on the highlighting implementation.
+- `@primitives/AGENTS.md` - Custom primitives implementation details
+- `@aggregation/AGENTS.md` - Data aggregation and normalization
+- `@data/AGENTS.md` - Data fetching and real-time updates

@@ -176,3 +176,4 @@ export function roundToInterval(
 ): number {
   return Math.floor(timestamp / intervalSeconds) * intervalSeconds
 }
+

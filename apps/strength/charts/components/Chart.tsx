@@ -19,15 +19,15 @@ import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
-import { VerticalLinePrimitive } from '../lib/VerticalLinePrimitive'
+import { VerticalLinePrimitive } from '../lib/primitives/VerticalLinePrimitive'
 import {
   TIME_MARKERS,
   TIME_RANGE_HIGHLIGHTS,
   getMarkerTimestamps,
   markerConfigToOptions,
-} from '../state/timeMarkers'
-import { TimeRangeHighlightPrimitive } from '../lib/TimeRangeHighlight'
-import { forwardFillData, getTimeRangeBoundaries } from '../lib/forwardFillData'
+} from '../lib/primitives/timeMarkers'
+import { TimeRangeHighlightPrimitive } from '../lib/primitives/TimeRangeHighlight'
+import { forwardFillData, getTimeRangeBoundaries } from '../lib/primitives/forwardFillData'
 import { SCALE_FACTOR } from '@/constants'
 import {
   strengthIntervals,
