@@ -246,47 +246,110 @@ function aggregateStrengthData(
   return extendDataIntoFuture(lineData, 12)
 }
 
+/**
+ * OPTIMIZED: Process all intervals in a single pass through the data
+ * 
+ * Old approach: For each interval, iterate through all data and forward-fill
+ * New approach: Single pass extracts ALL interval values, forward-fill once per ticker
+ * 
+ * With 7 intervals and 2 tickers:
+ * - Old: 14 forward-fill operations
+ * - New: 2 forward-fill operations (one per ticker, handling all intervals)
+ */
 function aggregateStrengthByInterval(
   allRawData: (WorkerStrengthRow[] | null)[],
   selectedIntervals: string[],
-  strengthIntervals: string[]
+  _strengthIntervals: string[]
 ): Record<string, LineData[]> {
   const sortedTimestamps = extractGlobalTimestamps(allRawData)
 
-  if (sortedTimestamps.length === 0) {
+  if (sortedTimestamps.length === 0 || selectedIntervals.length === 0) {
     return {}
   }
 
-  const result: Record<string, LineData[]> = {}
+  // Create a timestamp set for O(1) lookup
+  const timestampSet = new Set(sortedTimestamps)
 
-  for (const interval of strengthIntervals) {
-    if (!selectedIntervals.includes(interval)) {
-      continue
+  // Initialize aggregation maps for each interval
+  // Map<interval, Map<timestamp, { sum, count }>>
+  const intervalAggregates = new Map<string, Map<number, { sum: number; count: number }>>()
+  for (const interval of selectedIntervals) {
+    intervalAggregates.set(interval, new Map())
+  }
+
+  // Process each ticker ONCE, extracting ALL interval values in a single pass
+  for (const tickerData of allRawData) {
+    if (!tickerData || tickerData.length === 0) continue
+
+    // Extract raw values for all intervals from this ticker
+    // Map<interval, Map<timestamp, value>>
+    const intervalValues = new Map<string, Map<number, number>>()
+    for (const interval of selectedIntervals) {
+      intervalValues.set(interval, new Map())
     }
 
-    const getIntervalValue = (item: WorkerStrengthRow): number | null => {
-      const value = item[interval]
-      if (value !== null && value !== undefined) {
-        const numericValue =
-          typeof value === 'string' ? parseFloat(value) : Number(value)
-        if (Number.isFinite(numericValue)) {
-          return numericValue
+    // Single pass through ticker data to extract all interval values
+    for (const item of tickerData) {
+      const timestamp = new Date(item.timenow).getTime() / 1000
+
+      for (const interval of selectedIntervals) {
+        const value = item[interval]
+        if (value !== null && value !== undefined) {
+          const numericValue = typeof value === 'string' ? parseFloat(value) : Number(value)
+          if (Number.isFinite(numericValue)) {
+            intervalValues.get(interval)!.set(timestamp, numericValue)
+          }
         }
       }
-      return null
     }
 
-    const intervalData = aggregateStrengthDataWithInterpolation(
-      allRawData,
-      sortedTimestamps,
-      (item: WorkerStrengthRow) => getIntervalValue(item),
-      [interval]
-    )
+    // Forward-fill each interval's values (still need to do this per interval,
+    // but we're reading from cached values, not re-parsing the data)
+    for (const interval of selectedIntervals) {
+      const rawValues = intervalValues.get(interval)!
+      const aggregateMap = intervalAggregates.get(interval)!
 
-    const lineData = intervalData.map((point) => ({
-      time: point.time,
-      value: point.value,
-    }))
+      // Forward-fill this interval's values
+      let previousValue: number | null = null
+
+      for (const timestamp of sortedTimestamps) {
+        let value = rawValues.get(timestamp)
+
+        if (value !== undefined) {
+          previousValue = value
+        } else if (previousValue !== null) {
+          value = previousValue
+        }
+
+        if (value !== undefined) {
+          const existing = aggregateMap.get(timestamp)
+          if (existing) {
+            existing.sum += value
+            existing.count++
+          } else {
+            aggregateMap.set(timestamp, { sum: value, count: 1 })
+          }
+        }
+      }
+    }
+  }
+
+  // Build results
+  const result: Record<string, LineData[]> = {}
+
+  for (const interval of selectedIntervals) {
+    const aggregateMap = intervalAggregates.get(interval)!
+    const lineData: LineData[] = []
+
+    for (const timestamp of sortedTimestamps) {
+      const agg = aggregateMap.get(timestamp)
+      if (agg && agg.count > 0) {
+        lineData.push({
+          time: timestamp,
+          value: agg.sum / agg.count,
+        })
+      }
+    }
 
     if (lineData.length > 0) {
       result[interval] = extendDataIntoFuture(lineData, 12)
