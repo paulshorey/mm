@@ -43,6 +43,12 @@ Note "fe" means "front end", and "be" means "back end". Several apps have this n
 
 Common shared library files (./lib/common) can be imported from `@lib/common` such as this:
 
+```
+import { NEW_INTERVALS } from '@lib/common/sql/strength/constants'
+import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
+import { strengthGets } from '@lib/common/sql/strength/gets'
+```
+
 ### Questions:
 
 If I present you with a contradictory or confusing request, if you do not understand what I mean, please ask me to clarify.
