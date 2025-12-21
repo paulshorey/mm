@@ -29,8 +29,6 @@ The Strength app displays two synchronized financial charts (Strength and Price)
   "19": number       // 19-minute interval strength
   "39": number       // 39-minute interval strength
   "59": number       // 59-minute interval strength
-  "71": number       // 71-minute interval strength
-  "101": number      // 101-minute interval strength
 }
 ```
 
