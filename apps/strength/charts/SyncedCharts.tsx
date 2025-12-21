@@ -74,7 +74,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
    * This callback updates the Zustand store with the computed data
    */
   const handleAggregationResult = useCallback(
-    (result: AggregationResult, processingTimeMs: number) => {
+    (result: AggregationResult, processingTimeMs: number, requestId: number) => {
       setIsAggregating(false)
 
       // Update all aggregated data in the store
@@ -86,7 +86,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       // Log processing time for debugging
       if (processingTimeMs > 100) {
         console.log(
-          `[Worker] Aggregation completed in ${processingTimeMs.toFixed(1)}ms`
+          `[Worker] Aggregation #${requestId} completed in ${processingTimeMs.toFixed(1)}ms`
         )
       }
     },
@@ -110,11 +110,46 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
    * Initialize the Web Worker for data aggregation
    * All heavy computations happen off the main thread
    */
-  const { aggregate, isProcessing, isReady } = useAggregationWorker({
-    enabled: true,
-    onResult: handleAggregationResult,
-    onError: handleAggregationError,
-  })
+  const { aggregate, isProcessing, isReady, cancelPending } =
+    useAggregationWorker({
+      enabled: true,
+      onResult: handleAggregationResult,
+      onError: handleAggregationError,
+    })
+
+  // Track previous tickers to detect changes
+  const prevTickersRef = useRef<string[]>([])
+
+  /**
+   * Cancel pending worker requests and clear data when tickers change
+   * This prevents race conditions where old ticker data overwrites new ticker data
+   */
+  useEffect(() => {
+    const tickersChanged =
+      prevTickersRef.current.length > 0 &&
+      (prevTickersRef.current.length !== chartTickers.length ||
+        prevTickersRef.current.some((t, i) => t !== chartTickers[i]))
+
+    if (tickersChanged) {
+      // Cancel any pending aggregation requests
+      cancelPending()
+
+      // Clear existing chart data to prevent showing stale data
+      setAggregatedStrengthData(null)
+      setAggregatedPriceData(null)
+      setIntervalStrengthData({})
+      setTickerPriceData({})
+    }
+
+    prevTickersRef.current = chartTickers
+  }, [
+    chartTickers,
+    cancelPending,
+    setAggregatedStrengthData,
+    setAggregatedPriceData,
+    setIntervalStrengthData,
+    setTickerPriceData,
+  ])
 
   /**
    * Data Aggregation Effect with Web Worker

@@ -316,7 +316,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     /**
      * Helper to efficiently update series data
-     * Uses update() for small changes, setData() only when necessary
+     *
+     * IMPORTANT: lightweight-charts update() can ONLY:
+     * 1. Update the LAST point in the series (if same timestamp)
+     * 2. Append a new point that comes AFTER the last point
+     *
+     * It CANNOT update points in the middle of the series.
+     * For any other changes, we must use setData().
      */
     const updateSeriesEfficiently = (
       series: ISeriesApi<'Line'>,
@@ -325,22 +331,109 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     ): boolean => {
       if (currentData.length === 0) return false
 
-      // First load or major change: use setData
+      // First load or no previous data: use setData
       if (!prevData || prevData.length === 0) {
         series.setData(currentData)
         return true
       }
 
-      // Check if only the last few points changed (typical for real-time updates)
-      // Compare lengths first
       const lengthDiff = currentData.length - prevData.length
 
-      if (lengthDiff === 0) {
-        // Same length - check last 5 points for value changes
-        let changesFound = 0
-        const checkCount = Math.min(5, currentData.length)
+      // Check if this is a simple append (new points at the end only)
+      if (lengthDiff > 0 && lengthDiff <= 10) {
+        // Verify that existing data hasn't changed (timestamps match)
+        // We only check the last few points of the existing data for performance
+        const checkCount = Math.min(5, prevData.length)
+        let existingDataUnchanged = true
 
         for (let i = 0; i < checkCount; i++) {
+          const idx = prevData.length - 1 - i
+          const curr = currentData[idx]
+          const prev = prevData[idx]
+
+          // If timestamps differ or values significantly differ, data changed
+          if (
+            !curr ||
+            !prev ||
+            curr.time !== prev.time ||
+            Math.abs(curr.value - prev.value) > 0.0001
+          ) {
+            existingDataUnchanged = false
+            break
+          }
+        }
+
+        // Only use update() if existing data is unchanged
+        // (meaning we're just appending new points)
+        if (existingDataUnchanged) {
+          try {
+            // Append only the new points
+            for (let i = prevData.length; i < currentData.length; i++) {
+              const point = currentData[i]
+              if (point) {
+                series.update(point)
+              }
+            }
+            return true
+          } catch (e) {
+            // If update fails for any reason, fall back to setData
+            console.warn('update() failed, falling back to setData:', e)
+            series.setData(currentData)
+            return true
+          }
+        }
+      }
+
+      // Same length - check if only the LAST point changed
+      if (lengthDiff === 0) {
+        const lastCurr = currentData[currentData.length - 1]
+        const lastPrev = prevData[prevData.length - 1]
+
+        // If only the last point changed (same timestamp, different value)
+        if (
+          lastCurr &&
+          lastPrev &&
+          lastCurr.time === lastPrev.time &&
+          Math.abs(lastCurr.value - lastPrev.value) > 0.0001
+        ) {
+          // Check if everything else is the same
+          let onlyLastChanged = true
+          const checkCount = Math.min(5, currentData.length - 1)
+
+          for (let i = 0; i < checkCount; i++) {
+            const idx = currentData.length - 2 - i
+            if (idx < 0) break
+            const curr = currentData[idx]
+            const prev = prevData[idx]
+
+            if (
+              !curr ||
+              !prev ||
+              curr.time !== prev.time ||
+              Math.abs(curr.value - prev.value) > 0.0001
+            ) {
+              onlyLastChanged = false
+              break
+            }
+          }
+
+          if (onlyLastChanged) {
+            try {
+              // Safe to use update() - only the last point changed
+              series.update(lastCurr)
+              return true
+            } catch (e) {
+              // Fall back to setData if update fails
+              console.warn('update() failed, falling back to setData:', e)
+              series.setData(currentData)
+              return true
+            }
+          }
+        }
+
+        // Check if data is identical (no changes needed)
+        let identical = true
+        for (let i = 0; i < Math.min(10, currentData.length); i++) {
           const idx = currentData.length - 1 - i
           const curr = currentData[idx]
           const prev = prevData[idx]
@@ -350,58 +443,18 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
             curr.time !== prev.time ||
             Math.abs(curr.value - prev.value) > 0.0001
           ) {
-            changesFound++
+            identical = false
+            break
           }
         }
 
-        if (changesFound === 0) {
+        if (identical) {
           return false // No changes detected
         }
-
-        // Only last few points changed - use update() for each
-        if (changesFound <= 5) {
-          for (let i = checkCount - 1; i >= 0; i--) {
-            const idx = currentData.length - 1 - i
-            const curr = currentData[idx]
-            const prev = prevData[idx]
-            if (
-              curr &&
-              (!prev ||
-                curr.time !== prev.time ||
-                Math.abs(curr.value - prev.value) > 0.0001)
-            ) {
-              series.update(curr)
-            }
-          }
-          return true
-        }
-      } else if (lengthDiff > 0 && lengthDiff <= 10) {
-        // Small number of new points added - update last points
-        // First update any changed existing points
-        for (let i = 0; i < Math.min(5, prevData.length); i++) {
-          const idx = prevData.length - 1 - i
-          const curr = currentData[idx]
-          const prev = prevData[idx]
-          if (
-            curr &&
-            prev &&
-            curr.time === prev.time &&
-            Math.abs(curr.value - prev.value) > 0.0001
-          ) {
-            series.update(curr)
-          }
-        }
-        // Then add new points
-        for (let i = prevData.length; i < currentData.length; i++) {
-          const point = currentData[i]
-          if (point) {
-            series.update(point)
-          }
-        }
-        return true
       }
 
-      // Significant changes - use setData (this causes the freeze but is necessary)
+      // For any other changes (data in middle changed, length decreased, etc.)
+      // we must use setData()
       series.setData(currentData)
       return true
     }

@@ -36,6 +36,7 @@ export interface WorkerLineData {
  */
 export interface AggregationWorkerRequest {
   type: 'aggregate'
+  requestId: number // Used to track request ordering and ignore stale results
   payload: {
     rawData: (WorkerStrengthRow[] | null)[]
     intervals: string[]
@@ -50,6 +51,7 @@ export interface AggregationWorkerRequest {
  */
 export interface AggregationWorkerResponse {
   type: 'result'
+  requestId: number // Echo back the request ID
   payload: {
     strengthData: WorkerLineData[] | null
     priceData: WorkerLineData[] | null
