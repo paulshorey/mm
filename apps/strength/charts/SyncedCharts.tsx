@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
-import { useRealtimeStrengthData } from './lib/data/useRealtimeStrengthData'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { useStrengthData } from './lib/data/useStrengthData'
 import { calculateTimeRange } from './lib/chartUtils'
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
@@ -13,6 +13,7 @@ import {
   AggregationResult,
 } from './lib/workers/useAggregationWorker'
 import { SCALE_FACTOR } from '@/constants'
+import { LineData, Time } from 'lightweight-charts'
 
 export interface SyncedChartsProps {
   availableHeight: number
@@ -20,18 +21,28 @@ export interface SyncedChartsProps {
 }
 
 /**
- * Component that renders a single chart with dual y-axes for strength and price
+ * SyncedCharts - Main chart component with controlled data flow
+ *
+ * Data Flow:
+ * 1. User selects tickers → dataState = 'loading'
+ * 2. Historical data fetched → send to worker
+ * 3. Worker returns aggregated data → render chart
+ * 4. Real-time updates poll every 10s → incremental worker updates
+ *
+ * When tickers change:
+ * - Real-time updates paused automatically by useStrengthData
+ * - Chart data cleared
+ * - New data fetched and processed
+ * - Chart re-rendered with new data
  */
 export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
-  // Chart ref for single chart
   const chartRef = useRef<ChartRef | null>(null)
 
-  // Get state and actions from Zustand store
+  // Zustand store
   const {
-    // State
     hoursBack,
     interval,
-    chartTickers, // Single consolidated ticker list
+    chartTickers,
     timeRange,
     aggregatedStrengthData,
     aggregatedPriceData,
@@ -39,7 +50,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     tickerPriceData,
     showIntervalLines,
     showTickerLines,
-    // Actions
     setTimeRange,
     setAggregatedStrengthData,
     setAggregatedPriceData,
@@ -47,43 +57,58 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     setTickerPriceData,
   } = useChartControlsStore()
 
-  // Track if worker is processing for UI feedback
-  const [isAggregating, setIsAggregating] = useState(false)
+  // Local state for chart rendering control
+  const [chartData, setChartData] = useState<{
+    strength: LineData<Time>[] | null
+    price: LineData<Time>[] | null
+    intervalStrength: Record<string, LineData<Time>[]>
+    tickerPrice: Record<string, LineData<Time>[]>
+  }>({
+    strength: null,
+    price: null,
+    intervalStrength: {},
+    tickerPrice: {},
+  })
+  const [isChartReady, setIsChartReady] = useState(false)
 
   /**
-   * Use the real-time data hook to manage data fetching and updates
-   * Fetches data for all selected chartTickers
+   * Controlled data fetching hook
+   * Handles ticker changes, loading state, and real-time updates
    */
-  const {
-    rawData,
-    isLoading,
-    error,
-    lastUpdateTime,
-    isRealtime,
-    isInitialLoad,
-    updatedTimestamps,
-  } = useRealtimeStrengthData({
-    tickers: chartTickers,
-    enabled: chartTickers.length > 0,
-    maxDataHours: HOURS_BACK_INITIAL,
-    updateIntervalMs: 10000, // Update every 10 seconds for real-time interval updates
-  })
+  const { rawData, dataState, error, lastUpdateTime, dataVersion } =
+    useStrengthData({
+      tickers: chartTickers,
+      enabled: chartTickers.length > 0,
+      maxDataHours: HOURS_BACK_INITIAL,
+      updateIntervalMs: 10000,
+    })
 
   /**
    * Handle aggregation results from the Web Worker
-   * This callback updates the Zustand store with the computed data
    */
   const handleAggregationResult = useCallback(
-    (result: AggregationResult, processingTimeMs: number, requestId: number) => {
-      setIsAggregating(false)
+    (
+      result: AggregationResult,
+      processingTimeMs: number,
+      requestId: number
+    ) => {
+      // Update local chart data (not the store - for immediate rendering)
+      setChartData({
+        strength: result.strengthData,
+        price: result.priceData,
+        intervalStrength: result.intervalStrengthData,
+        tickerPrice: result.tickerPriceData,
+      })
 
-      // Update all aggregated data in the store
+      // Also update store for any external consumers
       setAggregatedStrengthData(result.strengthData)
       setAggregatedPriceData(result.priceData)
       setIntervalStrengthData(result.intervalStrengthData)
       setTickerPriceData(result.tickerPriceData)
 
-      // Log processing time for debugging
+      // Mark chart as ready to render
+      setIsChartReady(true)
+
       if (processingTimeMs > 100) {
         console.log(
           `[Worker] Aggregation #${requestId} completed in ${processingTimeMs.toFixed(1)}ms`
@@ -98,17 +123,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     ]
   )
 
-  /**
-   * Handle aggregation errors from the Web Worker
-   */
   const handleAggregationError = useCallback((errorMsg: string) => {
-    setIsAggregating(false)
     console.error('[Worker] Aggregation error:', errorMsg)
   }, [])
 
   /**
-   * Initialize the Web Worker for data aggregation
-   * All heavy computations happen off the main thread
+   * Web Worker for aggregation
    */
   const { aggregate, isProcessing, isReady, cancelPending } =
     useAggregationWorker({
@@ -117,33 +137,30 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       onError: handleAggregationError,
     })
 
-  // Track previous tickers to detect changes
-  const prevTickersRef = useRef<string[]>([])
-
   /**
-   * Cancel pending worker requests and clear data when tickers change
-   * This prevents race conditions where old ticker data overwrites new ticker data
+   * Effect: Clear chart when dataVersion changes (ticker switch)
+   * This ensures old data is never shown during the transition
    */
   useEffect(() => {
-    const tickersChanged =
-      prevTickersRef.current.length > 0 &&
-      (prevTickersRef.current.length !== chartTickers.length ||
-        prevTickersRef.current.some((t, i) => t !== chartTickers[i]))
+    // Cancel any pending worker requests
+    cancelPending()
 
-    if (tickersChanged) {
-      // Cancel any pending aggregation requests
-      cancelPending()
+    // Clear chart data immediately
+    setChartData({
+      strength: null,
+      price: null,
+      intervalStrength: {},
+      tickerPrice: {},
+    })
+    setIsChartReady(false)
 
-      // Clear existing chart data to prevent showing stale data
-      setAggregatedStrengthData(null)
-      setAggregatedPriceData(null)
-      setIntervalStrengthData({})
-      setTickerPriceData({})
-    }
-
-    prevTickersRef.current = chartTickers
+    // Clear store data
+    setAggregatedStrengthData(null)
+    setAggregatedPriceData(null)
+    setIntervalStrengthData({})
+    setTickerPriceData({})
   }, [
-    chartTickers,
+    dataVersion,
     cancelPending,
     setAggregatedStrengthData,
     setAggregatedPriceData,
@@ -152,72 +169,67 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   ])
 
   /**
-   * Data Aggregation Effect with Web Worker
-   *
-   * PERFORMANCE OPTIMIZATION:
-   * - All aggregation happens in a Web Worker (off main thread)
-   * - Main thread stays responsive for user interactions
-   * - Worker processes all data and returns the results
-   *
-   * The aggregation creates multiple data series:
-   * 1. Strength data: average of selected intervals across all tickers
-   * 2. Price data: normalized average of all tickers
-   * 3. Individual interval data: separate line for each selected interval
-   * 4. Individual ticker price data: separate line for each selected ticker
+   * Effect: Process data through worker when rawData changes
+   * Only triggers when we have actual data and worker is ready
    */
   useEffect(() => {
-    if (rawData.length === 0 || !rawData.some((data) => data !== null)) {
-      return
-    }
+    // Don't process if still loading or no data
+    if (dataState !== 'ready') return
+    if (rawData.length === 0 || !rawData.some((data) => data !== null)) return
+    if (!isReady) return
 
-    if (!isReady) {
-      // Worker not ready yet, wait for next effect run
-      return
-    }
+    // Don't queue up requests if already processing
+    if (isProcessing) return
 
-    // Don't trigger if already processing (prevents queue buildup)
-    if (isProcessing) {
-      return
-    }
-
-    setIsAggregating(true)
-
-    // Send data to Web Worker for aggregation
+    // Send to worker for aggregation
     aggregate(rawData, interval, chartTickers)
-  }, [interval, rawData, chartTickers, isReady, isProcessing, aggregate])
+  }, [
+    rawData,
+    dataState,
+    interval,
+    chartTickers,
+    isReady,
+    isProcessing,
+    aggregate,
+  ])
 
   /**
-   * Time Range Effect
-   *
-   * Updates the visible time range when:
-   * - hoursBack changes (user selects different time range)
-   * - rawData changes (new data with different time bounds)
-   * This only affects the visible portion of the charts, not the data itself.
+   * Effect: Calculate time range when data is ready
+   * Only calculates when we have aggregated data ready to display
    */
   useEffect(() => {
+    if (!isChartReady || !chartData.strength || chartData.strength.length === 0)
+      return
+
     const newRange = calculateTimeRange(rawData, parseInt(hoursBack))
     if (newRange && newRange.from < newRange.to) {
       setTimeRange(newRange)
-    } else if (!newRange && rawData.length > 0) {
-      // If we can't calculate a range, log a warning
-      console.warn('Unable to calculate valid time range from data', {
-        rawDataLength: rawData.length,
-        hoursBack,
-        hasData: rawData.some((d) => d && d.length > 0),
-      })
     }
-  }, [hoursBack, rawData])
+  }, [hoursBack, rawData, isChartReady, chartData.strength, setTimeRange])
+
+  /**
+   * Determine what to render based on state
+   */
+  const showLoading = dataState === 'loading'
+  const showError = error && dataState !== 'loading'
+  const showChart =
+    dataState === 'ready' && isChartReady && chartData.strength !== null
+
+  // Only pass timeRange to chart when data is ready
+  const chartTimeRange = showChart ? timeRange : undefined
 
   return (
     <div className="relative w-full">
-      {/* Show loading or error state */}
-      {isLoading && <LoadingState />}
-      {error && !isLoading && <ErrorState error={error} />}
+      {/* Loading state - shown while fetching historical data */}
+      {showLoading && <LoadingState />}
 
-      {/* Render single chart with dual y-axes */}
-      {!isLoading && !error && (
+      {/* Error state */}
+      {showError && <ErrorState error={error} />}
+
+      {/* Chart - only rendered when data is ready */}
+      {showChart && (
         <Chart
-          key="combined-chart"
+          key={`chart-${dataVersion}`}
           ref={(el) => {
             chartRef.current = el
           }}
@@ -245,14 +257,13 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
                 >
                   Strength
                 </span>
-                {/* <span className="text-gray-500"> trend</span> */}
               </span>
             </span>
           }
-          strengthData={aggregatedStrengthData}
-          priceData={aggregatedPriceData}
-          intervalStrengthData={intervalStrengthData}
-          tickerPriceData={tickerPriceData}
+          strengthData={chartData.strength}
+          priceData={chartData.price}
+          intervalStrengthData={chartData.intervalStrength}
+          tickerPriceData={chartData.tickerPrice}
           tickers={chartTickers}
           showIntervalLines={showIntervalLines}
           showTickerLines={showTickerLines}
@@ -262,13 +273,16 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
               : 1200
           }
           height={availableHeight}
-          timeRange={timeRange}
+          timeRange={chartTimeRange}
           showZeroLine={true}
         />
       )}
 
       {/* Last updated time */}
-      <UpdatedTime isRealtime={isRealtime} lastUpdateTime={lastUpdateTime} />
+      <UpdatedTime
+        isRealtime={dataState === 'ready'}
+        lastUpdateTime={lastUpdateTime}
+      />
 
       {/* Target box for screen capture */}
       <div

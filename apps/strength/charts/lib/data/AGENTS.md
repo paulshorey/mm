@@ -1,6 +1,6 @@
 # Data Fetching
 
-API client and React hook for fetching real-time strength data.
+API client and React hooks for fetching strength data.
 
 ## Files
 
@@ -9,25 +9,36 @@ API client and React hook for fetching real-time strength data.
 - `mergeData()` - Merge new data with existing, update same timestamps
 - `prepareDate()` - Ensure 1-minute intervals (no seconds)
 
-**useRealtimeStrengthData.ts** - Real-time data React hook:
-- Fetches initial historical data (configurable hours back)
-- Polls every 10 seconds for latest interval values
-- Merges and forward-fills missing values
-- Updates existing chart timestamps with new values
+**useStrengthData.ts** - Controlled data fetching hook (RECOMMENDED):
+- State machine approach: `idle` → `loading` → `ready`
+- Automatic pause of real-time updates when tickers change
+- Clears stale data before fetching new data
+- `dataVersion` increments on ticker change for chart reset
 
-**Important**: Database rows are at 1-minute intervals, but are UPDATED every
-few seconds with new interval data. We poll every 10 seconds to get the latest.
+**useRealtimeStrengthData.ts** - Legacy real-time data hook:
+- Older implementation, kept for backwards compatibility
+- Less controlled state management
+
+## Controlled Data Flow (useStrengthData)
+
+When user changes tickers:
+1. Stop real-time updates
+2. Clear existing data (`rawData = []`)
+3. Set `dataState = 'loading'`
+4. Increment `dataVersion` (triggers chart remount)
+5. Fetch historical data
+6. Set `dataState = 'ready'`
+7. Resume real-time updates (10-second polling)
+
+This prevents race conditions where old data overwrites new data.
 
 ## Real-time Strategy (10-second polling)
 
-Database rows exist at 1-minute intervals (10:01:00, 10:02:00, etc.) but each
-row is updated every few seconds as new interval values become available.
+Database rows exist at 1-minute intervals but are updated every few seconds.
 
 On each 10-second poll:
-1. Fetch last 3 minutes of data (current + previous + buffer)
-2. Forward-fill any null interval values from previous rows
-3. Merge into existing data (same timestamps get UPDATED, not duplicated)
-4. Chart updates to show latest interval values
-
-This allows the chart to show real-time updates as intervals complete.
+1. Fetch last 4 minutes of data
+2. Forward-fill null interval values from previous rows
+3. Merge into existing data (same timestamps get UPDATED)
+4. Worker re-aggregates the updated data
 

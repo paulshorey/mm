@@ -9,7 +9,7 @@ import { NEW_INTERVALS } from '@lib/common/sql/strength/constants'
 // ============================================================================
 export const strengthIntervals = NEW_INTERVALS
 // Remove first and last values from array
-const strengthIntervalsMid = strengthIntervals.slice(1, -1)
+const strengthIntervalsMid = strengthIntervals.slice(1, -2)
 
 const strengthIntervalsFirstHalf = strengthIntervals.slice(
   0,

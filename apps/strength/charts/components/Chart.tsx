@@ -227,14 +227,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         })
       }
 
-      // Apply initial time range if provided
-      if (timeRange && timeRange.from < timeRange.to) {
-        try {
-          chart.timeScale().setVisibleRange(timeRange)
-        } catch (error) {
-          console.warn('Failed to set initial visible range:', error)
-        }
-      }
+      // NOTE: Don't set initial time range here - wait for data to be loaded
+      // setVisibleRange fails if the series has no data
+      // Time range is applied after data is set in the useEffect hooks below
 
       // Cleanup
       return () => {
@@ -490,30 +485,37 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
           createTimeMarkers(currentData)
         }
 
-        // Reapply time range after data update (only on significant changes)
+        // Apply time range on first data load (when we had no previous data)
+        // Only do this if we have actual data to display
         if (
           updated &&
           !prevData &&
+          currentData.length > 0 &&
           timeRange &&
           chartRef.current &&
           timeRange.from < timeRange.to
         ) {
-          setTimeout(() => {
+          // Use requestAnimationFrame to ensure chart has processed the data
+          requestAnimationFrame(() => {
             if (
               chartRef.current &&
+              lastDataRef.current &&
+              lastDataRef.current.length > 0 &&
               timeRange &&
               timeRange.from < timeRange.to
             ) {
               try {
                 chartRef.current.timeScale().setVisibleRange(timeRange)
               } catch (error) {
+                // This can happen if the time range is outside the data bounds
+                // Just log and ignore - chart will auto-fit
                 console.warn(
                   'Failed to set visible range after data update:',
                   error
                 )
               }
             }
-          }, 100)
+          })
         }
       } catch (error) {
         console.warn('Failed to update strength data:', error)
@@ -692,6 +694,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Validate time range before setting
       if (timeRange.from >= timeRange.to) {
         console.warn('Invalid time range: from >= to', timeRange)
+        return
+      }
+
+      // Check that we have data in the series before setting visible range
+      // setVisibleRange will fail with "Value is null" if series is empty
+      if (!lastDataRef.current || lastDataRef.current.length === 0) {
+        // No data yet - don't try to set range
         return
       }
 

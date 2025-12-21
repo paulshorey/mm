@@ -53,14 +53,24 @@ useChartControlsStore (Zustand)
       ↓
 SyncedChartsWrapper (dimensions + hydration)
       ↓
-SyncedCharts (fetches raw data via useRealtimeStrengthData)
+SyncedCharts (orchestrates data flow)
       ↓
-Web Worker (aggregation runs off main thread for performance)
+useStrengthData (controlled state: idle → loading → ready)
       ↓
-Chart.tsx (add required timestamps → setData → attach primitives)
+Web Worker (aggregation runs off main thread)
+      ↓
+Chart.tsx (renders when data ready, key={dataVersion} for clean resets)
       ↓
 lightweight-charts (renders canvas)
 ```
+
+### Ticker Change Flow
+
+When user selects different tickers:
+1. `useStrengthData` pauses real-time updates
+2. `dataVersion` increments → Chart unmounts/remounts (clean slate)
+3. Historical data fetched → Worker aggregates → Chart renders
+4. Real-time updates resume (10-second polling)
 
 ## Key Features
 
