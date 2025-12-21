@@ -14,13 +14,18 @@ export function UpdatedTime({ isRealtime, lastUpdateTime }: UpdatedTimeProps) {
     return date.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
       hour12: false,
     })
   }
 
   return (
-    <div className="fixed bottom-[1.25rem] right-1 z-[10001]" dir="ltr">
-      <span className="text-xs text-gray-600 bg-white">
+    <div
+      className="fixed bottom-[1.25rem] right-1 z-[10001] scale2x"
+      dir="ltr"
+      style={{ transformOrigin: 'bottom right' }}
+    >
+      <span className="text-xs text-orange-400 bg-white">
         {formatTime(lastUpdateTime)}
       </span>
     </div>

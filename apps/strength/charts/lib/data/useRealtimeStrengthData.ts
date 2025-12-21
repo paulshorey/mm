@@ -154,12 +154,12 @@ export function useRealtimeStrengthData({
       return
 
     try {
-      // Fetch the last 3 minutes of data to ensure we get:
+      // Fetch the last 4 minutes of data to ensure we get:
       // - Current minute (actively being updated with new intervals)
       // - Previous minute (for forward-fill reference)
       // - One more for safety buffer
       const now = new Date()
-      const fromDate = new Date(now.getTime() - 3 * 60 * 1000) // 3 minutes back
+      const fromDate = new Date(now.getTime() - 4 * 60 * 1000) // 4 minutes back
       const toDate = new Date() // Current time
 
       const newTickerData = await FetchStrengthData.fetchMultipleTickersData(
@@ -306,4 +306,3 @@ export function useRealtimeStrengthData({
     isRealtime,
   }
 }
-

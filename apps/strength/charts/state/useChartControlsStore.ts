@@ -2,12 +2,12 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Time, LineData } from 'lightweight-charts'
 import { createURLStorage, getQueryParams } from './urlSync'
-import { OLD_INTERVALS } from '@lib/common/sql/strength/constants'
+import { NEW_INTERVALS } from '@lib/common/sql/strength/constants'
 
 // ============================================================================
 // CONFIGURATION CONSTANTS
 // ============================================================================
-export const strengthIntervals = OLD_INTERVALS
+export const strengthIntervals = NEW_INTERVALS
 // Remove first and last values from array
 const strengthIntervalsMid = strengthIntervals.slice(1, -1)
 
