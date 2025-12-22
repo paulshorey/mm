@@ -57,7 +57,9 @@ If working on the strength app then `cd apps/strength` (if not in that folder al
 
 ### Questions:
 
-If I present you with a contradictory or confusing request, if you do not understand what I mean, please ask me to clarify.
+If I present you with a contradictory or confusing request, ask me to clarify.
+
+If the solution is not obvious technically, search the web about best practices. Search for more information about the library or framework we're using.
 
 ### AGENTS.md files memory and documentation:
 

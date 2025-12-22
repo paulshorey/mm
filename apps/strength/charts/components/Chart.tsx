@@ -13,7 +13,6 @@ import {
   LineSeries,
   ISeriesApi,
   Time,
-  IPriceLine,
 } from 'lightweight-charts'
 import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import ChartTitle from './ChartTitle'
@@ -39,6 +38,7 @@ import {
   useChartControlsStore,
 } from '../state/useChartControlsStore'
 import { COLORS } from '../constants'
+
 interface ChartProps {
   heading: string | React.ReactNode
   name: string
@@ -47,12 +47,9 @@ interface ChartProps {
   intervalStrengthData?: IntervalStrengthData
   tickerPriceData?: TickerPriceData
   tickers?: string[]
-  showIntervalLines?: boolean
-  showTickerLines?: boolean
   width: number
   height: number
   timeRange?: { from: Time; to: Time } | null
-  showZeroLine?: boolean
 }
 
 export interface ChartRef {
@@ -77,7 +74,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       width,
       height,
       timeRange,
-      showZeroLine,
     },
     ref
   ) => {
@@ -89,7 +85,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const priceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const intervalSeriesRef = useRef<Record<string, ISeriesApi<'Line'>>>({})
     const tickerSeriesRef = useRef<Record<string, ISeriesApi<'Line'>>>({})
-    const zeroLineRef = useRef<IPriceLine | null>(null)
+    const zeroLineSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
     const timeMarkersRef = useRef<VerticalLinePrimitive[]>([])
     const timeRangeHighlightRef = useRef<TimeRangeHighlightPrimitive | null>(
       null
@@ -188,6 +184,19 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       })
       strengthSeriesRef.current = strengthSeries
 
+      // Add dedicated zero line series (always visible, independent of other series)
+      // This ensures the zero line is always shown regardless of which strength lines are displayed
+      const zeroLineSeries = chart.addSeries(LineSeries, {
+        color: COLORS.strength,
+        lineWidth: 1,
+        lineStyle: 2, // Dashed line
+        priceScaleId: 'left', // Same scale as strength series
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+      })
+      zeroLineSeriesRef.current = zeroLineSeries
+
       // Add second series (price) - uses RIGHT price scale (default)
       // Always create the series, even if data doesn't exist yet
       const priceSeries = chart.addSeries(LineSeries, {
@@ -237,9 +246,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         chartRef.current = null
         strengthSeriesRef.current = null
         priceSeriesRef.current = null
+        zeroLineSeriesRef.current = null
         intervalSeriesRef.current = {}
         tickerSeriesRef.current = {}
-        zeroLineRef.current = null
         hasInitialized.current = false
       }
     }, []) // Only run once on mount - removed all dependencies
@@ -478,6 +487,17 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
         if (updated) {
           lastDataRef.current = currentData // Don't spread - keep reference for comparison
+
+          // Update zero line series to span the full data range
+          // Only needs start and end points to draw a horizontal line at y=0
+          if (zeroLineSeriesRef.current && currentData.length > 0) {
+            const firstTime = currentData[0]!.time
+            const lastTime = currentData[currentData.length - 1]!.time
+            zeroLineSeriesRef.current.setData([
+              { time: firstTime, value: 0 },
+              { time: lastTime, value: 0 },
+            ])
+          }
         }
 
         // Create time markers on first data load
@@ -710,30 +730,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         console.warn('Failed to set visible range:', error)
       }
     }, [timeRange])
-
-    // Handle showZeroLine changes
-    useEffect(() => {
-      if (!strengthSeriesRef.current || !hasInitialized.current) return
-
-      // Remove existing zero line if it exists
-      if (zeroLineRef.current) {
-        strengthSeriesRef.current.removePriceLine(zeroLineRef.current)
-        zeroLineRef.current = null
-      }
-
-      // Add zero line if requested
-      if (showZeroLine) {
-        const zeroLine = strengthSeriesRef.current.createPriceLine({
-          price: 0,
-          color: COLORS.strength,
-          lineWidth: 2,
-          lineStyle: 2, // Dashed line
-          axisLabelVisible: false,
-          title: '',
-        })
-        zeroLineRef.current = zeroLine
-      }
-    }, [showZeroLine])
 
     // Toggle visibility of aggregated strength line based on showIntervalLines
     // When individual interval lines are shown, hide the aggregated line
