@@ -8,16 +8,6 @@ import { NEW_INTERVALS } from '@lib/common/sql/strength/constants'
 // CONFIGURATION CONSTANTS
 // ============================================================================
 export const strengthIntervals = NEW_INTERVALS
-// Remove first and last values from array
-const strengthIntervalsMid = strengthIntervals.slice(1, -2)
-
-const strengthIntervalsFirstHalf = strengthIntervals.slice(
-  0,
-  Math.ceil(strengthIntervals.length / 2)
-)
-const strengthIntervalsSecondHalf = strengthIntervals.slice(
-  Math.ceil(strengthIntervals.length / 2)
-)
 
 /**
  * Available interval configurations for strength data aggregation
@@ -25,15 +15,17 @@ const strengthIntervalsSecondHalf = strengthIntervals.slice(
  */
 export const intervalsOptions = [
   {
-    value: strengthIntervalsMid,
-    label: 'mid',
-  },
-  {
     value: strengthIntervals,
     label: 'all',
   },
-  { value: strengthIntervalsSecondHalf, label: 'long' },
-  { value: strengthIntervalsFirstHalf, label: 'short' },
+  {
+    value: strengthIntervals.slice(Math.ceil(strengthIntervals.length / 2)),
+    label: 'long',
+  },
+  {
+    value: strengthIntervals.slice(0, Math.ceil(strengthIntervals.length / 2)),
+    label: 'short',
+  },
 ]
 for (const interval of strengthIntervals) {
   intervalsOptions.push({ value: [interval], label: interval })
@@ -42,7 +34,15 @@ for (const interval of strengthIntervals) {
 /**
  * Available time range options for historical data
  */
-export const hoursBackOptions = ['120h', '96h', '72h', '48h', '24h']
+export const hoursBackOptions = [
+  '120h',
+  '96h',
+  '72h',
+  '48h',
+  '24h',
+  '12h',
+  '6h',
+]
 
 /**
  * Market categories and their ticker options
@@ -72,16 +72,17 @@ export const tickersByMarket = [
   {
     market: '---metals---',
     tickers: [
-      { label: 'Precious Metals', value: ['GC1!', 'SI1!', 'PL1!'] },
+      { label: 'Monetary', value: ['GC1!', 'SI1!'] },
+      { label: 'Precious', value: ['GC1!', 'SI1!', 'PL1!'] },
       { label: 'GC1!', value: ['GC1!'] },
       { label: 'SI1!', value: ['SI1!'] },
       { label: 'PL1!', value: ['PL1!'] },
+      { label: 'HG1!', value: ['HG1!'] },
     ],
   },
   {
     market: '---commodities---',
     tickers: [
-      { label: 'HG1!', value: ['HG1!'] },
       { label: 'CL1!', value: ['CL1!'] },
       { label: 'XC1!', value: ['XC1!'] },
       { label: 'XW1!', value: ['XW1!'] },
@@ -222,7 +223,7 @@ const getInitialState = (): State => {
     aggregatedPriceData: null,
     intervalStrengthData: {},
     tickerPriceData: {},
-    showIntervalLines: true,
+    showIntervalLines: false,
     showTickerLines: true,
     isHydrated: false,
   }

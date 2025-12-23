@@ -77,7 +77,12 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     },
     ref
   ) => {
-    const { showIntervalLines, showTickerLines } = useChartControlsStore()
+    const {
+      showIntervalLines,
+      showTickerLines,
+      hoursBack,
+      interval: selectedIntervals,
+    } = useChartControlsStore()
 
     const containerRef = useRef<HTMLDivElement>(null)
     const chartRef = useRef<IChartApi | null>(null)
@@ -178,7 +183,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add first series (strength) - uses LEFT price scale
       const strengthSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
-        lineWidth: 1,
+        lineWidth: 2,
         color: COLORS.strength,
         priceScaleId: 'left',
       })
@@ -187,8 +192,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add dedicated zero line series (always visible, independent of other series)
       // This ensures the zero line is always shown regardless of which strength lines are displayed
       const zeroLineSeries = chart.addSeries(LineSeries, {
-        color: COLORS.strength,
-        lineWidth: 1,
+        color: COLORS.neutral,
+        lineWidth: 2,
         lineStyle: 2, // Dashed line
         priceScaleId: 'left', // Same scale as strength series
         crosshairMarkerVisible: false,
@@ -201,7 +206,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Always create the series, even if data doesn't exist yet
       const priceSeries = chart.addSeries(LineSeries, {
         ...getLineSeriesConfig(),
-        lineWidth: 1,
+        lineWidth: 2,
         color: COLORS.price,
         priceScaleId: 'right',
       })
@@ -574,7 +579,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       try {
         // Update each interval series with its data
-        strengthIntervals.forEach((interval) => {
+        // @ts-ignore
+        intervalSeriesRef?.current?.forEach((interval) => {
           const series = intervalSeriesRef.current[interval]
           if (!series) return
 
