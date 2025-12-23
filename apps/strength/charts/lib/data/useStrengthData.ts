@@ -35,6 +35,8 @@ export interface UseStrengthDataOptions {
   enabled?: boolean
   maxDataHours?: number
   updateIntervalMs?: number
+  /** Pause real-time polling (e.g., when user is scrolling the chart) */
+  paused?: boolean
 }
 
 export interface UseStrengthDataResult {
@@ -74,27 +76,52 @@ function forwardFillRow(
 }
 
 /**
- * Find the last row with complete interval data (all intervals non-null)
- * Used for forward-filling new data from historical context
+ * Build a "composite" row with the last known value for each interval.
+ * This searches backwards through the data to find the most recent non-null
+ * value for EACH interval separately, rather than requiring a single row
+ * where all intervals are complete.
+ *
+ * This handles the case where different intervals are calculated at different
+ * times or have different lag in the database.
  */
-function findLastCompleteRow(
+function buildLastKnownValuesRow(
   data: StrengthRowGet[] | null
 ): StrengthRowGet | null {
   if (!data || data.length === 0) return null
 
-  // Search backwards from the end for a row with all intervals filled
-  for (let i = data.length - 1; i >= 0; i--) {
-    const row = data[i]!
-    const hasAllIntervals = strengthIntervals.every(
-      (interval) => row[interval] !== null
-    )
-    if (hasAllIntervals && row.price && row.price > 0) {
-      return row
+  // Start with the last row as a base
+  const lastRow = data[data.length - 1]
+  if (!lastRow) return null
+
+  // Create a composite row starting from the last row
+  const compositeRow: StrengthRowGet = { ...lastRow }
+
+  // For each interval, search backwards to find the last non-null value
+  for (const interval of strengthIntervals) {
+    if (compositeRow[interval] !== null) continue // Already have a value
+
+    // Search backwards for a non-null value for this specific interval
+    for (let i = data.length - 2; i >= 0; i--) {
+      const row = data[i]
+      if (row && row[interval] !== null) {
+        compositeRow[interval] = row[interval]
+        break
+      }
     }
   }
 
-  // If no complete row found, return the last row anyway
-  return data[data.length - 1] || null
+  // Also find the last non-null price
+  if (compositeRow.price === null || compositeRow.price === 0) {
+    for (let i = data.length - 2; i >= 0; i--) {
+      const row = data[i]
+      if (row && row.price !== null && row.price > 0) {
+        compositeRow.price = row.price
+        break
+      }
+    }
+  }
+
+  return compositeRow
 }
 
 /**
@@ -112,6 +139,7 @@ export function useStrengthData({
   enabled = true,
   maxDataHours = HOURS_BACK_INITIAL,
   updateIntervalMs = 10000,
+  paused = false,
 }: UseStrengthDataOptions): UseStrengthDataResult {
   const [rawData, setRawData] = useState<(StrengthRowGet[] | null)[]>([])
   const [dataState, setDataState] = useState<DataState>('idle')
@@ -218,8 +246,25 @@ export function useStrengthData({
             (a, b) => a.timenow.getTime() - b.timenow.getTime()
           )
 
-          // Find the last complete row from existing data for forward-fill context
-          const lastCompleteRow = findLastCompleteRow(existingData)
+          // Build composite row with last known values for each interval
+          // This handles cases where different intervals have different lag
+          const lastKnownValues = buildLastKnownValuesRow(existingData)
+
+          // DEBUG: Log forward-fill context
+          if (lastKnownValues) {
+            const filledIntervals = strengthIntervals.filter(
+              (i) => lastKnownValues[i] !== null
+            )
+            console.log(
+              `[useStrengthData] Forward-fill context for ticker ${idx}:`,
+              {
+                existingDataLength: existingData?.length || 0,
+                filledIntervalCount: filledIntervals.length,
+                totalIntervals: strengthIntervals.length,
+                newDataLength: sortedNewData.length,
+              }
+            )
+          }
 
           // Forward-fill new data, using existing historical data for the first row
           const filledNewData: StrengthRowGet[] = []
@@ -228,7 +273,7 @@ export function useStrengthData({
 
             if (i === 0) {
               // First row: forward-fill from existing historical data
-              filledNewData.push(forwardFillRow(currentRow, lastCompleteRow))
+              filledNewData.push(forwardFillRow(currentRow, lastKnownValues))
             } else {
               // Subsequent rows: forward-fill from previous new row
               filledNewData.push(
@@ -246,6 +291,25 @@ export function useStrengthData({
             existingData,
             filledNewData
           )
+
+          // DEBUG: Log merge results
+          const existingLast = existingData[existingData.length - 1]
+          const mergedLast = merged[merged.length - 1]
+          const newDataFirst = sortedNewData[0]
+          const newDataLast = sortedNewData[sortedNewData.length - 1]
+          console.log(`[useStrengthData] Merge for ticker ${idx}:`, {
+            existingLen: existingData.length,
+            newDataLen: sortedNewData.length,
+            mergedLen: merged.length,
+            existingLastTime: existingLast?.timenow?.toISOString(),
+            newDataFirstTime: newDataFirst?.timenow?.toISOString(),
+            newDataLastTime: newDataLast?.timenow?.toISOString(),
+            mergedLastTime: mergedLast?.timenow?.toISOString(),
+            // Check if intervals are filled in merged data
+            mergedLastIntervalsFilled: strengthIntervals.filter(
+              (i) => mergedLast?.[i] !== null
+            ).length,
+          })
 
           // Track latest timestamp
           if (merged.length > 0) {
@@ -296,7 +360,8 @@ export function useStrengthData({
       if (
         document.visibilityState === 'visible' &&
         dataState === 'ready' &&
-        currentTickersRef.current.length > 0
+        currentTickersRef.current.length > 0 &&
+        !paused
       ) {
         // Tab became visible - fetch immediately to fill any gaps
         console.log(
@@ -310,7 +375,33 @@ export function useStrengthData({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [dataState, fetchRealtimeUpdate])
+  }, [dataState, fetchRealtimeUpdate, paused])
+
+  /**
+   * Handle pause/resume of real-time polling
+   * When paused: stop polling (user is scrolling/interacting with chart)
+   * When resumed: fetch immediately to fill any gaps, then restart polling
+   */
+  useEffect(() => {
+    if (dataState !== 'ready') return
+
+    if (paused) {
+      // Stop polling while paused
+      stopRealtimeUpdates()
+      console.log('[useStrengthData] Polling paused (user interaction)')
+    } else {
+      // Resume polling - fetch immediately to fill any gaps
+      console.log('[useStrengthData] Polling resumed - fetching missed data')
+      fetchRealtimeUpdate()
+      startRealtimeUpdates()
+    }
+  }, [
+    paused,
+    dataState,
+    stopRealtimeUpdates,
+    startRealtimeUpdates,
+    fetchRealtimeUpdate,
+  ])
 
   /**
    * Load historical data for tickers

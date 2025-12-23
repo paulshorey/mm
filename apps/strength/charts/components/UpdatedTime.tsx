@@ -5,9 +5,15 @@ import React from 'react'
 interface UpdatedTimeProps {
   isRealtime: boolean
   lastUpdateTime: Date | null
+  /** Whether polling is paused (e.g., user is scrolling) */
+  paused?: boolean
 }
 
-export function UpdatedTime({ isRealtime, lastUpdateTime }: UpdatedTimeProps) {
+export function UpdatedTime({
+  isRealtime,
+  lastUpdateTime,
+  paused = false,
+}: UpdatedTimeProps) {
   if (!isRealtime || !lastUpdateTime) return null
 
   const formatTime = (date: Date) => {
@@ -25,9 +31,15 @@ export function UpdatedTime({ isRealtime, lastUpdateTime }: UpdatedTimeProps) {
       dir="ltr"
       style={{ transformOrigin: 'bottom right' }}
     >
-      <span className="text-xs text-orange-400 bg-white">
-        {formatTime(lastUpdateTime)}
-      </span>
+      {paused ? (
+        <span className="text-xs text-gray-500 bg-white">
+          ⏸ paused
+        </span>
+      ) : (
+        <span className="text-xs text-orange-400 bg-white">
+          {formatTime(lastUpdateTime)}
+        </span>
+      )}
     </div>
   )
 }

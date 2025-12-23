@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { useStrengthData } from './lib/data/useStrengthData'
 import { calculateTimeRange } from './lib/chartUtils'
 import { Chart, ChartRef } from './components/Chart'
@@ -99,8 +99,15 @@ const CACHE_MAX_AGE_MS = 5 * 60 * 1000 // 5 minutes cache validity
  * - Worker results include dataVersion
  * - Results with stale dataVersion are ignored
  */
+// Time in ms to wait after user stops scrolling before resuming polling
+const SCROLL_PAUSE_RESUME_MS = 30000
+
 export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const chartRef = useRef<ChartRef | null>(null)
+
+  // Polling pause state - paused when user is scrolling/panning the chart
+  const [pollingPaused, setPollingPaused] = useState(false)
+  const scrollResumeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Zustand store
   const {
@@ -138,8 +145,43 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const pendingAggregationRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
+   * Handle user scroll/pan on chart
+   * Pauses real-time polling while user is interacting with the chart.
+   * After 30 seconds of no scrolling, polling resumes automatically.
+   */
+  const handleUserScroll = useCallback(() => {
+    // Clear any existing resume timer
+    if (scrollResumeTimerRef.current) {
+      clearTimeout(scrollResumeTimerRef.current)
+    }
+
+    // Pause polling if not already paused
+    if (!pollingPaused) {
+      setPollingPaused(true)
+      console.log('[SyncedCharts] User scrolling - polling paused')
+    }
+
+    // Set timer to resume polling after inactivity
+    scrollResumeTimerRef.current = setTimeout(() => {
+      console.log('[SyncedCharts] Scroll inactivity - resuming polling')
+      setPollingPaused(false)
+      scrollResumeTimerRef.current = null
+    }, SCROLL_PAUSE_RESUME_MS)
+  }, [pollingPaused])
+
+  // Cleanup scroll timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollResumeTimerRef.current) {
+        clearTimeout(scrollResumeTimerRef.current)
+      }
+    }
+  }, [])
+
+  /**
    * Controlled data fetching hook
    * Handles ticker changes, loading state, and real-time updates
+   * Paused when user is scrolling/panning the chart
    */
   const { rawData, dataState, error, lastUpdateTime, dataVersion } =
     useStrengthData({
@@ -147,6 +189,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       enabled: chartTickers.length > 0,
       maxDataHours: HOURS_BACK_INITIAL,
       updateIntervalMs: 10000,
+      paused: pollingPaused,
     })
 
   /**
@@ -183,6 +226,31 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         intervalStrength: result.intervalStrengthData,
         tickerPrice: result.tickerPriceData,
       }
+
+      // DEBUG: Log interval data lengths
+      const intervalDataInfo = Object.entries(result.intervalStrengthData).map(
+        ([key, data]) => `${key}:${data?.length || 0}`
+      )
+      const hasIntervalData =
+        Object.keys(result.intervalStrengthData).length > 0
+      console.log(`[SyncedCharts] Aggregation result v${resultDataVersion}:`, {
+        strengthLen: result.strengthData?.length || 0,
+        priceLen: result.priceData?.length || 0,
+        intervalData: intervalDataInfo.join(', ') || 'EMPTY!',
+        hasIntervalData,
+      })
+
+      // WARN if strengthData exists but intervalStrengthData is empty
+      if (
+        result.strengthData &&
+        result.strengthData.length > 0 &&
+        !hasIntervalData
+      ) {
+        console.warn(
+          '[SyncedCharts] WARNING: strengthData exists but intervalStrengthData is empty!'
+        )
+      }
+
       setChartData(newChartData)
 
       // Cache the results for instant ticker switching
@@ -455,13 +523,15 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           }
           height={availableHeight}
           timeRange={chartTimeRange}
+          onUserScroll={handleUserScroll}
         />
       )}
 
-      {/* Last updated time */}
+      {/* Last updated time (shows paused indicator when user is scrolling) */}
       <UpdatedTime
         isRealtime={dataState === 'ready'}
         lastUpdateTime={lastUpdateTime}
+        paused={pollingPaused}
       />
 
       {/* Target box for screen capture */}

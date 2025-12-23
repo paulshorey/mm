@@ -58,11 +58,29 @@ When tab is in background, polling may stop. On return:
 - Dynamic window calculates missed time
 - All missing data fetched in one request
 
+### 6. Scroll-to-Pause Polling
+When user scrolls/pans the chart, real-time polling pauses automatically:
+- Chart detects scroll via `subscribeVisibleLogicalRangeChange`
+- Polling pauses to prevent chart jumping while user explores
+- After 30 seconds of no scrolling, polling resumes
+- On resume, all missed data is fetched (using dynamic fetch window)
+- Visual indicator shows "⏸ paused" in bottom-right corner
+
 ## Chart Lines
 
 - **Strength** (orange, left axis) - average of selected intervals
 - **Price** (blue, right axis) - normalized average of tickers
 - **Individual lines** - toggle to show per-interval or per-ticker
+
+## Known Issues / Fixes
+
+### Interval Lines Stop Updating (Fixed)
+
+**Symptom:** Price and aggregated strength lines update, but individual interval lines freeze.
+
+**Root Cause:** Different intervals have different calculation lag in the database. The old forward-fill logic required finding a single row where ALL intervals were non-null. If no such row existed, it would use the last row (with nulls), causing forward-fill to fail.
+
+**Fix:** `buildLastKnownValuesRow()` searches backwards for EACH interval separately, building a "composite" row with the most recent non-null value for each interval. This handles cases where intervals are calculated at different times.
 
 ## Related Docs
 

@@ -50,6 +50,8 @@ interface ChartProps {
   width: number
   height: number
   timeRange?: { from: Time; to: Time } | null
+  /** Called when user scrolls/pans the chart (visible time range changes) */
+  onUserScroll?: () => void
 }
 
 export interface ChartRef {
@@ -74,6 +76,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       width,
       height,
       timeRange,
+      onUserScroll,
     },
     ref
   ) => {
@@ -98,9 +101,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const markersInitialized = useRef(false)
     const hasInitialized = useRef(false)
     const lastDataRef = useRef<LineData[] | null>(null)
+    const onUserScrollRef = useRef(onUserScroll)
+    onUserScrollRef.current = onUserScroll
     const lastSecondDataRef = useRef<LineData[] | null>(null)
     const lastIntervalDataRef = useRef<IntervalStrengthData>({})
     const lastTickerDataRef = useRef<TickerPriceData>({})
+    const strengthEffectRunCount = useRef(0)
+    const intervalEffectRunCount = useRef(0)
 
     useImperativeHandle(ref, () => ({
       chart: chartRef.current,
@@ -119,6 +126,24 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       const chart = createChart(containerRef.current, getChartConfig(height))
       chartRef.current = chart
       hasInitialized.current = true
+
+      // Track whether this is the initial render (skip first callback which fires on setup)
+      let isInitialRender = true
+
+      // Subscribe to visible time range changes (fires when user scrolls/pans)
+      // Note: This will also fire on programmatic range changes, but onUserScroll
+      // is debounced upstream so it won't cause issues
+      const handleTimeRangeChange = () => {
+        // Skip the initial callback that fires when chart is created
+        if (isInitialRender) {
+          isInitialRender = false
+          return
+        }
+        onUserScrollRef.current?.()
+      }
+      chart
+        .timeScale()
+        .subscribeVisibleLogicalRangeChange(handleTimeRangeChange)
 
       // --- Fix for zoom: 0.5 ---
       // Intercept mouse events to correct coordinates for the 2x width
@@ -247,6 +272,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       // Cleanup
       return () => {
+        chart
+          .timeScale()
+          .unsubscribeVisibleLogicalRangeChange(handleTimeRangeChange)
         chart.remove()
         chartRef.current = null
         strengthSeriesRef.current = null
@@ -256,7 +284,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         tickerSeriesRef.current = {}
         hasInitialized.current = false
       }
-    }, []) // Only run once on mount - removed all dependencies
+    }, []) // Only run once on mount - uses ref for callback
 
     // Helper function to create all time markers
     const createTimeMarkers = (currentData: LineData[]) => {
@@ -470,6 +498,11 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     // Update first series (strength) data
     useEffect(() => {
+      strengthEffectRunCount.current++
+      console.log(
+        `[Chart] Strength effect run #${strengthEffectRunCount.current}`
+      )
+
       if (
         !strengthSeriesRef.current ||
         !strengthData ||
@@ -575,25 +608,52 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
     // Update interval series data
     useEffect(() => {
+      intervalEffectRunCount.current++
+      console.log(
+        `[Chart] Interval effect run #${intervalEffectRunCount.current}`
+      )
+
       if (!hasInitialized.current) return
+
+      // DEBUG: Log interval data received
+      const receivedIntervals = Object.keys(intervalStrengthData || {})
+      if (receivedIntervals.length > 0) {
+        const lastTimestamps = receivedIntervals.map((interval) => {
+          const data = intervalStrengthData?.[interval]
+          if (!data || data.length === 0) return `${interval}:empty`
+          const lastTime = data[data.length - 1]?.time
+          return `${interval}:${data.length}pts,last=${lastTime}`
+        })
+        console.log(`[Chart] Interval data update:`, lastTimestamps.join(', '))
+      }
+
+      // DEBUG: Log showIntervalLines state and first interval
+      console.log(
+        `[Chart] showIntervalLines=${showIntervalLines}, firstInterval=${strengthIntervals[0]}`
+      )
 
       try {
         // Update each interval series with its data
+        // ALWAYS update data, control visibility separately via series.applyOptions
         strengthIntervals.forEach((interval) => {
           const series = intervalSeriesRef.current[interval]
-          if (!series) return
-
-          // If showIntervalLines is false, clear all interval series
-          if (!showIntervalLines) {
-            if (lastIntervalDataRef.current[interval]) {
-              series.setData([])
-              lastIntervalDataRef.current[interval] = null
-            }
+          if (!series) {
+            console.log(`[Chart] No series for interval ${interval}`)
             return
           }
 
           const data = intervalStrengthData?.[interval]
           const prevData = lastIntervalDataRef.current[interval]
+
+          // DEBUG: Log every interval's state (first few only to reduce noise)
+          const intervalIdx = strengthIntervals.indexOf(interval)
+          if (intervalIdx < 2) {
+            console.log(`[Chart] Processing interval ${interval}:`, {
+              hasData: !!data,
+              dataLen: data?.length || 0,
+              prevLen: prevData?.length || 0,
+            })
+          }
 
           if (!data) {
             // Clear the series if no data for this interval
@@ -614,9 +674,23 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
             prevData || null
           )
 
+          // DEBUG: Log update result for first few intervals
+          if (intervalIdx < 2) {
+            console.log(
+              `[Chart] Update result for ${interval}: ${
+                updated ? 'SUCCESS' : 'NO CHANGE'
+              }, currLen=${currentData.length}`
+            )
+          }
+
           if (updated) {
             lastIntervalDataRef.current[interval] = currentData
           }
+
+          // Control visibility based on showIntervalLines
+          series.applyOptions({
+            visible: showIntervalLines,
+          })
         })
       } catch (error) {
         console.warn('Failed to update interval data:', error)

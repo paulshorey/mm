@@ -49,21 +49,21 @@ export const hoursBackOptions = [
  * This defines what tickers are available for selection
  */
 export const tickersByMarket = [
-  {
-    market: '---meta---',
-    tickers: [
-      { label: 'Bullish', value: ['NQ1!', 'RTY1!', 'HG1!', 'CX'] },
-      { label: 'Bearish', value: ['VX1!', 'UVIX', 'ZN1!', 'CL1!', 'Forex'] },
-      { label: 'VX1!', value: ['VX1!'] },
-      { label: 'UVIX', value: ['UVIX'] },
-      { label: 'ZN1!', value: ['ZN1!'] },
-      { label: 'Other Currencies', value: ['Forex'] },
-    ],
-  },
+  // {
+  //   market: '---meta---',
+  //   tickers: [
+  //     { label: 'Bullish', value: ['NQ1!', 'RTY1!', 'HG1!', 'CX'] },
+  //     { label: 'Bearish', value: ['VX1!', 'UVIX', 'ZN1!', 'CL1!', 'Forex'] },
+  //     { label: 'VX1!', value: ['VX1!'] },
+  //     { label: 'UVIX', value: ['UVIX'] },
+  //     { label: 'ZN1!', value: ['ZN1!'] },
+  //     { label: 'Other Currencies', value: ['Forex'] },
+  //   ],
+  // },
   {
     market: '---equities---',
     tickers: [
-      { label: 'US Equities', value: ['NQ1!', 'ES1!', 'RTY1!'] },
+      { label: 'All', value: ['NQ1!', 'ES1!', 'RTY1!'] },
       { label: 'NQ1!', value: ['NQ1!'] },
       { label: 'ES1!', value: ['ES1!'] },
       { label: 'RTY1!', value: ['RTY1!'] },
@@ -80,26 +80,26 @@ export const tickersByMarket = [
       { label: 'HG1!', value: ['HG1!'] },
     ],
   },
-  {
-    market: '---commodities---',
-    tickers: [
-      { label: 'CL1!', value: ['CL1!'] },
-      { label: 'XC1!', value: ['XC1!'] },
-      { label: 'XW1!', value: ['XW1!'] },
-      { label: 'SB1!', value: ['SB1!'] },
-      { label: 'ZL1!', value: ['ZL1!'] },
-    ],
-  },
+  // {
+  //   market: '---commodities---',
+  //   tickers: [
+  //     { label: 'CL1!', value: ['CL1!'] },
+  //     { label: 'XC1!', value: ['XC1!'] },
+  //     { label: 'XW1!', value: ['XW1!'] },
+  //     { label: 'SB1!', value: ['SB1!'] },
+  //     { label: 'ZL1!', value: ['ZL1!'] },
+  //   ],
+  // },
   {
     market: '---crypto---',
     tickers: [
-      { label: 'Crypto', value: ['CX'] },
+      // { label: 'Crypto', value: ['CX'] },
       { label: 'BTCUSD', value: ['BTCUSD'] },
-      { label: 'ETHUSD', value: ['ETHUSD'] },
+      // { label: 'ETHUSD', value: ['ETHUSD'] },
       { label: 'SOLUSD', value: ['SOLUSD'] },
-      { label: 'XRPUSD', value: ['XRPUSD'] },
-      { label: 'BNBUSD', value: ['BNBUSD'] },
-      { label: 'SUIUSD', value: ['SUIUSD'] },
+      // { label: 'XRPUSD', value: ['XRPUSD'] },
+      // { label: 'BNBUSD', value: ['BNBUSD'] },
+      // { label: 'SUIUSD', value: ['SUIUSD'] },
       // { label: 'DOGEUSD', value: ['DOGEUSD'] },
       // { label: 'AVAXUSD', value: ['AVAXUSD'] },
       // { label: 'XLMUSD', value: ['XLMUSD'] },

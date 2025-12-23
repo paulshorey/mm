@@ -34,6 +34,8 @@ Every 10s: fetch recent data → merge → trigger aggregation
 3. Forward-fill null intervals from existing historical data
 4. Merge into rawData (updates existing timestamps, adds new ones)
 
+**Pause/Resume:** The `paused` option stops polling when user is scrolling the chart. On resume, immediate fetch fills any gaps.
+
 ## Background Tab Recovery
 
 When tab is in background, JS execution is limited. On return:
@@ -46,7 +48,13 @@ When tab is in background, JS execution is limited. On return:
 Database rows may have null interval values (not yet calculated).
 Forward-fill copies the last known value to ensure chart continuity.
 
-**Key improvement:** First row of new data is forward-filled from existing historical data, not just from within the new batch.
+**Key improvements:**
+1. First row of new data is forward-filled from existing historical data
+2. Uses "composite row" approach: searches backwards for EACH interval separately
+   - Different intervals may have different calculation lag in the database
+   - Old approach required a single row with ALL intervals complete
+   - New approach finds last non-null value for each interval independently
+   - This prevents interval lines from stopping when some intervals lag behind
 
 ## State Machine
 
