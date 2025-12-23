@@ -579,8 +579,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       try {
         // Update each interval series with its data
-        // @ts-ignore
-        intervalSeriesRef?.current?.forEach((interval) => {
+        strengthIntervals.forEach((interval) => {
           const series = intervalSeriesRef.current[interval]
           if (!series) return
 
