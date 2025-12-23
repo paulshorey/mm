@@ -18,6 +18,7 @@ body {
 
 .mantine-MultiSelect-options {
   --mantine-scale: 2;
+  max-height: auto !important;
 }
 /* .mantine-MultiSelect-options > div,
 .mantine-MultiSelect-options > div > div,

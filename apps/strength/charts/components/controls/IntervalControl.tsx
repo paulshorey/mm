@@ -31,6 +31,9 @@ export default function IntervalControl({ showLabel = true }: Props) {
       }}
       placeholder={placeholderText}
       hidePickedOptions={false}
+      classNames={{
+        dropdown: 'scale2x',
+      }}
       // Custom options format (not needed now, maybe in the future):
       // renderOption={({ option, checked }) => (
       //   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

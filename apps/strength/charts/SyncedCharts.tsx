@@ -21,13 +21,41 @@ export interface SyncedChartsProps {
 }
 
 /**
+ * Generate a simple hash of rawData to detect changes
+ * Only checks timestamps and data lengths for efficiency
+ */
+function getRawDataHash(rawData: unknown[]): string {
+  if (!rawData || rawData.length === 0) return 'empty'
+
+  let hash = `len:${rawData.length}`
+  for (const tickerData of rawData) {
+    if (!tickerData || !Array.isArray(tickerData)) {
+      hash += '|null'
+      continue
+    }
+    const arr = tickerData as { timenow: Date }[]
+    // Include length and first/last timestamps
+    const len = arr.length
+    const first = arr[0]?.timenow?.getTime() || 0
+    const last = arr[len - 1]?.timenow?.getTime() || 0
+    hash += `|${len}:${first}:${last}`
+  }
+  return hash
+}
+
+/**
  * SyncedCharts - Main chart component with controlled data flow
  *
  * Data Flow:
  * 1. User selects tickers → dataState = 'loading', dataVersion++
  * 2. Historical data fetched → send to worker with dataVersion
  * 3. Worker returns aggregated data → validate dataVersion → render chart
- * 4. Real-time updates poll every 10s → incremental worker updates
+ * 4. Real-time updates poll every 10s → debounced worker updates
+ *
+ * Performance Optimizations:
+ * - Uses refs for processing state to avoid effect re-triggers
+ * - Debounces rapid data changes (500ms minimum between aggregations)
+ * - Skips aggregation if rawData hash hasn't changed
  *
  * Race Condition Prevention:
  * - dataVersion is tied to the data source (tickers)
@@ -66,6 +94,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   // Track which dataVersion the current chartData corresponds to
   const chartDataVersionRef = useRef<number>(-1)
 
+  // Refs for aggregation control (using refs to avoid effect re-triggers)
+  const isProcessingRef = useRef(false)
+  const lastAggregationTimeRef = useRef(0)
+  const lastRawDataHashRef = useRef('')
+  const pendingAggregationRef = useRef<NodeJS.Timeout | null>(null)
+
   /**
    * Controlled data fetching hook
    * Handles ticker changes, loading state, and real-time updates
@@ -88,6 +122,10 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       processingTimeMs: number,
       resultDataVersion: number
     ) => {
+      // Mark processing as complete (use ref to avoid re-triggering effects)
+      isProcessingRef.current = false
+      lastAggregationTimeRef.current = Date.now()
+
       // Double-check: only update if this is for the current data version
       // (The worker hook already filters, but this is an extra safety check)
       if (resultDataVersion < chartDataVersionRef.current) {
@@ -132,17 +170,19 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   const handleAggregationError = useCallback((errorMsg: string) => {
     console.error('[Worker] Aggregation error:', errorMsg)
+    isProcessingRef.current = false
   }, [])
 
   /**
    * Web Worker for aggregation
+   * Note: We don't use isProcessing from the hook - we use our own ref
+   * to avoid re-triggering effects when processing state changes
    */
-  const { aggregate, isProcessing, isReady, setValidDataVersion } =
-    useAggregationWorker({
-      enabled: true,
-      onResult: handleAggregationResult,
-      onError: handleAggregationError,
-    })
+  const { aggregate, isReady, setValidDataVersion } = useAggregationWorker({
+    enabled: true,
+    onResult: handleAggregationResult,
+    onError: handleAggregationError,
+  })
 
   /**
    * Effect: When dataVersion changes (ticker switch), immediately clear chart
@@ -179,7 +219,12 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   /**
    * Effect: Process data through worker when rawData changes
-   * Only triggers when we have actual data and worker is ready
+   *
+   * Performance optimizations:
+   * - Uses refs for processing state (not in dependency array)
+   * - Debounces rapid changes with 500ms minimum interval
+   * - Skips if rawData hash hasn't changed
+   * - Clears pending aggregations when new data arrives
    */
   useEffect(() => {
     // Don't process if still loading or no data
@@ -187,11 +232,56 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     if (rawData.length === 0 || !rawData.some((data) => data !== null)) return
     if (!isReady) return
 
-    // Don't queue up requests if already processing
-    if (isProcessing) return
+    // Check if rawData actually changed (by comparing hashes)
+    const currentHash = getRawDataHash(rawData)
+    if (currentHash === lastRawDataHashRef.current) {
+      // Data hasn't changed, skip aggregation
+      return
+    }
 
-    // Send to worker for aggregation with the current dataVersion
-    aggregate(rawData, interval, chartTickers, dataVersion)
+    // Clear any pending aggregation
+    if (pendingAggregationRef.current) {
+      clearTimeout(pendingAggregationRef.current)
+      pendingAggregationRef.current = null
+    }
+
+    // Function to actually trigger aggregation
+    const triggerAggregation = () => {
+      // Don't queue up requests if already processing
+      if (isProcessingRef.current) {
+        // Schedule retry after a short delay
+        pendingAggregationRef.current = setTimeout(triggerAggregation, 200)
+        return
+      }
+
+      // Update hash and mark as processing
+      lastRawDataHashRef.current = currentHash
+      isProcessingRef.current = true
+
+      // Send to worker for aggregation with the current dataVersion
+      aggregate(rawData, interval, chartTickers, dataVersion)
+    }
+
+    // Check if we need to debounce (minimum 500ms between aggregations)
+    const timeSinceLastAggregation = Date.now() - lastAggregationTimeRef.current
+    const DEBOUNCE_MS = 500
+
+    if (timeSinceLastAggregation < DEBOUNCE_MS) {
+      // Schedule aggregation after debounce period
+      const delay = DEBOUNCE_MS - timeSinceLastAggregation
+      pendingAggregationRef.current = setTimeout(triggerAggregation, delay)
+    } else {
+      // Execute immediately
+      triggerAggregation()
+    }
+
+    // Cleanup pending timeout on unmount or dependency change
+    return () => {
+      if (pendingAggregationRef.current) {
+        clearTimeout(pendingAggregationRef.current)
+        pendingAggregationRef.current = null
+      }
+    }
   }, [
     rawData,
     dataState,
@@ -199,8 +289,8 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     chartTickers,
     dataVersion,
     isReady,
-    isProcessing,
     aggregate,
+    // Note: isProcessing is NOT in dependencies - we use isProcessingRef instead
   ])
 
   /**

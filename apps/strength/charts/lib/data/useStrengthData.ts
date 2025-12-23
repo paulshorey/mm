@@ -11,6 +11,15 @@
  * - Clears all data
  * - Fetches new historical data
  * - Resumes real-time updates
+ *
+ * Background Tab Handling:
+ * - Tracks last successful fetch time
+ * - When tab returns to foreground, fetches all missing data
+ * - Uses visibility API to detect tab focus changes
+ *
+ * Forward-Fill Logic:
+ * - New data is forward-filled from existing historical data
+ * - Ensures continuity when intervals are null in recent rows
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
@@ -39,25 +48,64 @@ export interface UseStrengthDataResult {
 
 /**
  * Forward-fill missing strength values from previous row
+ * Fills null interval values and zero/null prices
  */
 function forwardFillRow(
   currentRow: StrengthRowGet,
-  previousRow: StrengthRowGet
+  previousRow: StrengthRowGet | null
 ): StrengthRowGet {
+  if (!previousRow) return currentRow
+
   const filled = { ...currentRow }
 
+  // Forward-fill each interval if null
   strengthIntervals.forEach((interval) => {
     if (filled[interval] === null && previousRow[interval] !== null) {
       filled[interval] = previousRow[interval]
     }
   })
 
+  // Forward-fill price if zero or null
   if (filled.price === 0 || filled.price === null) {
     filled.price = previousRow.price || 0
   }
 
   return filled
 }
+
+/**
+ * Find the last row with complete interval data (all intervals non-null)
+ * Used for forward-filling new data from historical context
+ */
+function findLastCompleteRow(
+  data: StrengthRowGet[] | null
+): StrengthRowGet | null {
+  if (!data || data.length === 0) return null
+
+  // Search backwards from the end for a row with all intervals filled
+  for (let i = data.length - 1; i >= 0; i--) {
+    const row = data[i]!
+    const hasAllIntervals = strengthIntervals.every(
+      (interval) => row[interval] !== null
+    )
+    if (hasAllIntervals && row.price && row.price > 0) {
+      return row
+    }
+  }
+
+  // If no complete row found, return the last row anyway
+  return data[data.length - 1] || null
+}
+
+/**
+ * Minimum fetch window in minutes (always fetch at least this much)
+ */
+const MIN_FETCH_MINUTES = 4
+
+/**
+ * Maximum fetch window in minutes (cap to prevent huge fetches)
+ */
+const MAX_FETCH_MINUTES = 120 // 2 hours max
 
 export function useStrengthData({
   tickers,
@@ -77,6 +125,12 @@ export function useStrengthData({
   const currentTickersRef = useRef<string[]>([])
   const lastDataTimestampRef = useRef<Date | null>(null)
 
+  // Track last successful fetch time for calculating dynamic window
+  const lastSuccessfulFetchRef = useRef<Date | null>(null)
+
+  // Track if we're currently fetching to prevent duplicate requests
+  const isFetchingRef = useRef(false)
+
   /**
    * Stop real-time updates
    */
@@ -88,15 +142,54 @@ export function useStrengthData({
   }, [])
 
   /**
-   * Fetch real-time update (last few minutes of data)
+   * Calculate how far back to fetch based on time since last successful fetch
+   * Returns minutes to fetch back
+   */
+  const calculateFetchWindow = useCallback((): number => {
+    if (!lastSuccessfulFetchRef.current) {
+      // No previous fetch, use minimum
+      return MIN_FETCH_MINUTES
+    }
+
+    const now = Date.now()
+    const lastFetch = lastSuccessfulFetchRef.current.getTime()
+    const minutesSinceLastFetch = Math.ceil((now - lastFetch) / (60 * 1000))
+
+    // Add buffer for safety (fetch a few extra minutes)
+    const fetchMinutes = Math.max(
+      MIN_FETCH_MINUTES,
+      minutesSinceLastFetch + 2 // +2 minute buffer
+    )
+
+    // Cap at maximum
+    return Math.min(fetchMinutes, MAX_FETCH_MINUTES)
+  }, [])
+
+  /**
+   * Fetch real-time update with dynamic window based on time since last fetch
+   * Also handles forward-filling from existing historical data
    */
   const fetchRealtimeUpdate = useCallback(async () => {
     if (!isMountedRef.current || currentTickersRef.current.length === 0) return
 
+    // Prevent duplicate concurrent fetches
+    if (isFetchingRef.current) {
+      return
+    }
+    isFetchingRef.current = true
+
     try {
       const now = new Date()
-      const fromDate = new Date(now.getTime() - 4 * 60 * 1000)
-      const toDate = new Date()
+      const fetchMinutes = calculateFetchWindow()
+      const fromDate = new Date(now.getTime() - fetchMinutes * 60 * 1000)
+      const toDate = now
+
+      // Log if we're fetching more than the minimum (indicates background tab recovery)
+      if (fetchMinutes > MIN_FETCH_MINUTES) {
+        console.log(
+          `[useStrengthData] Fetching ${fetchMinutes} minutes of data (background tab recovery)`
+        )
+      }
 
       const newTickerData = await FetchStrengthData.fetchMultipleTickersData(
         currentTickersRef.current,
@@ -104,57 +197,82 @@ export function useStrengthData({
         toDate
       )
 
-      // Process and forward-fill
-      const processedData = newTickerData.map((tickerData) => {
-        if (!tickerData || tickerData.length === 0) return tickerData
+      if (!isMountedRef.current) {
+        isFetchingRef.current = false
+        return
+      }
 
-        const sorted = [...tickerData].sort(
-          (a, b) => a.timenow.getTime() - b.timenow.getTime()
-        )
+      // Mark fetch as successful
+      lastSuccessfulFetchRef.current = now
 
-        const filled: StrengthRowGet[] = []
-        for (let i = 0; i < sorted.length; i++) {
-          if (i === 0) {
-            filled.push(sorted[i]!)
-          } else {
-            filled.push(forwardFillRow(sorted[i]!, sorted[i - 1]!))
-          }
-        }
-        return filled
-      })
+      // Process and forward-fill, using existing data for context
+      setRawData((prevData) => {
+        let newLatestTimestamp = lastDataTimestampRef.current
 
-      if (isMountedRef.current) {
-        setRawData((prevData) => {
-          let newLatestTimestamp = lastDataTimestampRef.current
+        const mergedData = prevData.map((existingData, idx) => {
+          const newData = newTickerData[idx]
+          if (!newData || newData.length === 0) return existingData
 
-          const mergedData = prevData.map((existing, idx) => {
-            const newData = processedData[idx]
-            if (!newData || newData.length === 0) return existing
-            if (!existing) return newData
+          // Sort new data by time
+          const sortedNewData = [...newData].sort(
+            (a, b) => a.timenow.getTime() - b.timenow.getTime()
+          )
 
-            const merged = FetchStrengthData.mergeData(existing, newData)
+          // Find the last complete row from existing data for forward-fill context
+          const lastCompleteRow = findLastCompleteRow(existingData)
 
-            if (merged.length > 0) {
-              const last = merged[merged.length - 1]
-              if (last && (!newLatestTimestamp || last.timenow > newLatestTimestamp)) {
-                newLatestTimestamp = last.timenow
-              }
+          // Forward-fill new data, using existing historical data for the first row
+          const filledNewData: StrengthRowGet[] = []
+          for (let i = 0; i < sortedNewData.length; i++) {
+            const currentRow = sortedNewData[i]!
+
+            if (i === 0) {
+              // First row: forward-fill from existing historical data
+              filledNewData.push(forwardFillRow(currentRow, lastCompleteRow))
+            } else {
+              // Subsequent rows: forward-fill from previous new row
+              filledNewData.push(
+                forwardFillRow(currentRow, filledNewData[i - 1]!)
+              )
             }
+          }
 
-            return merged
-          })
+          // Merge with existing data
+          if (!existingData) {
+            return filledNewData
+          }
 
-          lastDataTimestampRef.current = newLatestTimestamp
-          return mergedData
+          const merged = FetchStrengthData.mergeData(
+            existingData,
+            filledNewData
+          )
+
+          // Track latest timestamp
+          if (merged.length > 0) {
+            const last = merged[merged.length - 1]
+            if (
+              last &&
+              (!newLatestTimestamp || last.timenow > newLatestTimestamp)
+            ) {
+              newLatestTimestamp = last.timenow
+            }
+          }
+
+          return merged
         })
 
-        setLastUpdateTime(new Date())
-      }
+        lastDataTimestampRef.current = newLatestTimestamp
+        return mergedData
+      })
+
+      setLastUpdateTime(now)
     } catch (err) {
       console.error('Real-time update error:', err)
       // Don't set error state - keep showing existing data
+    } finally {
+      isFetchingRef.current = false
     }
-  }, [])
+  }, [calculateFetchWindow])
 
   /**
    * Start real-time updates
@@ -162,10 +280,37 @@ export function useStrengthData({
   const startRealtimeUpdates = useCallback(() => {
     stopRealtimeUpdates()
 
+    // Set initial successful fetch time
+    lastSuccessfulFetchRef.current = new Date()
+
     updateIntervalRef.current = setInterval(() => {
       fetchRealtimeUpdate()
     }, updateIntervalMs)
   }, [stopRealtimeUpdates, fetchRealtimeUpdate, updateIntervalMs])
+
+  /**
+   * Handle visibility change - fetch immediately when tab becomes visible
+   */
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        dataState === 'ready' &&
+        currentTickersRef.current.length > 0
+      ) {
+        // Tab became visible - fetch immediately to fill any gaps
+        console.log(
+          '[useStrengthData] Tab visible - triggering immediate fetch'
+        )
+        fetchRealtimeUpdate()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [dataState, fetchRealtimeUpdate])
 
   /**
    * Load historical data for tickers
@@ -187,6 +332,7 @@ export function useStrengthData({
       setDataState('loading')
       setDataVersion((v) => v + 1)
       lastDataTimestampRef.current = null
+      lastSuccessfulFetchRef.current = null
 
       try {
         const initialDate = FetchStrengthData.getInitialDataDate(maxDataHours)
@@ -219,6 +365,7 @@ export function useStrengthData({
 
         setRawData(allTickerData)
         lastDataTimestampRef.current = latestTimestamp
+        lastSuccessfulFetchRef.current = new Date()
         setLastUpdateTime(new Date())
         setDataState('ready')
 
@@ -279,4 +426,3 @@ export function useStrengthData({
     dataVersion,
   }
 }
-
