@@ -236,8 +236,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add interval series for each possible interval
       // These are created once and data is set/updated later
       strengthIntervals.forEach((interval) => {
-        // if (interval === '30S' && parseInt(hoursBack) > 12) return
-        // if (interval === '1' && parseInt(hoursBack) > 24) return
         const intervalSeries = chart.addSeries(LineSeries, {
           ...getLineSeriesConfig(),
           lineWidth: 1,

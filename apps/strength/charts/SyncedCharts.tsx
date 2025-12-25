@@ -7,7 +7,7 @@ import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 import { UpdatedTime } from './components/UpdatedTime'
 import { useChartControlsStore } from './state/useChartControlsStore'
-import { COLORS, HOURS_BACK_INITIAL } from './constants'
+import { COLORS, FETCH_DATA_HOURS_BACK } from './constants'
 import {
   useAggregationWorker,
   AggregationResult,
@@ -191,7 +191,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     useStrengthData({
       tickers: chartTickers,
       enabled: chartTickers.length > 0,
-      maxDataHours: HOURS_BACK_INITIAL,
+      maxDataHours: FETCH_DATA_HOURS_BACK,
       updateIntervalMs: 10000,
       paused: pollingPaused,
     })

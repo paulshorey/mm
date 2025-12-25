@@ -1,5 +1,5 @@
 import { StrengthRowGet } from '@lib/common/sql/strength'
-import { HOURS_BACK_INITIAL } from '../../constants'
+import { FETCH_DATA_HOURS_BACK } from '../../constants'
 
 export interface FetchStrengthDataParams {
   ticker: string
@@ -42,31 +42,31 @@ export class FetchStrengthData {
         return { rows: null, error: data.error }
       }
 
-        // Convert date strings back to Date objects
-        let rows = data.rows
-        if (rows && rows.length > 0) {
-          rows = rows.map((row: any) => {
-            const timenow = new Date(row.timenow)
+      // Convert date strings back to Date objects
+      let rows = data.rows
+      if (rows && rows.length > 0) {
+        rows = rows.map((row: any) => {
+          const timenow = new Date(row.timenow)
 
-            // Validate that timenow has no seconds (1-minute intervals)
-            const seconds = timenow.getSeconds()
-            const milliseconds = timenow.getMilliseconds()
+          // Validate that timenow has no seconds (1-minute intervals)
+          const seconds = timenow.getSeconds()
+          const milliseconds = timenow.getMilliseconds()
 
-            if (seconds !== 0 || milliseconds !== 0) {
-              console.warn('[fetchTickerData] Invalid timestamp detected:', {
-                ticker: params.ticker,
-                timenow: timenow.toISOString(),
-                seconds,
-                milliseconds,
-              })
-            }
+          if (seconds !== 0 || milliseconds !== 0) {
+            console.warn('[fetchTickerData] Invalid timestamp detected:', {
+              ticker: params.ticker,
+              timenow: timenow.toISOString(),
+              seconds,
+              milliseconds,
+            })
+          }
 
-            return {
-              ...row,
-              timenow,
-              created_at: new Date(row.created_at),
-            }
-          })
+          return {
+            ...row,
+            timenow,
+            created_at: new Date(row.created_at),
+          }
+        })
 
         // Ensure data is sorted in ascending order by timenow
         rows.sort(
@@ -113,7 +113,7 @@ export class FetchStrengthData {
   /**
    * Get the date for initial data load
    */
-  static getInitialDataDate(hoursBack: number = HOURS_BACK_INITIAL): Date {
+  static getInitialDataDate(hoursBack: number = FETCH_DATA_HOURS_BACK): Date {
     const date = new Date(Date.now() - hoursBack * 60 * 60 * 1000)
     return this.prepareDate(date)
   }
@@ -169,4 +169,3 @@ export class FetchStrengthData {
     return sortedData
   }
 }
-

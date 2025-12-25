@@ -1,5 +1,8 @@
-export const CHART_WIDTH_INITIAL = 2400
-export const HOURS_BACK_INITIAL = 240
+// Fetch this much data from the database (more than enough for most hoursBack store values)
+export const FETCH_DATA_HOURS_BACK = 240
+
+// Time in ms to wait after user stops scrolling before resuming polling
+export const SCROLL_PAUSE_RESUME_MS = 30000 // 30 seconds
 
 /**
  * Chart color palette
@@ -22,6 +25,3 @@ export const COLORS = {
   price_i: 'hsla(233 100% 75% / 0.67)', // Blue transparent
   neutral_i: '#CDCCC835',
 }
-
-// Time in ms to wait after user stops scrolling before resuming polling
-export const SCROLL_PAUSE_RESUME_MS = 30000 // 30 seconds
