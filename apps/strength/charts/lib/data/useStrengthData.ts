@@ -25,7 +25,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { StrengthRowGet } from '@lib/common/sql/strength'
 import { FetchStrengthData } from './FetchStrengthData'
-import { HOURS_BACK_INITIAL } from '../../constants'
+import { FETCH_DATA_HOURS_BACK } from '../../constants'
 import { strengthIntervals } from '../../state/useChartControlsStore'
 
 export type DataState = 'idle' | 'loading' | 'ready'
@@ -137,7 +137,7 @@ const MAX_FETCH_MINUTES = 120 // 2 hours max
 export function useStrengthData({
   tickers,
   enabled = true,
-  maxDataHours = HOURS_BACK_INITIAL,
+  maxDataHours = FETCH_DATA_HOURS_BACK,
   updateIntervalMs = 10000,
   paused = false,
 }: UseStrengthDataOptions): UseStrengthDataResult {

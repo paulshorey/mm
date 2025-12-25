@@ -126,29 +126,26 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       chartRef.current = chart
       hasInitialized.current = true
 
-      // Track whether this is the initial render (skip first callback which fires on setup)
-      let isInitialRender = true
-
-      // Subscribe to visible time range changes (fires when user scrolls/pans)
-      // Note: This will also fire on programmatic range changes, but onUserScroll
-      // is debounced upstream so it won't cause issues
-      const handleTimeRangeChange = () => {
-        // Skip the initial callback that fires when chart is created
-        if (isInitialRender) {
-          isInitialRender = false
-          return
-        }
-        onUserScrollRef.current?.()
-      }
-      chart
-        .timeScale()
-        .subscribeVisibleLogicalRangeChange(handleTimeRangeChange)
-
       // --- Fix for zoom: 0.5 ---
       // Intercept mouse events to correct coordinates for the 2x width
       // Since the body is scaled by 0.5 and chart width is 2x, we need to double the mouse coordinates
       // so the chart (which thinks it's 2x wide) gets the correct relative position.
       const container = containerRef.current
+
+      // Detect actual user scrolling via wheel/touch events
+      // (Don't use subscribeVisibleLogicalRangeChange - it fires on programmatic updates too)
+      const handleUserInteraction = () => {
+        onUserScrollRef.current?.()
+      }
+
+      // Wheel event = user scrolling horizontally on the chart
+      container.addEventListener('wheel', handleUserInteraction, {
+        passive: true,
+      })
+      // Touch events for mobile panning
+      container.addEventListener('touchmove', handleUserInteraction, {
+        passive: true,
+      })
       const events = [
         'mousemove',
         'mouseenter',
@@ -239,8 +236,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add interval series for each possible interval
       // These are created once and data is set/updated later
       strengthIntervals.forEach((interval) => {
-        // if (interval === '30S' && parseInt(hoursBack) > 12) return
-        // if (interval === '1' && parseInt(hoursBack) > 24) return
         const intervalSeries = chart.addSeries(LineSeries, {
           ...getLineSeriesConfig(),
           lineWidth: 1,
@@ -273,9 +268,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       // Cleanup
       return () => {
-        chart
-          .timeScale()
-          .unsubscribeVisibleLogicalRangeChange(handleTimeRangeChange)
+        container.removeEventListener('wheel', handleUserInteraction)
+        container.removeEventListener('touchmove', handleUserInteraction)
         chart.remove()
         chartRef.current = null
         strengthSeriesRef.current = null

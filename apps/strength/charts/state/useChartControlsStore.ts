@@ -21,6 +21,7 @@ export const hoursBackOptions = [
   '12h',
   '6h',
 ]
+export const hoursBackInitial = hoursBackOptions[hoursBackOptions.length - 3]!
 
 /**
  * Market categories and their ticker options
@@ -172,7 +173,7 @@ const getInitialState = (): State => {
   const defaultTickers = tickersByMarket[2]!.tickers[0]!.value
 
   const defaultState: State = {
-    hoursBack: hoursBackOptions[hoursBackOptions.length - 3]!,
+    hoursBack: hoursBackInitial,
     interval: [...strengthIntervals],
     chartTickers: defaultTickers,
     timeRange: null,
@@ -214,12 +215,26 @@ const getInitialState = (): State => {
 
 export const useChartControlsStore = create<ChartControlsStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...getInitialState(),
 
       // Configuration setters
       setHoursBack: (hours: string) => {
-        set({ hoursBack: hours })
+        const hoursNum = parseInt(hours)
+        let interval = [...get().interval]
+        if (hoursNum > 12) {
+          interval = interval.filter((i) => i !== '30S')
+        }
+        if (hoursNum > 24) {
+          interval = interval.filter((i) => i !== '1')
+        }
+        if (hoursNum > 36) {
+          interval = interval.filter((i) => i !== '5')
+        }
+        if (hoursNum > 48) {
+          interval = interval.filter((i) => i !== '7')
+        }
+        set({ hoursBack: hours, interval })
       },
 
       setInterval: (intervals: string[]) => {

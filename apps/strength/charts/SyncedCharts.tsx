@@ -1,19 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useStrengthData } from './lib/data/useStrengthData'
 import { calculateTimeRange } from './lib/chartUtils'
 import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 import { UpdatedTime } from './components/UpdatedTime'
 import { useChartControlsStore } from './state/useChartControlsStore'
-import { COLORS, HOURS_BACK_INITIAL } from './constants'
+import { COLORS, FETCH_DATA_HOURS_BACK } from './constants'
 import {
   useAggregationWorker,
   AggregationResult,
 } from './lib/workers/useAggregationWorker'
 import { SCALE_FACTOR } from '@/constants'
 import { LineData, Time } from 'lightweight-charts'
+import { SCROLL_PAUSE_RESUME_MS } from './constants'
 
 export interface SyncedChartsProps {
   availableHeight: number
@@ -21,14 +22,18 @@ export interface SyncedChartsProps {
 }
 
 /**
- * Generate a hash of rawData to detect meaningful changes
- * Includes timestamps AND sample values from recent data
- * This prevents re-aggregation when only old historical data exists
+ * Generate a hash to detect meaningful changes that require re-aggregation
+ * Includes: rawData (timestamps + values) AND selected intervals
+ * This ensures re-aggregation when either data OR intervals change
  */
-function getRawDataHash(rawData: unknown[]): string {
+function getAggregationHash(rawData: unknown[], intervals: string[]): string {
   if (!rawData || rawData.length === 0) return 'empty'
 
-  let hash = `len:${rawData.length}`
+  // Include intervals in hash so aggregation runs when intervals change
+  let hash = `intervals:${[...intervals].sort().join(',')}|len:${
+    rawData.length
+  }`
+
   for (const tickerData of rawData) {
     if (!tickerData || !Array.isArray(tickerData)) {
       hash += '|null'
@@ -100,9 +105,6 @@ const CACHE_MAX_AGE_MS = 5 * 60 * 1000 // 5 minutes cache validity
  * - Worker results include dataVersion
  * - Results with stale dataVersion are ignored
  */
-// Time in ms to wait after user stops scrolling before resuming polling
-const SCROLL_PAUSE_RESUME_MS = 30000
-
 export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const chartRef = useRef<ChartRef | null>(null)
 
@@ -143,6 +145,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const isProcessingRef = useRef(false)
   const lastAggregationTimeRef = useRef(0)
   const lastRawDataHashRef = useRef('')
+  const lastIntervalsRef = useRef<string[]>([])
   const pendingAggregationRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
@@ -188,7 +191,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     useStrengthData({
       tickers: chartTickers,
       enabled: chartTickers.length > 0,
-      maxDataHours: HOURS_BACK_INITIAL,
+      maxDataHours: FETCH_DATA_HOURS_BACK,
       updateIntervalMs: 10000,
       paused: pollingPaused,
     })
@@ -374,8 +377,8 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     if (rawData.length === 0 || !rawData.some((data) => data !== null)) return
     if (!isReady) return
 
-    // Check if rawData actually changed (by comparing hashes including values)
-    const currentHash = getRawDataHash(rawData)
+    // Check if rawData OR intervals changed (both require re-aggregation)
+    const currentHash = getAggregationHash(rawData, interval)
     if (currentHash === lastRawDataHashRef.current) {
       return
     }
@@ -403,11 +406,20 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       aggregate(rawData, interval, chartTickers, dataVersion)
     }
 
-    // Debounce: 2000ms for real-time updates (data comes every 10s, no need for faster)
-    // But use 100ms for initial load (when lastAggregationTime is 0)
+    // Debounce timing:
+    // - 100ms for initial load (fast first render)
+    // - 100ms for interval changes (user expects immediate feedback)
+    // - 2000ms for real-time data updates (data comes every 10s anyway)
     const timeSinceLastAggregation = Date.now() - lastAggregationTimeRef.current
     const isInitialLoad = lastAggregationTimeRef.current === 0
-    const DEBOUNCE_MS = isInitialLoad ? 100 : 2000
+
+    // Check if intervals changed (user interaction - should be fast)
+    const intervalsChanged =
+      interval.length !== lastIntervalsRef.current.length ||
+      interval.some((i) => !lastIntervalsRef.current.includes(i))
+    lastIntervalsRef.current = [...interval]
+
+    const DEBOUNCE_MS = isInitialLoad || intervalsChanged ? 100 : 2000
 
     if (timeSinceLastAggregation < DEBOUNCE_MS) {
       // Schedule aggregation after debounce period
