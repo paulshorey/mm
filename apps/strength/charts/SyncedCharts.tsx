@@ -55,12 +55,13 @@ function getRawDataHash(rawData: unknown[]): string {
 /**
  * Generate a cache key for aggregated results
  * Based on tickers and intervals (not data content)
+ * IMPORTANT: Use spread operator to avoid mutating the original arrays!
  */
 function getAggregationCacheKey(
   tickers: string[],
   intervals: string[]
 ): string {
-  return `${tickers.sort().join(',')}|${intervals.sort().join(',')}`
+  return `${[...tickers].sort().join(',')}|${[...intervals].sort().join(',')}`
 }
 
 // Cache for aggregated results - survives ticker switches
@@ -210,9 +211,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       // Double-check: only update if this is for the current data version
       // (The worker hook already filters, but this is an extra safety check)
       if (resultDataVersion < chartDataVersionRef.current) {
-        console.log(
-          `[SyncedCharts] Ignoring stale result (version: ${resultDataVersion}, current: ${chartDataVersionRef.current})`
-        )
         return
       }
 
@@ -284,11 +282,27 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   /**
    * Effect: When dataVersion changes (ticker switch), immediately clear chart
-   * and update the valid version so old worker results are ignored
+   * and update the valid version so old worker results are ignored.
    */
   useEffect(() => {
     // Set the valid version - any results with older version will be ignored
     setValidDataVersion(dataVersion)
+
+    // Cancel any pending aggregation timeouts
+    if (pendingAggregationRef.current) {
+      clearTimeout(pendingAggregationRef.current)
+      pendingAggregationRef.current = null
+    }
+
+    // Reset processing state - the old aggregation's result will be ignored
+    // so we need to allow new aggregations to start
+    isProcessingRef.current = false
+
+    // Reset the raw data hash so new data will trigger aggregation
+    lastRawDataHashRef.current = ''
+
+    // Reset debounce timer so initial load is fast
+    lastAggregationTimeRef.current = 0
 
     // Clear chart data immediately when version changes
     // This prevents showing old data while new data loads
@@ -363,7 +377,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     // Check if rawData actually changed (by comparing hashes including values)
     const currentHash = getRawDataHash(rawData)
     if (currentHash === lastRawDataHashRef.current) {
-      // Data hasn't changed, skip aggregation
       return
     }
 

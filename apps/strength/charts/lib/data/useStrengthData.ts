@@ -400,10 +400,14 @@ export function useStrengthData({
         if (!isMountedRef.current) return
 
         // Check if tickers changed while loading
-        if (
-          tickersToLoad.length !== currentTickersRef.current.length ||
-          tickersToLoad.some((t, i) => t !== currentTickersRef.current[i])
-        ) {
+        // Use Set comparison to handle order differences (arrays may be sorted elsewhere)
+        const tickersToLoadSet = new Set(tickersToLoad)
+        const currentTickersSet = new Set(currentTickersRef.current)
+        const tickersMatch =
+          tickersToLoadSet.size === currentTickersSet.size &&
+          [...tickersToLoadSet].every((t) => currentTickersSet.has(t))
+
+        if (!tickersMatch) {
           // Tickers changed during fetch - abort, new fetch will be triggered
           return
         }
@@ -451,10 +455,12 @@ export function useStrengthData({
       return
     }
 
-    // Check if tickers actually changed
+    // Check if tickers actually changed (use Set for order-independent comparison)
+    const currentSet = new Set(currentTickersRef.current)
+    const newSet = new Set(tickers)
     const tickersChanged =
-      tickers.length !== currentTickersRef.current.length ||
-      tickers.some((t, i) => t !== currentTickersRef.current[i])
+      currentSet.size !== newSet.size ||
+      ![...newSet].every((t) => currentSet.has(t))
 
     if (tickersChanged) {
       currentTickersRef.current = [...tickers]

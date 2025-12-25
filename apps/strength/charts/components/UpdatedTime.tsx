@@ -32,14 +32,14 @@ export function UpdatedTime({
       style={{ transformOrigin: 'bottom right' }}
     >
       {paused ? (
-        <span className="text-xs text-gray-500 bg-white">
-          ⏸ paused
-        </span>
+        <span className="text-xs text-gray-500 bg-white">⏸</span>
       ) : (
-        <span className="text-xs text-orange-400 bg-white">
-          {formatTime(lastUpdateTime)}
-        </span>
+        <span className="text-xs text-gray-500 bg-white">▶</span>
       )}
+      <span className="text-xs text-orange-400 bg-white">
+        {' '}
+        {formatTime(lastUpdateTime)}
+      </span>
     </div>
   )
 }

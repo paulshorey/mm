@@ -86,7 +86,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       showPriceLine,
       showTickerLines,
       hoursBack,
-      interval: selectedIntervals,
     } = useChartControlsStore()
 
     const containerRef = useRef<HTMLDivElement>(null)
@@ -240,10 +239,12 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add interval series for each possible interval
       // These are created once and data is set/updated later
       strengthIntervals.forEach((interval) => {
+        // if (interval === '30S' && parseInt(hoursBack) > 12) return
+        // if (interval === '1' && parseInt(hoursBack) > 24) return
         const intervalSeries = chart.addSeries(LineSeries, {
           ...getLineSeriesConfig(),
           lineWidth: 1,
-          color: COLORS.strength_i,
+          color: interval === '181' ? COLORS.strength : COLORS.strength_i,
           priceScaleId: 'left', // Use same scale as aggregated strength
         })
         intervalSeriesRef.current[interval] = intervalSeries

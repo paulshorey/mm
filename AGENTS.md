@@ -67,4 +67,4 @@ You are an AI agent. You will read AGENTS.md file in any relevant folder every t
 
 When writing documentation, be very concise. AGENTS.md files should only include hints to help you find relevant files in the codebase. Specific documentation should be written in comment blocks above each file or function.
 
-Always improve AGENTS.md files as you look throughout the codebase. Remove irrelevant or inacurate info. Consolidate documentation that is redundant or verbose.
+Always try to improve AGENTS.md files as you look throughout the codebase. Remove irrelevant or incorrect info. Consolidate documentation that is redundant or verbose.
