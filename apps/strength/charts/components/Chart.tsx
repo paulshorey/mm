@@ -78,6 +78,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       showPriceLine,
       showTickerLines,
       hoursBack,
+      interval: selectedIntervals, // Which intervals are selected (for visibility)
     } = useChartControlsStore()
 
     const containerRef = useRef<HTMLDivElement>(null)
@@ -178,8 +179,11 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       strengthIntervals.forEach((interval) => {
         const intervalSeries = chart.addSeries(LineSeries, {
           ...getLineSeriesConfig(),
-          lineWidth: interval === '181' ? 2 : 1,
-          color: interval === '181' ? COLORS.strength : COLORS.strength_i,
+          lineWidth: interval === '181' && !showStrengthLine ? 2 : 1,
+          color:
+            interval === '181' && !showStrengthLine
+              ? COLORS.strength
+              : COLORS.strength_i,
           priceScaleId: 'left', // Use same scale as aggregated strength
         })
         intervalSeriesRef.current[interval] = intervalSeries
@@ -391,15 +395,29 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
             lastIntervalDataRef.current[interval] = currentData
           }
 
-          // Control visibility based on showIntervalLines
+          // Control visibility based on:
+          // 1. Master toggle (showIntervalLines)
+          // 2. Per-interval selection (selectedIntervals)
+          // Highlight the most important line when aggregate is hidden
+          const isSelected = selectedIntervals.includes(interval)
+          const isHighlightedInterval = interval === '181' && !showStrengthLine
+
           series.applyOptions({
-            visible: showIntervalLines,
+            visible: showIntervalLines && isSelected,
+            lineWidth: isHighlightedInterval ? 2 : 1,
+            color: isHighlightedInterval ? COLORS.strength : COLORS.strength_i,
           })
         })
       } catch (error) {
         console.warn('Failed to update interval data:', error)
       }
-    }, [intervalStrengthData, showIntervalLines, name])
+    }, [
+      intervalStrengthData,
+      showIntervalLines,
+      showStrengthLine,
+      selectedIntervals,
+      name,
+    ])
 
     // Update ticker series data (for individual ticker price lines)
     // ALWAYS update data, control visibility separately via series.applyOptions
@@ -518,6 +536,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       strengthSeriesRef.current.applyOptions({
         visible: showStrengthLine,
+        lineWidth: 2, // Always prominent when visible (it's the main aggregate line)
       })
     }, [showStrengthLine])
 
