@@ -16,6 +16,7 @@ import { SCALE_FACTOR } from '@/constants'
 import { LineData, Time } from 'lightweight-charts'
 import { SCROLL_PAUSE_RESUME_MS } from './constants'
 import { computeStrengthIndicator } from './lib/computeStrengthIndicator'
+import { computePriceIndicator } from './lib/computePriceIndicator'
 
 export interface SyncedChartsProps {
   availableHeight: number
@@ -126,6 +127,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     setStrengthIntervals,
     setPriceTickers,
     setStrengthIndicator,
+    setPriceIndicator,
   } = useChartControlsStore()
 
   // Local state for chart rendering control
@@ -135,12 +137,14 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     strengthIntervals: Record<string, LineData<Time>[]>
     priceTickers: Record<string, LineData<Time>[]>
     strengthIndicator: LineData<Time>[] | null
+    priceIndicator: LineData<Time>[] | null
   }>({
     strengthAverage: null,
     priceAverage: null,
     strengthIntervals: {},
     priceTickers: {},
     strengthIndicator: null,
+    priceIndicator: null,
   })
 
   // Track which dataVersion the current chartData corresponds to
@@ -228,6 +232,9 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       // Compute indicator from strength average
       const strengthIndicator = computeStrengthIndicator(result.strengthAverage)
 
+      // Compute indicator from price average
+      const priceIndicator = computePriceIndicator(result.priceAverage)
+
       // Update local chart data
       const newChartData = {
         strengthAverage: result.strengthAverage,
@@ -235,6 +242,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         strengthIntervals: result.strengthIntervals,
         priceTickers: result.priceTickers,
         strengthIndicator,
+        priceIndicator,
       }
 
       setChartData(newChartData)
@@ -247,6 +255,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         strengthIntervals: newChartData.strengthIntervals,
         priceTickers: newChartData.priceTickers,
         strengthIndicator: newChartData.strengthIndicator,
+        priceIndicator: newChartData.priceIndicator,
         timestamp: Date.now(),
       })
 
@@ -262,6 +271,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       setStrengthIntervals(result.strengthIntervals)
       setPriceTickers(result.priceTickers)
       setStrengthIndicator(strengthIndicator)
+      setPriceIndicator(priceIndicator)
 
       if (processingTimeMs > 100) {
         console.log(
@@ -279,6 +289,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       setStrengthIntervals,
       setPriceTickers,
       setStrengthIndicator,
+      setPriceIndicator,
     ]
   )
 
@@ -331,6 +342,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         strengthIntervals: {},
         priceTickers: {},
         strengthIndicator: null,
+        priceIndicator: null,
       })
 
       // Clear store data too
@@ -339,6 +351,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       setStrengthIntervals({})
       setPriceTickers({})
       setStrengthIndicator(null)
+      setPriceIndicator(null)
     }
   }, [
     dataVersion,
@@ -348,6 +361,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
     setStrengthIntervals,
     setPriceTickers,
     setStrengthIndicator,
+    setPriceIndicator,
   ])
 
   /**
@@ -372,6 +386,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
             strengthIntervals: cached.strengthIntervals,
             priceTickers: cached.priceTickers,
             strengthIndicator: cached.strengthIndicator,
+            priceIndicator: cached.priceIndicator,
           })
         }
       } else {
@@ -537,6 +552,7 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           strengthIntervalsData={chartData.strengthIntervals}
           priceTickersData={chartData.priceTickers}
           strengthIndicatorData={chartData.strengthIndicator}
+          priceIndicatorData={chartData.priceIndicator}
           tickers={chartTickers}
           width={
             typeof window !== 'undefined'
