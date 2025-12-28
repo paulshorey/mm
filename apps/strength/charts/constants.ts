@@ -12,20 +12,21 @@ export const SCROLL_PAUSE_RESUME_MS = 300000 // 30 seconds
 export const COLORS = {
   red: 'hsl(0 75.53% 53.53%)',
   green: 'hsl(120 70.8% 44.31%)',
+  purple: 'hsl(275 85% 70%)', // Purple
   dark: '#777777',
-  // Main aggregated lines
+  // Indicator
+  indicator: 'hsl(120 70.8% 44.31%)',
+  // Strength
   strength: 'hsl(35 100% 50%)', // Orange
-  // price: 'hsl(275 85% 70%)', // Purple
+  // Price
   price: 'hsl(233 100% 75%)', // Blue
+  // Etc
   light: '#B5B5B566', // Light gray
 
   // Individual lines (lighter versions)
   strength_i: 'hsla(35 100% 50% / 0.55)', // Orange transparent
   strength_ii: 'hsla(35 100% 50% / 0.44)', // Orange transparent
   strength_iii: 'hsla(35 100% 50% / 0.22)', // Orange transparent
-
-  // Indicator (moving average) - distinct color for visibility
-  indicator: 'hsl(300 85% 60%)', // Magenta/pink for contrast
 
   // price_i: 'hsla(275 85% 70% / 0.5)', // Purple transparent
   price_i: 'hsla(233 100% 75% / 0.67)', // Blue transparent

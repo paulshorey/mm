@@ -205,7 +205,7 @@ const getInitialState = (): State => {
     showIntervalLines: true,
     showPriceLine: false,
     showTickerLines: true,
-    showIndicatorLine: true,
+    showIndicatorLine: false,
     isHydrated: false,
   }
 
