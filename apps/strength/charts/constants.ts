@@ -24,6 +24,9 @@ export const COLORS = {
   strength_ii: 'hsla(35 100% 50% / 0.44)', // Orange transparent
   strength_iii: 'hsla(35 100% 50% / 0.22)', // Orange transparent
 
+  // Indicator (moving average) - distinct color for visibility
+  indicator: 'hsl(300 85% 60%)', // Magenta/pink for contrast
+
   // price_i: 'hsla(275 85% 70% / 0.5)', // Purple transparent
   price_i: 'hsla(233 100% 75% / 0.67)', // Blue transparent
   light_i: '#CDCCC835',
