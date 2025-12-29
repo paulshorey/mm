@@ -8,6 +8,8 @@ export const FETCH_DATA_ROWS = 7250
 // Time in ms to wait after user stops scrolling before resuming polling
 export const SCROLL_PAUSE_RESUME_MS = 300000 // 30 seconds
 
+export const SHOW_100_LINES = false
+
 // Color palette
 export const COLORS = {
   red: 'hsl(0 75.53% 53.53%)',

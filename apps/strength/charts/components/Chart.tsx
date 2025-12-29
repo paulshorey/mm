@@ -22,7 +22,7 @@ import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
 import { prepareDataWithRequiredTimestamps } from '../lib/primitives/forwardFillData'
-import { TIME_RANGE_HIGHLIGHTS } from '../constants'
+import { TIME_RANGE_HIGHLIGHTS, SHOW_100_LINES } from '../constants'
 import {
   strengthIntervalsAll as STRENGTH_INTERVALS,
   StrengthIntervalsData,
@@ -133,8 +133,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // Add dedicated horizontal line series (always visible, independent of other series)
       // These ensure the reference lines are always shown regardless of which strength lines are displayed
       const zeroLineSeries = chart.addSeries(LineSeries, {
-        color: COLORS.dark,
-        lineWidth: 1,
+        color: COLORS.green,
+        lineWidth: 2,
         lineStyle: 1, // Solid: 0, Dotted: 1, Dashed: 2
         priceScaleId: 'left', // Same scale as strength series
         crosshairMarkerVisible: false,
@@ -143,29 +143,30 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       })
       zeroLineSeriesRef.current = zeroLineSeries
 
-      // +100 line (upper bound)
-      const plus100LineSeries = chart.addSeries(LineSeries, {
-        color: COLORS.red,
-        lineWidth: 1,
-        lineStyle: 1,
-        priceScaleId: 'left',
-        crosshairMarkerVisible: false,
-        lastValueVisible: false,
-        priceLineVisible: false,
-      })
-      plus100LineSeriesRef.current = plus100LineSeries
+      // +100 and -100 lines (upper/lower bounds) - only if enabled
+      if (SHOW_100_LINES) {
+        const plus100LineSeries = chart.addSeries(LineSeries, {
+          color: COLORS.red,
+          lineWidth: 1,
+          lineStyle: 1,
+          priceScaleId: 'left',
+          crosshairMarkerVisible: false,
+          lastValueVisible: false,
+          priceLineVisible: false,
+        })
+        plus100LineSeriesRef.current = plus100LineSeries
 
-      // -100 line (lower bound)
-      const minus100LineSeries = chart.addSeries(LineSeries, {
-        color: COLORS.green,
-        lineWidth: 1,
-        lineStyle: 1,
-        priceScaleId: 'left',
-        crosshairMarkerVisible: false,
-        lastValueVisible: false,
-        priceLineVisible: false,
-      })
-      minus100LineSeriesRef.current = minus100LineSeries
+        const minus100LineSeries = chart.addSeries(LineSeries, {
+          color: COLORS.dark,
+          lineWidth: 1,
+          lineStyle: 1,
+          priceScaleId: 'left',
+          crosshairMarkerVisible: false,
+          lastValueVisible: false,
+          priceLineVisible: false,
+        })
+        minus100LineSeriesRef.current = minus100LineSeries
+      }
 
       // Price average - uses 'right' scale (default)
       // Always create the series, even if data doesn't exist yet
