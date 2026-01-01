@@ -21,8 +21,11 @@ interface ChartProps {
 
 const DATA_URL = 'https://demo-live-data.highcharts.com/aapl-historical.json'
 
+const DEBOUNCE_MS = 3000 // Only fetch new data once per 3 seconds
+
 export function Chart({ width, height }: ChartProps) {
   const chartRef = useRef<HighchartsReact.RefObject>(null)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const [Highcharts, setHighcharts] = useState<typeof HighchartsType | null>(
     null
   )
@@ -53,26 +56,36 @@ export function Chart({ width, height }: ChartProps) {
     initHighcharts()
   }, [])
 
-  // Callback for loading data on zoom/pan
+  // Callback for loading data on zoom/pan (debounced)
   const afterSetExtremes = useCallback(
     (e: HighchartsType.AxisSetExtremesEventObject) => {
       const chart = chartRef.current?.chart
       if (!chart) return
 
-      chart.showLoading('Loading data from server...')
+      // Clear any pending request
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
 
-      fetch(`${DATA_URL}?start=${Math.round(e.min)}&end=${Math.round(e.max)}`)
-        .then((res) => res.ok && res.json())
-        .then((data) => {
-          if (data && chart.series[0]) {
-            chart.series[0].setData(data)
-          }
-          chart.hideLoading()
-        })
-        .catch((error) => {
-          console.error('Error loading data:', error.message)
-          chart.hideLoading()
-        })
+      // Debounce: wait before fetching to avoid too many requests
+      debounceRef.current = setTimeout(() => {
+        chart.showLoading('Loading data from server...')
+
+        fetch(
+          `${DATA_URL}?start=${Math.round(e.min)}&end=${Math.round(e.max)}`
+        )
+          .then((res) => res.ok && res.json())
+          .then((data) => {
+            if (data && chart.series[0]) {
+              chart.series[0].setData(data)
+            }
+            chart.hideLoading()
+          })
+          .catch((error) => {
+            console.error('Error loading data:', error.message)
+            chart.hideLoading()
+          })
+      }, DEBOUNCE_MS)
     },
     []
   )
