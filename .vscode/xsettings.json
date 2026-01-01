@@ -1,0 +1,31 @@
+{
+  "settings.cycle": [
+    {
+      "overrideWorkspaceSettings": true,
+      "id": "toggleFileExclusion",
+      "values": [
+        {
+          "files.exclude": {
+            "apps/*/*.*": false,
+            "apps/*/.*": false
+          }
+        },
+        {
+          "files.exclude": {
+            "apps/*/*.*": true,
+            "apps/*/.*": true
+          }
+        }
+      ]
+    }
+  ],
+  "files.associations": {
+    ".fantomasignore": "ignore",
+    "*.d.ts": "typescript",
+    "*.haml": "html",
+    "*.tsx": "typescriptreact",
+    "*.ts": "typescript",
+    ".env*": "dotenv",
+    "*.pine": "pine"
+  }
+}

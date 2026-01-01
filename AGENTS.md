@@ -8,8 +8,8 @@ Before running any terminal npm or pnpm command, make sure to be in the correct 
 
 - ./apps/log - logging and observability for all data types
 - ./apps/trade - day trading and investment positions management
-- ./apps/strength - financial charts and data analysis
-- ./apps/strength/charts - code to setup and render the financial strength charts and interact with UI
+- ./apps/strength - financial charts and data analysis experiment built with lightweight-charts
+- ./apps/price - newer financial charts and data analysis built with HighCharts and improved data sources
 - ./apps/auth - authentication testing app using Next Auth and Prisma
 - ./apps/facts - (additional app in monorepo)
 
@@ -44,9 +44,7 @@ Note "fe" means "front end", and "be" means "back end". Several apps have this n
 Common shared library files (./lib/common) can be imported from `@lib/common` such as this:
 
 ```
-import { NEW_INTERVALS } from '@lib/common/sql/strength/constants'
 import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
-import { strengthGets } from '@lib/common/sql/strength/gets'
 ```
 
 ### Build and lint:

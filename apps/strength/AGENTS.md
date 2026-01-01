@@ -1,6 +1,6 @@
-# Strength App
+# Strength app (apps/strength/)
 
-Financial charting app displaying strength (RSI-like) and price data with real-time updates.
+Financial charting app displaying price and relative strength, with real-time updates.
 
 ## Overview
 
@@ -8,33 +8,13 @@ Financial charting app displaying strength (RSI-like) and price data with real-t
 - **Right y-axis:** Price
 - **X-axis:** Time (shared)
 
-## Structure
+## Folders
 
-```
-apps/strength/
-├── app/                    # Next.js app directory
-├── charts/                 # Chart mini-app (see charts/AGENTS.md)
-│   ├── lib/data/           # Data fetching
-│   ├── lib/workers/        # Web Worker aggregation
-│   └── state/              # Zustand store
-└── components/             # Shared UI
-```
+Current working directory is `apps/strength`
 
-## Key Technical Points
+Inside:
 
-- **Timestamps:** 1-minute intervals, seconds/ms must be 0
-- **Polling:** Every 10 seconds for real-time updates
-- **Aggregation:** Runs in Web Worker (~1000-1500ms)
-- **Caching:** Results cached by ticker+interval for instant switching
-
-## Database
-
-See `@lib/common/sql/strength/` for data types and queries.
-
-## Charts
-
-This strength app consists mostly of the charts logic and components in `charts` folder.
-
-This app uses light-weight charts library. Documentation in `docs/lightweight-charts`.
-
-@docs/lightweight-charts/AGENTS.md
+- api - NextJS api
+- price - /price page - will display new improved chart using highcharts library
+- page.tsx - / homepage - renders old (current version) chart using lightweight-charts
+- components - React components for the new
