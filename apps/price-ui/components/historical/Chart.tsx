@@ -61,7 +61,6 @@ export function Chart() {
       .then((res) => res.ok && res.json())
       .then((data) => {
         if (data) {
-          data.push(['2011-10-14 18:00', null, null, null, null])
           setNavigatorData(data) // Full data for navigator (never changes)
           setChartData(data) // Initial view data
         }

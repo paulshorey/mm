@@ -1,34 +1,18 @@
 const express = require("express");
-const { Pool } = require("pg");
+const { pool } = require("./lib/db");
+const { getSchema } = require("./lib/schema");
+const { getCandles, getDateRange } = require("./lib/candles");
 
 const app = express();
 const port = process.env.PORT || 8080;
 
-// Middleware
 app.use(express.json());
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Connection pool settings
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
-
-// Log which database URL is being used (without password)
-const dbUrl = process.env.DATABASE_URL || "";
-const safeDbUrl = dbUrl.replace(/:[^:@]+@/, ":***@");
-console.log(`Database URL: ${safeDbUrl}`);
-
 /**
- * Health Check Endpoint
- *
- * Railway uses this to verify the service is healthy before routing traffic.
- * Returns 200 when the service is ready.
+ * Health Check
  */
 app.get("/health", async (req, res) => {
   try {
-    // Verify database connection is working
     await pool.query("SELECT 1");
     res.status(200).json({
       status: "healthy",
@@ -47,61 +31,16 @@ app.get("/health", async (req, res) => {
 });
 
 /**
- * Root API Endpoint
- *
- * Returns the database schema information:
- * - List of all tables
- * - Columns for each table with their data types
+ * Database Schema
  */
-app.get("/", async (req, res) => {
+app.get("/tables", async (req, res) => {
   try {
-    // Get all tables in the public schema
-    const tablesResult = await pool.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-      ORDER BY table_name
-    `);
-
-    const tables = tablesResult.rows.map((row) => row.table_name);
-
-    // Get columns for each table
-    const schema = {};
-    for (const tableName of tables) {
-      const columnsResult = await pool.query(
-        `
-        SELECT 
-          column_name,
-          data_type,
-          is_nullable,
-          column_default,
-          character_maximum_length
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-          AND table_name = $1
-        ORDER BY ordinal_position
-      `,
-        [tableName]
-      );
-
-      schema[tableName] = columnsResult.rows.map((col) => ({
-        name: col.column_name,
-        type: col.data_type,
-        nullable: col.is_nullable === "YES",
-        default: col.column_default,
-        maxLength: col.character_maximum_length,
-      }));
-    }
-
+    const schema = await getSchema();
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
       environment: process.env.RAILWAY_ENVIRONMENT_NAME || "local",
-      database: {
-        tableCount: tables.length,
-        tables: schema,
-      },
+      database: schema,
     });
   } catch (error) {
     console.error("Error fetching schema:", error.message);
@@ -109,25 +48,99 @@ app.get("/", async (req, res) => {
       success: false,
       error: "Failed to fetch database schema",
       message: error.message,
-      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * Historical Candles
+ *
+ * Query params:
+ *   start - Start timestamp in ms (required)
+ *   end   - End timestamp in ms (required)
+ *   symbol - Filter by symbol (optional)
+ *
+ * Returns array of tuples: [timestamp_ms, open, high, low, close, volume]
+ * Automatically selects the best timeframe based on date range.
+ */
+app.get("/historical/candles", async (req, res) => {
+  try {
+    const { start, end, symbol } = req.query;
+
+    // Validate required params
+    if (!start || !end) {
+      return res.status(400).json({
+        error: "Missing required params: start, end (timestamps in ms)",
+      });
+    }
+
+    const startMs = parseInt(start, 10);
+    const endMs = parseInt(end, 10);
+
+    if (isNaN(startMs) || isNaN(endMs)) {
+      return res.status(400).json({
+        error: "Invalid timestamps: start and end must be numbers (ms)",
+      });
+    }
+
+    if (startMs >= endMs) {
+      return res.status(400).json({
+        error: "Invalid range: start must be less than end",
+      });
+    }
+
+    const result = await getCandles(startMs, endMs, symbol || null);
+
+    // Return just the data array for Highcharts compatibility
+    // Include metadata in headers for debugging
+    res.set("X-Timeframe", result.timeframe);
+    res.set("X-Table", result.table);
+    res.set("X-Count", result.count.toString());
+
+    res.json(result.data);
+  } catch (error) {
+    console.error("Error fetching candles:", error.message);
+    res.status(500).json({
+      error: "Failed to fetch candle data",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * Historical Candles - Date Range
+ * Returns the available date range in the database
+ */
+app.get("/historical/range", async (req, res) => {
+  try {
+    const range = await getDateRange();
+
+    if (!range) {
+      return res.status(404).json({ error: "No data available" });
+    }
+
+    res.json(range);
+  } catch (error) {
+    console.error("Error fetching date range:", error.message);
+    res.status(500).json({
+      error: "Failed to fetch date range",
+      message: error.message,
     });
   }
 });
 
 /**
  * Start Server
- *
- * Listen on "::" to support both IPv4 and IPv6.
- * This is required for Railway's private networking to work correctly.
  */
 app.listen(port, "::", () => {
   console.log(`🚀 Market Data API server running on port ${port}`);
   console.log(`   Environment: ${process.env.RAILWAY_ENVIRONMENT_NAME || "local"}`);
-  console.log(`   Health check: http://localhost:${port}/health`);
-  console.log(`   Schema API: http://localhost:${port}/`);
+  console.log(`   Health: http://localhost:${port}/health`);
+  console.log(`   Schema: http://localhost:${port}/tables`);
+  console.log(`   Candles: http://localhost:${port}/historical/candles?start=...&end=...`);
 });
 
-// Graceful shutdown handling
+// Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully...");
   await pool.end();
