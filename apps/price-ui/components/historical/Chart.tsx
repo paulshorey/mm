@@ -21,7 +21,7 @@ interface ChartProps {
 
 const DATA_URL = 'https://demo-live-data.highcharts.com/aapl-historical.json'
 
-const DEBOUNCE_MS = 3000 // Only fetch new data once per 3 seconds
+const DEBOUNCE_MS = 1 // Avoid duplicate requests (does not need to be high)
 
 export function Chart({ width, height }: ChartProps) {
   const chartRef = useRef<HighchartsReact.RefObject>(null)
@@ -71,9 +71,7 @@ export function Chart({ width, height }: ChartProps) {
       debounceRef.current = setTimeout(() => {
         chart.showLoading('Loading data from server...')
 
-        fetch(
-          `${DATA_URL}?start=${Math.round(e.min)}&end=${Math.round(e.max)}`
-        )
+        fetch(`${DATA_URL}?start=${Math.round(e.min)}&end=${Math.round(e.max)}`)
           .then((res) => res.ok && res.json())
           .then((data) => {
             if (data && chart.series[0]) {
@@ -101,7 +99,16 @@ export function Chart({ width, height }: ChartProps) {
         if (data && chart?.series?.[0]) {
           // Add a null value for the end date
           data.push(['2011-10-14 18:00', null, null, null, null])
+
+          // Set main series data
           chart.series[0].setData(data)
+
+          // Set navigator series data (keeps full dataset for zoom reference)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const nav = (chart as any).navigator
+          if (nav?.series?.[0]) {
+            nav.series[0].setData(data)
+          }
         }
       })
       .catch((error) => console.error('Error loading initial data:', error))
