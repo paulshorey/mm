@@ -1,8 +1,27 @@
 'use client'
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import Highcharts from 'highcharts/highstock'
 import HighchartsReact from 'highcharts-react-official'
-import type HighchartsType from 'highcharts/highstock'
+
+// Initialize modules once
+let modulesInitialized = false
+function initModules() {
+  if (modulesInitialized || typeof window === 'undefined') return
+  modulesInitialized = true
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const exporting = require('highcharts/modules/exporting')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const accessibility = require('highcharts/modules/accessibility')
+
+  if (typeof exporting === 'function') exporting(Highcharts)
+  else if (exporting?.default) exporting.default(Highcharts)
+
+  if (typeof accessibility === 'function') accessibility(Highcharts)
+  else if (accessibility?.default) accessibility.default(Highcharts)
+}
+initModules()
 
 // Dark theme colors
 const darkTheme = {
@@ -14,68 +33,60 @@ const darkTheme = {
   candleDown: '#ef5350',
 }
 
-interface ChartProps {
-  width: number
-  height: number
-}
-
 const DATA_URL = 'https://demo-live-data.highcharts.com/aapl-historical.json'
+const DEBOUNCE_MS = 1000 // Necessary on scroll events to prevent continous fetch() calls
 
-const DEBOUNCE_MS = 1 // Avoid duplicate requests (does not need to be high)
-
-export function Chart({ width, height }: ChartProps) {
+export function Chart() {
   const chartRef = useRef<HighchartsReact.RefObject>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
-  const [Highcharts, setHighcharts] = useState<typeof HighchartsType | null>(
-    null
-  )
+  const [navigatorData, setNavigatorData] = useState<number[][]>([]) // Full dataset for navigator
+  const [chartData, setChartData] = useState<number[][]>([]) // Current view data for main series
 
-  // Initialize Highcharts with modules on client side only
+  // Handle window resize with reflow
   useEffect(() => {
-    async function initHighcharts() {
-      const HC = (await import('highcharts/highstock')).default
-
-      // Dynamic imports for modules - use type assertion for runtime flexibility
-      const exportingMod = await import('highcharts/modules/exporting')
-      const accessibilityMod = await import('highcharts/modules/accessibility')
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mod = exportingMod as any
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const accMod = accessibilityMod as any
-
-      // Handle different module export formats
-      const exportingFn = mod.default ?? mod
-      const accessibilityFn = accMod.default ?? accMod
-
-      if (typeof exportingFn === 'function') exportingFn(HC)
-      if (typeof accessibilityFn === 'function') accessibilityFn(HC)
-
-      setHighcharts(HC)
+    const handleResize = () => {
+      const chart = chartRef.current?.chart
+      if (chart) {
+        chart.reflow()
+      }
     }
-    initHighcharts()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Callback for loading data on zoom/pan (debounced)
+  // Load initial data
+  useEffect(() => {
+    fetch(DATA_URL)
+      .then((res) => res.ok && res.json())
+      .then((data) => {
+        if (data) {
+          data.push(['2011-10-14 18:00', null, null, null, null])
+          setNavigatorData(data) // Full data for navigator (never changes)
+          setChartData(data) // Initial view data
+        }
+      })
+      .catch((error) => console.error('Error loading initial data:', error))
+  }, [])
+
+  // Callback for loading data on zoom/pan
   const afterSetExtremes = useCallback(
-    (e: HighchartsType.AxisSetExtremesEventObject) => {
+    (e: Highcharts.AxisSetExtremesEventObject) => {
       const chart = chartRef.current?.chart
       if (!chart) return
 
-      // Clear any pending request
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
       }
 
-      // Debounce: wait before fetching to avoid too many requests
       debounceRef.current = setTimeout(() => {
         chart.showLoading('Loading data from server...')
 
         fetch(`${DATA_URL}?start=${Math.round(e.min)}&end=${Math.round(e.max)}`)
           .then((res) => res.ok && res.json())
           .then((data) => {
-            if (data && chart.series[0]) {
-              chart.series[0].setData(data)
+            if (data) {
+              setChartData(data)
             }
             chart.hideLoading()
           })
@@ -88,212 +99,168 @@ export function Chart({ width, height }: ChartProps) {
     []
   )
 
-  // Load initial data when Highcharts is ready
-  useEffect(() => {
-    if (!Highcharts) return
-
-    fetch(DATA_URL)
-      .then((res) => res.ok && res.json())
-      .then((data) => {
-        const chart = chartRef.current?.chart
-        if (data && chart?.series?.[0]) {
-          // Add a null value for the end date
-          data.push(['2011-10-14 18:00', null, null, null, null])
-
-          // Set main series data
-          chart.series[0].setData(data)
-
-          // Set navigator series data (keeps full dataset for zoom reference)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nav = (chart as any).navigator
-          if (nav?.series?.[0]) {
-            nav.series[0].setData(data)
-          }
-        }
-      })
-      .catch((error) => console.error('Error loading initial data:', error))
-  }, [Highcharts])
-
-  const options: HighchartsType.Options = {
-    chart: {
-      type: 'candlestick',
-      backgroundColor: darkTheme.background,
-      style: {
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+  const options: Highcharts.Options = useMemo(
+    () => ({
+      chart: {
+        type: 'candlestick',
+        backgroundColor: darkTheme.background,
+        spacing: [10, 10, 0, 10], // top, right, bottom, left - remove bottom spacing
+        style: {
+          fontFamily:
+            'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+        },
+        zooming: {
+          type: 'x',
+        },
       },
-      zooming: {
-        type: 'x',
-      },
-    },
 
-    title: {
-      text: 'AAPL history by the minute from 1998 to 2011',
-      align: 'left',
-      style: {
-        color: darkTheme.text,
-        fontSize: '18px',
-        fontWeight: '600',
-      },
-    },
-
-    subtitle: {
-      text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading',
-      align: 'left',
-      style: {
-        color: '#a0a0b0',
-      },
-    },
-
-    navigator: {
-      adaptToUpdatedData: false,
-      series: {
-        data: [],
-      },
-      outlineColor: darkTheme.axisLine,
-      maskFill: 'rgba(102, 133, 194, 0.2)',
-    },
-
-    scrollbar: {
-      liveRedraw: false,
-      barBackgroundColor: darkTheme.axisLine,
-      trackBackgroundColor: darkTheme.gridLine,
-    },
-
-    rangeSelector: {
-      buttons: [
-        { type: 'hour', count: 1, text: '1h' },
-        { type: 'day', count: 1, text: '1d' },
-        { type: 'month', count: 1, text: '1m' },
-        { type: 'year', count: 1, text: '1y' },
-        { type: 'all', text: 'All' },
-      ],
-      inputEnabled: false,
-      selected: 4, // 'All' selected by default
-      buttonTheme: {
-        fill: darkTheme.gridLine,
-        stroke: darkTheme.axisLine,
+      title: {
+        text: 'AAPL history by the minute from 1998 to 2011',
+        align: 'left',
         style: {
           color: darkTheme.text,
+          fontSize: '18px',
+          fontWeight: '600',
         },
-        states: {
-          hover: {
-            fill: darkTheme.axisLine,
+      },
+
+      subtitle: {
+        text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading',
+        align: 'left',
+        style: {
+          color: '#a0a0b0',
+        },
+      },
+
+      navigator: {
+        adaptToUpdatedData: false,
+        series: {
+          data: navigatorData, // Always use full dataset for navigator
+        },
+        outlineColor: darkTheme.axisLine,
+        maskFill: 'rgba(102, 133, 194, 0.2)',
+      },
+
+      scrollbar: {
+        liveRedraw: false,
+        barBackgroundColor: darkTheme.axisLine,
+        trackBackgroundColor: darkTheme.gridLine,
+      },
+
+      rangeSelector: {
+        buttons: [
+          { type: 'hour', count: 1, text: '1h' },
+          { type: 'day', count: 1, text: '1d' },
+          { type: 'month', count: 1, text: '1m' },
+          { type: 'year', count: 1, text: '1y' },
+          { type: 'all', text: 'All' },
+        ],
+        inputEnabled: false,
+        selected: 4,
+        buttonTheme: {
+          fill: darkTheme.gridLine,
+          stroke: darkTheme.axisLine,
+          style: {
+            color: darkTheme.text,
           },
-          select: {
-            fill: '#4a6fa5',
-            style: {
-              color: '#ffffff',
+          states: {
+            hover: {
+              fill: darkTheme.axisLine,
+            },
+            select: {
+              fill: '#4a6fa5',
+              style: {
+                color: '#ffffff',
+              },
+            },
+          },
+        },
+        labelStyle: {
+          color: darkTheme.text,
+        },
+      },
+
+      xAxis: {
+        events: {
+          afterSetExtremes,
+        },
+        minRange: 3600 * 1000,
+        gridLineColor: darkTheme.gridLine,
+        lineColor: darkTheme.axisLine,
+        tickColor: darkTheme.axisLine,
+        labels: {
+          style: {
+            color: darkTheme.text,
+          },
+        },
+      },
+
+      yAxis: {
+        floor: 0,
+        gridLineColor: darkTheme.gridLine,
+        lineColor: darkTheme.axisLine,
+        labels: {
+          style: {
+            color: darkTheme.text,
+          },
+        },
+      },
+
+      series: [
+        {
+          type: 'candlestick',
+          name: 'AAPL',
+          data: chartData,
+          dataGrouping: {
+            enabled: false,
+          },
+          color: darkTheme.candleDown,
+          upColor: darkTheme.candleUp,
+          lineColor: darkTheme.candleDown,
+          upLineColor: darkTheme.candleUp,
+        },
+      ],
+
+      credits: {
+        enabled: false,
+      },
+
+      exporting: {
+        buttons: {
+          contextButton: {
+            theme: {
+              fill: darkTheme.gridLine,
             },
           },
         },
       },
-      labelStyle: {
-        color: darkTheme.text,
-      },
-    },
 
-    xAxis: {
-      events: {
-        afterSetExtremes,
-      },
-      minRange: 3600 * 1000, // one hour
-      gridLineColor: darkTheme.gridLine,
-      lineColor: darkTheme.axisLine,
-      tickColor: darkTheme.axisLine,
-      labels: {
+      loading: {
         style: {
+          backgroundColor: darkTheme.background,
+        },
+        labelStyle: {
           color: darkTheme.text,
         },
       },
-    },
-
-    yAxis: {
-      floor: 0,
-      gridLineColor: darkTheme.gridLine,
-      lineColor: darkTheme.axisLine,
-      labels: {
-        style: {
-          color: darkTheme.text,
-        },
-      },
-    },
-
-    series: [
-      {
-        type: 'candlestick',
-        name: 'AAPL',
-        data: [],
-        dataGrouping: {
-          enabled: false,
-        },
-        color: darkTheme.candleDown,
-        upColor: darkTheme.candleUp,
-        lineColor: darkTheme.candleDown,
-        upLineColor: darkTheme.candleUp,
-      },
-    ],
-
-    credits: {
-      enabled: false,
-    },
-
-    exporting: {
-      buttons: {
-        contextButton: {
-          theme: {
-            fill: darkTheme.gridLine,
-          },
-        },
-      },
-    },
-
-    loading: {
-      style: {
-        backgroundColor: darkTheme.background,
-      },
-      labelStyle: {
-        color: darkTheme.text,
-      },
-    },
-  }
-
-  // Show loading state while Highcharts is initializing
-  if (!Highcharts) {
-    return (
-      <div
-        style={{
-          width,
-          height,
-          background: darkTheme.background,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: darkTheme.text,
-        }}
-      >
-        Initializing chart...
-      </div>
-    )
-  }
+    }),
+    [chartData, navigatorData, afterSetExtremes]
+  )
 
   return (
-    <div
-      style={{
-        width,
-        height,
-        background: darkTheme.background,
+    <HighchartsReact
+      highcharts={Highcharts}
+      constructorType="stockChart"
+      options={options}
+      ref={chartRef}
+      immutable={true}
+      containerProps={{
+        style: {
+          width: '100%',
+          height: '100%',
+          background: darkTheme.background,
+        },
       }}
-    >
-      <HighchartsReact
-        highcharts={Highcharts}
-        constructorType="stockChart"
-        options={options}
-        ref={chartRef}
-        containerProps={{
-          style: { width: '100%', height: '100%' },
-        }}
-      />
-    </div>
+    />
   )
 }
