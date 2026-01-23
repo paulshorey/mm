@@ -6,16 +6,16 @@ Before running any terminal npm or pnpm command, make sure to be in the correct 
 
 **Apps:**
 
-- ./apps/log - logging and observability for all data types
-- ./apps/trade - day trading and investment positions management
-- ./apps/strength - financial charts and data analysis experiment built with lightweight-charts
-- ./apps/price - newer financial charts and data analysis built with HighCharts and improved data sources
-- ./apps/auth - authentication testing app using Next Auth and Prisma
-- ./apps/facts - (additional app in monorepo)
+- strength - ./apps/strength - financial charts and data analysis experiment built with lightweight-charts
+- price-ui - ./apps/price-ui - newer financial charts and data analysis built with HighCharts and improved data sources
+- log - ./apps/log - logging and observability for all data types
+- trade ./apps/trade - day trading and investment positions management
+- auth - ./apps/auth - authentication testing app using Next Auth and Prisma
+- facts - ./apps/facts - (additional app in monorepo)
 
 **Shared Libraries:**
 
-- ./lib/common - shared utilities imported by all apps:
+- common - ./lib/common - shared utilities imported by all apps:
   - ./lib/common/sql - database functions for log, order, and strength tables
   - ./lib/common/twillio - Twilio integration for SMS alerts
   - ./lib/common/fe - client-side React components, hooks, and utility functions
