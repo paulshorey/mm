@@ -96,6 +96,17 @@ export function Chart() {
   // Fetches extra data before the visible range to allow proper SMA calculation
   const afterSetExtremes = useCallback(
     (e: Highcharts.AxisSetExtremesEventObject) => {
+      // Only respond to user-initiated changes (navigator, range selector, zoom)
+      // Ignore programmatic changes to prevent infinite loops when we set min/max in options
+      if (e.trigger !== 'navigator' && e.trigger !== 'rangeSelectorButton' && e.trigger !== 'zoom') {
+        return
+      }
+
+      // Don't fetch if navigator data hasn't loaded yet - interval estimation would be incorrect
+      if (navigatorData.length === 0) {
+        return
+      }
+
       if (debounceRef.current) {
         clearTimeout(debounceRef.current)
       }
@@ -116,8 +127,10 @@ export function Chart() {
         const interval = estimateDataInterval(navigatorData)
         const extraTime = interval * SMA_PERIOD
 
-        // Extend the start time to fetch extra data for SMA calculation
-        const extendedStart = requestedMin - extraTime
+        // Extend the start time to fetch extra data for SMA calculation,
+        // clamped to the earliest available data timestamp to avoid negative/invalid timestamps
+        const earliestTimestamp = navigatorData[0]?.[0] ?? 0
+        const extendedStart = Math.max(earliestTimestamp, requestedMin - extraTime)
 
         fetch(`${CANDLES_URL}&start=${extendedStart}&end=${requestedMax}`)
           .then((res) => res.ok && res.json())
@@ -264,6 +277,9 @@ export function Chart() {
           lineColor: darkTheme.candleDown,
           upLineColor: darkTheme.candleUp,
         },
+        // Type assertion required because @types/highcharts doesn't include
+        // indicator series types from the 'highcharts/indicators/indicators' module.
+        // The SMA series is valid at runtime when the indicators module is loaded.
         {
           type: 'sma',
           linkedTo: 'price-data',
