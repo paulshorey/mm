@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/v1/strength-screenshot",
-      "schedule": "55 * * * *"
-    }
-  ]
-}
