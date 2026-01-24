@@ -68,8 +68,8 @@ When working in any folder:
 
 For complex tasks affecting multiple files or requiring research, use the **@orchestrator** agent to coordinate a multi-phase workflow:
 
-- See `.github/agents/README.md` for full documentation
-- See `.github/copilot-instructions.md` for global project context
+- Global project context: `.github/copilot-instructions.md`
+- Agent definitions: `.github/agents/*.agent.md`
 - Each agent has specialized knowledge and isolated context
 - Orchestrator coordinates: explore → research → implement → refactor → test → review
 
