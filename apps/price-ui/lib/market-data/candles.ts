@@ -37,6 +37,9 @@ export function selectTimeframe(startMs: number, endMs: number): Timeframe {
   }
 
   // Default to largest timeframe for very long ranges
+  if (TIMEFRAMES.length === 0) {
+    throw new Error('No timeframes configured')
+  }
   return TIMEFRAMES[TIMEFRAMES.length - 1]
 }
 
