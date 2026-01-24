@@ -53,7 +53,7 @@ for app_dir in "${app_dirs[@]}"; do
   else
     # Clean up temp file on failure
     rm -f "${temp_file}"
-    echo "   ERROR: Failed to download secrets for ${app_name}"
+    echo "   ERROR: Failed to download secrets for ${app_name} (project: ${project_name})"
     exit 1
   fi
 done
