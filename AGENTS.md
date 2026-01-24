@@ -4,7 +4,7 @@ This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo t
 
 **Apps:**
 
-- strength - ./apps/strength - financial charts and data analysis experiment built with lightweight-charts
+- strength - ./apps/strength - financial charts and data analysis built with lightweight-charts
 - price-ui - ./apps/price-ui - newer financial charts and data analysis built with HighCharts and improved data sources
 - log - ./apps/log - logging and observability for all data types
 - trade ./apps/trade - day trading and investment positions management
@@ -48,16 +48,6 @@ Common shared library files `./lib/common` can be imported from `@lib/common`, l
 ### Build and lint:
 
 Don't bother checking linting / typescript separately. Simply run `npm run build` in the app that you're working on. If working on the strength app for example then `cd apps/strength` and run `npm run build` to check lint / types together.
-
-### App scaffolding
-
-Use the shared generator to add new apps with the standard config files:
-
-```bash
-pnpm create:app <app-name> --port 3335
-```
-
-This seeds a Next.js app in `apps/<app-name>` using the shared `@lib/config` presets.
 
 ### Questions:
 

@@ -8,7 +8,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "create:app": "node scripts/create-app.js"
+    "create:next-app": "node scripts/create-next-app.js"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

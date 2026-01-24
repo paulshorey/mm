@@ -1,0 +1,44 @@
+/*
+on the domain: github.com
+matching regex: /\/pull\//
+*/
+
+.Layout,
+.Layout-main {
+  display: block !important;
+}
+.Layout-sidebar {
+  display: none !important;
+}
+
+[data-url*="/paulshorey/m/pull/20/partials/deployed_event"] {
+  display: none !important;
+}
+
+.TimelineItem {
+  padding: 0;
+}
+.TimelineItem--condensed,
+.js-comment {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+.timeline-comment-header {
+  display: none !important;
+}
+
+[data-gap="condensed"] {
+  display: none !important;
+}
+
+.XTimelineItem--condensed {
+  border: solid 1px red !important;
+}
+
+.timeline-new-comment > [data-view-component="true"],
+.timeline-new-comment > .protip {
+  visibility: hidden;
+}
+footer {
+  display: none !important;
+}
