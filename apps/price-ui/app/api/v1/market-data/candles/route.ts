@@ -64,7 +64,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result.data, { headers })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    cc.error('GET /api/v1/market-data/candles ERROR: ' + message, error)
+    cc.error('GET /api/v1/market-data/candles ERROR: ' + message, {
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
       {
         error: 'Failed to fetch candle data',
