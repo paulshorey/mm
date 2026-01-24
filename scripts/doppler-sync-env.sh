@@ -34,7 +34,7 @@ umask 077
 for app_dir in "${app_dirs[@]}"; do
   app_name="$(basename "${app_dir}")"
   project_name="${DOPPLER_PROJECT_PREFIX}${app_name}"
-  output_file="${app_dir}.env.local"
+  output_file="${app_dir}/.env.local"
   temp_file="${output_file}.tmp"
 
   echo " - ${app_name}: ${project_name} -> ${output_file}"
