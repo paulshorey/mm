@@ -80,11 +80,7 @@ export class Dydx implements DydxInterface {
       throw new Error('Could not initialize wallet. Check DYDX_MNEMONIC environment variable.')
     }
     this.address = this.wallet.address
-    // v3 API uses SubaccountInfo.forLocalWallet(), but use type assertion for CI compatibility
-    const SubaccountClass = SubaccountInfo as unknown as {
-      forLocalWallet: (wallet: LocalWallet, subaccountNumber?: number) => SubaccountInfo
-    }
-    this.subaccount = SubaccountClass.forLocalWallet(this.wallet, 0)
+    this.subaccount = SubaccountInfo.forLocalWallet(this.wallet, 0)
     this.subaccountNumber = this.subaccount.subaccountNumber
   }
 
