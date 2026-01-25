@@ -32,6 +32,7 @@
   "devDependencies": {
     "@lib/config": "workspace:*",
     "@testing-library/jest-dom": "^6.5.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "^18",
     "husky": "^9.1.6",
     "jest": "^29.7.0",

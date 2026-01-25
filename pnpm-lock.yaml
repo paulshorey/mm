@@ -329,6 +329,9 @@ importers:
       '@testing-library/jest-dom':
         specifier: ^6.5.0
         version: 6.8.0
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
       '@types/react':
         specifier: ^18.3.11
         version: 18.3.24
