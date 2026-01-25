@@ -87,6 +87,7 @@ export function Chart() {
     if (!chart) return
 
     const axis = chart.xAxis[0]
+    if (!axis) return
     const series = chart.get('price-data') as Highcharts.Series | undefined
     const lastPoint = series?.data[series.data.length - 1]
 
