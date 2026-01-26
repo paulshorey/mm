@@ -16,14 +16,13 @@ type CandleTuple = [number, number, number, number, number, number, number]
 
 // Configuration
 const TICKER = 'ES'
-const INITIAL_CANDLES = 5000
 const POLL_INTERVAL_MS = 10_000
 const RECENT_CANDLES = 22
 
 // Color palette - Dark theme
 const COLORS = {
-  price: 'hsl(233 100% 75%)', // Blue
-  cvd: 'hsl(120 100% 45%)', // Bright green
+  price: 'hsl(221.01 100% 72.75%)', // Blue
+  cvd: 'hsla(115.87 100% 62.94% / 0.75)', // Green
   rsi: 'hsl(30 100% 50%)', // Orange
   background: '#1a1a2e',
   text: '#C3BCDB',
@@ -53,7 +52,7 @@ function buildCandlesUrl(limit: number) {
 function candlesToCvdData(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[0] / 1000) as Time, // Convert ms to seconds
-    value: candle[6], // CVD value
+    value: -candle[6], // CVD value (inverted)
   }))
 }
 
@@ -72,7 +71,10 @@ function candlesToLineData(candles: CandleTuple[]): LineData[] {
  * RSI = 100 - (100 / (1 + RS))
  * RS = Average Gain / Average Loss over the period
  */
-function calculateRSI(candles: CandleTuple[], period: number = RSI_PERIOD): LineData[] {
+function calculateRSI(
+  candles: CandleTuple[],
+  period: number = RSI_PERIOD
+): LineData[] {
   if (candles.length < period + 1) {
     return []
   }
@@ -350,26 +352,8 @@ export function Chart({ width, height }: ChartProps) {
     chartRef.current = chart
     hasInitialized.current = true
 
-    // Add price series (right axis - middle 50%)
-    const priceSeries = chart.addSeries(LineSeries, {
-      color: COLORS.price,
-      lineWidth: 2,
-      priceScaleId: 'right',
-      crosshairMarkerVisible: true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    })
-    // Position price in the top 75% of the chart
-    priceSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0,
-        bottom: 0.25,
-      },
-      autoScale: true,
-    })
-    priceSeriesRef.current = priceSeries
-
-    // Add CVD series (left axis - separate scale, top 50%)
+    // Add CVD series first (left axis - separate scale, top 50%)
+    // Added first so it renders behind price
     const cvdSeries = chart.addSeries(LineSeries, {
       color: COLORS.cvd,
       lineWidth: 1,
@@ -387,6 +371,26 @@ export function Chart({ width, height }: ChartProps) {
       autoScale: true,
     })
     cvdSeriesRef.current = cvdSeries
+
+    // Add price series (right axis - middle 50%)
+    // Added after CVD so it renders on top
+    const priceSeries = chart.addSeries(LineSeries, {
+      color: COLORS.price,
+      lineWidth: 1,
+      priceScaleId: 'right',
+      crosshairMarkerVisible: true,
+      priceLineVisible: false,
+      lastValueVisible: true,
+    })
+    // Position price in the top 75% of the chart
+    priceSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0,
+        bottom: 0.25,
+      },
+      autoScale: true,
+    })
+    priceSeriesRef.current = priceSeries
 
     // Add RSI series (overlay scale - hidden axis, positioned at bottom)
     // Using a unique priceScaleId creates a separate overlay scale
@@ -451,7 +455,10 @@ export function Chart({ width, height }: ChartProps) {
 
     // Use capture phase to intercept before lightweight-charts
     const container = containerRef.current
-    container.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+    container.addEventListener('wheel', handleWheel, {
+      passive: false,
+      capture: true,
+    })
 
     return () => {
       container.removeEventListener('wheel', handleWheel, { capture: true })
@@ -467,8 +474,8 @@ export function Chart({ width, height }: ChartProps) {
   // Load initial data
   useEffect(() => {
     let isMounted = true
-
-    fetchCandles(INITIAL_CANDLES)
+    const SCREEN_CANDLES = 2 * (width - PRICE_SCALE_RIGHT_OFFSET - 80) // subtract right price scale width
+    fetchCandles(SCREEN_CANDLES)
       .then((initialCandles) => {
         if (!isMounted) return
         if (initialCandles.length > 0) {
@@ -502,7 +509,10 @@ export function Chart({ width, height }: ChartProps) {
   // Update chart dimensions
   useEffect(() => {
     if (!chartRef.current || !hasInitialized.current) return
-    chartRef.current.applyOptions({ width: width + PRICE_SCALE_RIGHT_OFFSET, height })
+    chartRef.current.applyOptions({
+      width: width + PRICE_SCALE_RIGHT_OFFSET,
+      height,
+    })
   }, [width, height])
 
   if (error) {
