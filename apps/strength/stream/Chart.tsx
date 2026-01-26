@@ -323,6 +323,7 @@ export function Chart({ width, height }: ChartProps) {
         secondsVisible: false,
         tickMarkFormatter: timeFormatter,
         borderVisible: false, // Remove time scale border
+        rightBarStaysOnScroll: true, // Keep right bar visible when scrolling
       },
       crosshair: {
         mode: 0,
@@ -340,7 +341,7 @@ export function Chart({ width, height }: ChartProps) {
         },
       },
       handleScroll: true,
-      handleScale: true,
+      handleScale: false, // Disable built-in scale handling, we handle zoom ourselves
       localization: {
         timeFormatter,
       },
@@ -407,7 +408,53 @@ export function Chart({ width, height }: ChartProps) {
     })
     rsiSeriesRef.current = rsiSeries
 
+    // Custom right-edge anchored zoom handler
+    const handleWheel = (e: WheelEvent) => {
+      // Detect zoom gestures: ctrl/cmd+wheel or trackpad pinch (large deltaY with ctrlKey)
+      const isZoomGesture = e.ctrlKey || e.metaKey
+
+      if (!isZoomGesture) return // Let lightweight-charts handle regular scroll/pan
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const timeScale = chart.timeScale()
+      const visibleRange = timeScale.getVisibleLogicalRange()
+      if (!visibleRange) return
+
+      // Calculate zoom factor based on wheel delta
+      // Smaller factor for smoother zoom
+      const zoomFactor = e.deltaY > 0 ? 1.05 : 0.95 // zoom out : zoom in
+
+      // Current range
+      const currentFrom = visibleRange.from
+      const currentTo = visibleRange.to
+      const currentWidth = currentTo - currentFrom
+
+      // New width after zoom
+      const newWidth = currentWidth * zoomFactor
+
+      // Minimum and maximum zoom limits
+      const minBars = 10
+      const maxBars = 50000
+      if (newWidth < minBars || newWidth > maxBars) return
+
+      // Keep right edge (currentTo) fixed, adjust left edge
+      const newFrom = currentTo - newWidth
+
+      // Apply the new range with right edge anchored
+      timeScale.setVisibleLogicalRange({
+        from: newFrom,
+        to: currentTo,
+      })
+    }
+
+    // Use capture phase to intercept before lightweight-charts
+    const container = containerRef.current
+    container.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+
     return () => {
+      container.removeEventListener('wheel', handleWheel, { capture: true })
       chart.remove()
       chartRef.current = null
       priceSeriesRef.current = null
