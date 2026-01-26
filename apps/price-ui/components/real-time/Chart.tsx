@@ -280,6 +280,9 @@ export function Chart() {
         zooming: {
           type: '' as unknown as Highcharts.OptionsTypeValue,
         },
+        zoomType: '' as unknown as Highcharts.OptionsTypeValue,
+      } as Highcharts.ChartOptions & {
+        zoomType?: Highcharts.OptionsTypeValue
       },
 
       navigator: {
