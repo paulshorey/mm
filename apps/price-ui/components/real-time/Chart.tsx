@@ -273,8 +273,12 @@ export function Chart() {
           fontFamily:
             'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
         },
-        zooming: {
+        panning: {
+          enabled: true,
           type: 'x',
+        },
+        zooming: {
+          type: undefined,
         },
       },
 
