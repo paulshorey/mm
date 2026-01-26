@@ -23,8 +23,8 @@ const RECENT_CANDLES = 22
 // Color palette
 const COLORS = {
   price: 'hsl(233 100% 75%)', // Blue
-  cvd: 'hsl(30 100% 50%)', // Orange
-  rsi: 'hsl(280 70% 60%)', // Purple
+  cvd: 'hsl(120 100% 45%)', // Bright green
+  rsi: 'hsl(30 100% 50%)', // Orange
   background: '#ffffff',
   gridLine: '#CDCCC835',
 }
@@ -292,8 +292,7 @@ export function Chart({ width, height }: ChartProps) {
         minimumWidth: 80,
       },
       leftPriceScale: {
-        visible: true,
-        minimumWidth: 80,
+        visible: false,
       },
       timeScale: {
         visible: true,
@@ -326,7 +325,7 @@ export function Chart({ width, height }: ChartProps) {
     chartRef.current = chart
     hasInitialized.current = true
 
-    // Add price series (right axis - default)
+    // Add price series (right axis - middle 50%)
     const priceSeries = chart.addSeries(LineSeries, {
       color: COLORS.price,
       lineWidth: 2,
@@ -334,6 +333,14 @@ export function Chart({ width, height }: ChartProps) {
       crosshairMarkerVisible: true,
       priceLineVisible: false,
       lastValueVisible: true,
+    })
+    // Position price in the middle 50% of the chart
+    priceSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0.25,
+        bottom: 0.25,
+      },
+      autoScale: true,
     })
     priceSeriesRef.current = priceSeries
 
