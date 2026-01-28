@@ -247,8 +247,68 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // setVisibleRange fails if the series has no data
       // Time range is applied after data is set in the useEffect hooks below
 
+      // Custom zoom handler anchored on the last data bar
+      // Requires cmd (Mac) or ctrl (Windows) + scroll to zoom
+      const handleWheel = (e: WheelEvent) => {
+        // Only handle zoom gestures: ctrl/cmd+wheel or trackpad pinch
+        const isZoomGesture = e.ctrlKey || e.metaKey
+        if (!isZoomGesture) return // Let lightweight-charts handle regular scroll/pan
+
+        e.preventDefault()
+        e.stopPropagation()
+
+        const timeScale = chart.timeScale()
+        const visibleRange = timeScale.getVisibleLogicalRange()
+        if (!visibleRange) return
+
+        // Get the last bar's logical index from strength data
+        const data = lastStrengthAverageRef.current
+        if (!data || data.length === 0) return
+        const lastBarIndex = data.length - 1
+
+        // Calculate zoom factor based on wheel delta
+        // Smaller factor for smoother zoom
+        const zoomFactor = e.deltaY > 0 ? 1.05 : 0.95 // zoom out : zoom in
+
+        // Current range
+        const currentFrom = visibleRange.from
+        const currentTo = visibleRange.to
+        const currentWidth = currentTo - currentFrom
+
+        // Calculate the gap between the last bar and the visible right edge
+        // This gap should be preserved after zoom
+        const rightGap = currentTo - lastBarIndex
+
+        // New width after zoom
+        const newWidth = currentWidth * zoomFactor
+
+        // Minimum and maximum zoom limits
+        const minBars = 10
+        const maxBars = 50000
+        if (newWidth < minBars || newWidth > maxBars) return
+
+        // Anchor on the last bar: keep lastBarIndex in the same position
+        // newTo = lastBarIndex + rightGap (preserves the gap)
+        const newTo = lastBarIndex + rightGap
+        const newFrom = newTo - newWidth
+
+        // Apply the new range with last bar anchored
+        timeScale.setVisibleLogicalRange({
+          from: newFrom,
+          to: newTo,
+        })
+      }
+
+      // Use capture phase to intercept before lightweight-charts
+      const container = containerRef.current
+      container.addEventListener('wheel', handleWheel, {
+        passive: false,
+        capture: true,
+      })
+
       // Cleanup
       return () => {
+        container.removeEventListener('wheel', handleWheel, { capture: true })
         chart.remove()
         chartRef.current = null
         strengthAverageSeriesRef.current = null

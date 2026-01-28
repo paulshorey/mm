@@ -376,8 +376,8 @@ export function Chart({ width, height }: ChartProps) {
     // Position CVD at the top 50% of the chart
     cvdSeries.priceScale().applyOptions({
       scaleMargins: {
-        top: 0,
-        bottom: 0.5, // End at 50% from bottom
+        top: 0.2,
+        bottom: 0.3, // End at 50% from bottom
       },
       autoScale: true,
     })
@@ -415,7 +415,7 @@ export function Chart({ width, height }: ChartProps) {
     // Position RSI at the bottom 50% of the chart
     rsiSeries.priceScale().applyOptions({
       scaleMargins: {
-        top: 0.5, // Start at 50% from top
+        top: 0.6, // Start at 50% from top
         bottom: 0, // End at bottom
       },
       autoScale: true,
@@ -503,9 +503,17 @@ export function Chart({ width, height }: ChartProps) {
           dataRef.current = initialCandles
           updateChartData(initialCandles)
 
-          // Fit content to show all data
+          // Show ~50% of the data, zoomed in with the latest candle visible
           if (chartRef.current) {
-            chartRef.current.timeScale().fitContent()
+            const totalBars = initialCandles.length
+            const barsToShow = Math.floor(totalBars * 0.5)
+            const lastBarIndex = totalBars - 1
+            const fromIndex = lastBarIndex - barsToShow
+
+            chartRef.current.timeScale().setVisibleLogicalRange({
+              from: fromIndex,
+              to: lastBarIndex + 2, // Small padding on the right
+            })
           }
         }
         setIsLoading(false)

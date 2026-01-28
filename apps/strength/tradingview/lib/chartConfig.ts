@@ -52,6 +52,7 @@ export const getChartConfig = (height: number): DeepPartial<ChartOptions> => ({
     timeVisible: true,
     secondsVisible: false,
     tickMarkFormatter: timeFormatter,
+    rightBarStaysOnScroll: true, // Keep right bar visible when scrolling
   },
   crosshair: {
     mode: 0, // Normal mode: we'll set Y explicitly via setCrosshairPosition
