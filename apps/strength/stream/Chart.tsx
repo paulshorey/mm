@@ -12,9 +12,62 @@ import {
   Time,
 } from 'lightweight-charts'
 import { useChartEventPatcher } from './useChartEventPatcher'
+import type { CandleTuple } from '@/lib/market-data/candles'
 
-// Type for candle data from API: [timestamp_ms, open, high, low, close, volume, cvd_close]
-type CandleTuple = [number, number, number, number, number, number, number]
+/**
+ * Index constants for CandleTuple fields
+ * See CandleTuple type in candles.ts for full documentation
+ */
+const IDX = {
+  TIMESTAMP: 0,
+  // Price OHLC
+  OPEN: 1,
+  HIGH: 2,
+  LOW: 3,
+  CLOSE: 4,
+  VOLUME: 5,
+  // CVD OHLC
+  CVD_OPEN: 6,
+  CVD_HIGH: 7,
+  CVD_LOW: 8,
+  CVD_CLOSE: 9,
+  // EVR OHLC
+  EVR_OPEN: 10,
+  EVR_HIGH: 11,
+  EVR_LOW: 12,
+  EVR_CLOSE: 13,
+  // SMP OHLC
+  SMP_OPEN: 14,
+  SMP_HIGH: 15,
+  SMP_LOW: 16,
+  SMP_CLOSE: 17,
+  // VWAP OHLC
+  VWAP_OPEN: 18,
+  VWAP_HIGH: 19,
+  VWAP_LOW: 20,
+  VWAP_CLOSE: 21,
+  // VD_RATIO OHLC
+  VD_RATIO_OPEN: 22,
+  VD_RATIO_HIGH: 23,
+  VD_RATIO_LOW: 24,
+  VD_RATIO_CLOSE: 25,
+  // SPREAD_BPS OHLC
+  SPREAD_BPS_OPEN: 26,
+  SPREAD_BPS_HIGH: 27,
+  SPREAD_BPS_LOW: 28,
+  SPREAD_BPS_CLOSE: 29,
+  // PRICE_PCT OHLC
+  PRICE_PCT_OPEN: 30,
+  PRICE_PCT_HIGH: 31,
+  PRICE_PCT_LOW: 32,
+  PRICE_PCT_CLOSE: 33,
+  // Line metrics
+  BOOK_IMBALANCE_CLOSE: 34,
+  BIG_TRADES: 35,
+  BIG_VOLUME: 36,
+  DIVERGENCE: 37,
+  VD_STRENGTH: 38,
+} as const
 
 // Configuration
 const TICKER = 'ES'
@@ -23,13 +76,52 @@ const RECENT_CANDLES = 22
 
 // Color palette - Dark theme
 const COLORS = {
+  // Main series
   price: 'hsl(221.01 100% 72.75%)', // Blue
   cvd: 'hsla(115.87 100% 62.94% / 0.75)', // Green
   rsi: 'hsl(30 100% 50%)', // Orange
+  // OHLC bar series
+  evr: 'hsl(280 70% 65%)', // Purple
+  smp: 'hsl(340 80% 60%)', // Pink
+  vwap: 'hsl(45 100% 50%)', // Yellow
+  vdRatio: 'hsl(180 70% 50%)', // Cyan
+  spreadBps: 'hsl(200 80% 55%)', // Light Blue
+  pricePct: 'hsl(15 90% 55%)', // Red-Orange
+  // Line series
+  bookImbalance: 'hsl(160 60% 50%)', // Teal
+  bigTrades: 'hsl(320 70% 55%)', // Magenta
+  bigVolume: 'hsl(260 60% 60%)', // Violet
+  divergence: 'hsl(95 60% 50%)', // Lime
+  vdStrength: 'hsl(50 80% 55%)', // Gold
+  // UI
   background: '#1a1a2e',
   text: '#C3BCDB',
   gridLine: '#333344',
   crosshair: '#71649C',
+}
+
+// Scale margins for each series (top/bottom as percentage of chart height)
+// Adjust these values to position series vertically on the chart
+// Series configuration: enable/disable and position each series
+// Set `enabled: false` to hide a series from the chart
+const SERIES = {
+  // Main series
+  price: { enabled: true, top: 0, bottom: 0.5 },
+  cvd: { enabled: true, top: 0.125, bottom: 0.625 },
+  rsi: { enabled: true, top: 0.25, bottom: 0.5 },
+  // OHLC bar series
+  evr: { enabled: true, top: 0.45, bottom: 0.5 }, // purple
+  smp: { enabled: true, top: 0.5, bottom: 0.45 }, // pink
+  vwap: { enabled: true, top: 0.55, bottom: 0.4 }, // gold -- good for detecting LH/HL trend
+  vdRatio: { enabled: true, top: 0.6, bottom: 0.35 }, // aqua
+  spreadBps: { enabled: true, top: 0.65, bottom: 0.3 }, // blue
+  pricePct: { enabled: true, top: 0.7, bottom: 0.25 }, // red-orange
+  // Line series
+  bookImbalance: { enabled: true, top: 0.75, bottom: 0.2 }, // turquoise
+  bigTrades: { enabled: true, top: 0.8, bottom: 0.15 }, // magenta
+  bigVolume: { enabled: true, top: 0.85, bottom: 0.1 }, // violet
+  divergence: { enabled: true, top: 0.9, bottom: 0.05 }, // green
+  vdStrength: { enabled: true, top: 0.95, bottom: 0 }, // yellow
 }
 
 // Extra width to extend chart past screen edge, pushing price scale's internal padding off-screen
@@ -48,27 +140,157 @@ function buildCandlesUrl(limit: number) {
 }
 
 /**
- * Convert candles to LineData format for CVD series
- * CVD is at index 6 of the tuple
+ * Convert candles to BarData format for price OHLC bars
  */
-function candlesToCvdData(candles: CandleTuple[]): LineData[] {
+function candlesToPriceOhlc(candles: CandleTuple[]): BarData[] {
   return candles.map((candle) => ({
-    time: (candle[0] / 1000) as Time, // Convert ms to seconds
-    value: -candle[6], // CVD value (inverted)
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.OPEN],
+    high: candle[IDX.HIGH],
+    low: candle[IDX.LOW],
+    close: candle[IDX.CLOSE],
   }))
 }
 
 /**
- * Convert candles to BarData format for OHLC bars
- * Renders as vertical bar (low to high) with open tick on left, close tick on right
+ * Convert candles to BarData format for CVD OHLC bars
+ * Values are inverted (negated) for display
  */
-function candlesToOhlcData(candles: CandleTuple[]): BarData[] {
+function candlesToCvdOhlc(candles: CandleTuple[]): BarData[] {
   return candles.map((candle) => ({
-    time: (candle[0] / 1000) as Time, // Convert ms to seconds
-    open: candle[1],
-    high: candle[2],
-    low: candle[3],
-    close: candle[4],
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: -candle[IDX.CVD_OPEN],
+    high: -candle[IDX.CVD_LOW], // Inverted: low becomes high
+    low: -candle[IDX.CVD_HIGH], // Inverted: high becomes low
+    close: -candle[IDX.CVD_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for EVR OHLC bars
+ */
+function candlesToEvrOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.EVR_OPEN],
+    high: candle[IDX.EVR_HIGH],
+    low: candle[IDX.EVR_LOW],
+    close: candle[IDX.EVR_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for SMP OHLC bars
+ */
+function candlesToSmpOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.SMP_OPEN],
+    high: candle[IDX.SMP_HIGH],
+    low: candle[IDX.SMP_LOW],
+    close: candle[IDX.SMP_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for VWAP OHLC bars
+ */
+function candlesToVwapOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.VWAP_OPEN],
+    high: candle[IDX.VWAP_HIGH],
+    low: candle[IDX.VWAP_LOW],
+    close: candle[IDX.VWAP_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for VD_RATIO OHLC bars
+ */
+function candlesToVdRatioOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.VD_RATIO_OPEN],
+    high: candle[IDX.VD_RATIO_HIGH],
+    low: candle[IDX.VD_RATIO_LOW],
+    close: candle[IDX.VD_RATIO_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for SPREAD_BPS OHLC bars
+ */
+function candlesToSpreadBpsOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.SPREAD_BPS_OPEN],
+    high: candle[IDX.SPREAD_BPS_HIGH],
+    low: candle[IDX.SPREAD_BPS_LOW],
+    close: candle[IDX.SPREAD_BPS_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to BarData format for PRICE_PCT OHLC bars
+ */
+function candlesToPricePctOhlc(candles: CandleTuple[]): BarData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    open: candle[IDX.PRICE_PCT_OPEN],
+    high: candle[IDX.PRICE_PCT_HIGH],
+    low: candle[IDX.PRICE_PCT_LOW],
+    close: candle[IDX.PRICE_PCT_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to LineData format for book_imbalance_close
+ */
+function candlesToBookImbalanceData(candles: CandleTuple[]): LineData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    value: candle[IDX.BOOK_IMBALANCE_CLOSE],
+  }))
+}
+
+/**
+ * Convert candles to LineData format for big_trades
+ */
+function candlesToBigTradesData(candles: CandleTuple[]): LineData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    value: candle[IDX.BIG_TRADES],
+  }))
+}
+
+/**
+ * Convert candles to LineData format for big_volume
+ */
+function candlesToBigVolumeData(candles: CandleTuple[]): LineData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    value: candle[IDX.BIG_VOLUME],
+  }))
+}
+
+/**
+ * Convert candles to LineData format for divergence
+ */
+function candlesToDivergenceData(candles: CandleTuple[]): LineData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    value: candle[IDX.DIVERGENCE],
+  }))
+}
+
+/**
+ * Convert candles to LineData format for vd_strength
+ */
+function candlesToVdStrengthData(candles: CandleTuple[]): LineData[] {
+  return candles.map((candle) => ({
+    time: (candle[IDX.TIMESTAMP] / 1000) as Time,
+    value: candle[IDX.VD_STRENGTH],
   }))
 }
 
@@ -93,7 +315,7 @@ function calculateRSI(
     const current = candles[i]
     const previous = candles[i - 1]
     if (current && previous) {
-      changes.push(current[4] - previous[4]) // Close price difference
+      changes.push(current[IDX.CLOSE] - previous[IDX.CLOSE]) // Close price difference
     }
   }
 
@@ -127,7 +349,7 @@ function calculateRSI(
   const firstCandle = candles[period]
   if (firstCandle) {
     result.push({
-      time: (firstCandle[0] / 1000) as Time,
+      time: (firstCandle[IDX.TIMESTAMP] / 1000) as Time,
       value: firstRSI,
     })
   }
@@ -155,7 +377,7 @@ function calculateRSI(
     const candle = candles[i + 1]
     if (candle) {
       result.push({
-        time: (candle[0] / 1000) as Time,
+        time: (candle[IDX.TIMESTAMP] / 1000) as Time,
         value: rsi,
       })
     }
@@ -181,14 +403,31 @@ interface ChartProps {
 export function Chart({ width, height }: ChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const priceSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const cvdSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const dataRef = useRef<CandleTuple[]>([])
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const isPollingRef = useRef(false)
   const hasStartedPollingRef = useRef(false)
   const hasInitialized = useRef(false)
+
+  // Main series refs
+  const priceSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const cvdSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+
+  // OHLC bar series refs
+  const evrSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const smpSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const vwapSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const vdRatioSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const spreadBpsSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+  const pricePctSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
+
+  // Line series refs
+  const bookImbalanceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const bigTradesSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const bigVolumeSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const divergenceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const vdStrengthSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -206,29 +445,63 @@ export function Chart({ width, height }: ChartProps) {
   }, [])
 
   const updateChartData = useCallback((candles: CandleTuple[]) => {
-    if (!priceSeriesRef.current || !cvdSeriesRef.current) return
+    // Update price series
+    if (priceSeriesRef.current) {
+      priceSeriesRef.current.setData(candlesToPriceOhlc(candles))
+    }
 
-    // Convert candles to OHLC data for price
-    const priceData = candlesToOhlcData(candles)
+    // Update CVD series (OHLC bars)
+    if (cvdSeriesRef.current) {
+      cvdSeriesRef.current.setData(candlesToCvdOhlc(candles))
+    }
 
-    // Convert candles to CVD data
-    const cvdData = candlesToCvdData(candles)
-
-    // Calculate RSI data
-    const rsiData = calculateRSI(candles, RSI_PERIOD)
-
-    // Update all series
-    priceSeriesRef.current.setData(priceData)
-    cvdSeriesRef.current.setData(cvdData)
+    // Update RSI
     if (rsiSeriesRef.current) {
-      rsiSeriesRef.current.setData(rsiData)
+      rsiSeriesRef.current.setData(calculateRSI(candles, RSI_PERIOD))
+    }
+
+    // Update OHLC bar series
+    if (evrSeriesRef.current) {
+      evrSeriesRef.current.setData(candlesToEvrOhlc(candles))
+    }
+    if (smpSeriesRef.current) {
+      smpSeriesRef.current.setData(candlesToSmpOhlc(candles))
+    }
+    if (vwapSeriesRef.current) {
+      vwapSeriesRef.current.setData(candlesToVwapOhlc(candles))
+    }
+    if (vdRatioSeriesRef.current) {
+      vdRatioSeriesRef.current.setData(candlesToVdRatioOhlc(candles))
+    }
+    if (spreadBpsSeriesRef.current) {
+      spreadBpsSeriesRef.current.setData(candlesToSpreadBpsOhlc(candles))
+    }
+    if (pricePctSeriesRef.current) {
+      pricePctSeriesRef.current.setData(candlesToPricePctOhlc(candles))
+    }
+
+    // Update line series
+    if (bookImbalanceSeriesRef.current) {
+      bookImbalanceSeriesRef.current.setData(
+        candlesToBookImbalanceData(candles)
+      )
+    }
+    if (bigTradesSeriesRef.current) {
+      bigTradesSeriesRef.current.setData(candlesToBigTradesData(candles))
+    }
+    if (bigVolumeSeriesRef.current) {
+      bigVolumeSeriesRef.current.setData(candlesToBigVolumeData(candles))
+    }
+    if (divergenceSeriesRef.current) {
+      divergenceSeriesRef.current.setData(candlesToDivergenceData(candles))
+    }
+    if (vdStrengthSeriesRef.current) {
+      vdStrengthSeriesRef.current.setData(candlesToVdStrengthData(candles))
     }
   }, [])
 
   const applyRecentCandles = useCallback(
     (recentCandles: CandleTuple[]) => {
-      if (!priceSeriesRef.current || !cvdSeriesRef.current) return
-
       const existing = dataRef.current
       if (existing.length === 0) {
         dataRef.current = recentCandles
@@ -242,17 +515,20 @@ export function Chart({ width, height }: ChartProps) {
       for (let i = startIndex; i < existing.length; i += 1) {
         const candle = existing[i]
         if (!candle) continue
-        indexByTime.set(candle[0], i)
+        indexByTime.set(candle[IDX.TIMESTAMP], i)
       }
 
       let didUpdate = false
 
       for (const candle of recentCandles) {
-        const existingIndex = indexByTime.get(candle[0])
+        const existingIndex = indexByTime.get(candle[IDX.TIMESTAMP])
         if (existingIndex !== undefined) {
           // Update existing candle if different
           const existingCandle = existing[existingIndex]
-          if (existingCandle && existingCandle[4] !== candle[4]) {
+          if (
+            existingCandle &&
+            existingCandle[IDX.CLOSE] !== candle[IDX.CLOSE]
+          ) {
             existing[existingIndex] = candle
             didUpdate = true
           }
@@ -261,7 +537,10 @@ export function Chart({ width, height }: ChartProps) {
 
         // Add new candle if it's newer than the last one
         const lastExisting = existing[existing.length - 1]
-        if (lastExisting && candle[0] > lastExisting[0]) {
+        if (
+          lastExisting &&
+          candle[IDX.TIMESTAMP] > lastExisting[IDX.TIMESTAMP]
+        ) {
           existing.push(candle)
           didUpdate = true
         }
@@ -363,64 +642,266 @@ export function Chart({ width, height }: ChartProps) {
     chartRef.current = chart
     hasInitialized.current = true
 
-    // Add CVD series first (left axis - separate scale, top 50%)
+    // ========== MAIN SERIES ==========
+
+    // Add CVD series as OHLC bars (left axis - separate scale)
     // Added first so it renders behind price
-    const cvdSeries = chart.addSeries(LineSeries, {
-      color: COLORS.cvd,
-      lineWidth: 1,
-      priceScaleId: 'left',
-      crosshairMarkerVisible: true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    })
-    // Position CVD at the top 50% of the chart
-    cvdSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.2,
-        bottom: 0.3, // End at 50% from bottom
-      },
-      autoScale: true,
-    })
-    cvdSeriesRef.current = cvdSeries
+    if (SERIES.cvd.enabled) {
+      const cvdSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.cvd,
+        downColor: COLORS.cvd,
+        priceScaleId: 'left',
+        priceLineVisible: false,
+        lastValueVisible: true,
+      })
+      cvdSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.cvd.top, bottom: SERIES.cvd.bottom },
+        autoScale: true,
+      })
+      cvdSeriesRef.current = cvdSeries
+    }
 
-    // Add price series as OHLC bars (right axis - middle 50%)
-    // Renders as vertical bar (low to high) with open tick on left, close tick on right
-    const priceSeries = chart.addSeries(BarSeries, {
-      upColor: COLORS.price,
-      downColor: COLORS.price,
-      priceScaleId: 'right',
-      priceLineVisible: false,
-      lastValueVisible: true,
-    })
-    // Position price in the top 75% of the chart
-    priceSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0,
-        bottom: 0.25,
-      },
-      autoScale: true,
-    })
-    priceSeriesRef.current = priceSeries
+    // Add price series as OHLC bars (right axis)
+    if (SERIES.price.enabled) {
+      const priceSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.price,
+        downColor: COLORS.price,
+        priceScaleId: 'right',
+        priceLineVisible: false,
+        lastValueVisible: true,
+      })
+      priceSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.price.top, bottom: SERIES.price.bottom },
+        autoScale: true,
+      })
+      priceSeriesRef.current = priceSeries
+    }
 
-    // Add RSI series (overlay scale - hidden axis, positioned at bottom)
-    // Using a unique priceScaleId creates a separate overlay scale
-    const rsiSeries = chart.addSeries(LineSeries, {
-      color: COLORS.rsi,
-      lineWidth: 1,
-      priceScaleId: 'rsi', // Unique ID for overlay scale (no visible axis)
-      crosshairMarkerVisible: true,
-      priceLineVisible: false,
-      lastValueVisible: true,
-    })
-    // Position RSI at the bottom 50% of the chart
-    rsiSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.6, // Start at 50% from top
-        bottom: 0, // End at bottom
-      },
-      autoScale: true,
-    })
-    rsiSeriesRef.current = rsiSeries
+    // RSI series (overlay)
+    if (SERIES.rsi.enabled) {
+      const rsiSeries = chart.addSeries(LineSeries, {
+        color: COLORS.rsi,
+        lineWidth: 1,
+        priceScaleId: 'rsi',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      rsiSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.rsi.top, bottom: SERIES.rsi.bottom },
+        autoScale: true,
+      })
+      rsiSeriesRef.current = rsiSeries
+    }
+
+    // ========== ADDITIONAL OHLC BAR SERIES ==========
+
+    // EVR OHLC bars
+    if (SERIES.evr.enabled) {
+      const evrSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.evr,
+        downColor: COLORS.evr,
+        priceScaleId: 'evr',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      evrSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.evr.top, bottom: SERIES.evr.bottom },
+        autoScale: true,
+      })
+      evrSeriesRef.current = evrSeries
+    }
+
+    // SMP OHLC bars
+    if (SERIES.smp.enabled) {
+      const smpSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.smp,
+        downColor: COLORS.smp,
+        priceScaleId: 'smp',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      smpSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.smp.top, bottom: SERIES.smp.bottom },
+        autoScale: true,
+      })
+      smpSeriesRef.current = smpSeries
+    }
+
+    // VWAP OHLC bars
+    if (SERIES.vwap.enabled) {
+      const vwapSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.vwap,
+        downColor: COLORS.vwap,
+        priceScaleId: 'vwap',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      vwapSeries.priceScale().applyOptions({
+        scaleMargins: { top: SERIES.vwap.top, bottom: SERIES.vwap.bottom },
+        autoScale: true,
+      })
+      vwapSeriesRef.current = vwapSeries
+    }
+
+    // VD_RATIO OHLC bars
+    if (SERIES.vdRatio.enabled) {
+      const vdRatioSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.vdRatio,
+        downColor: COLORS.vdRatio,
+        priceScaleId: 'vdRatio',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      vdRatioSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.vdRatio.top,
+          bottom: SERIES.vdRatio.bottom,
+        },
+        autoScale: true,
+      })
+      vdRatioSeriesRef.current = vdRatioSeries
+    }
+
+    // SPREAD_BPS OHLC bars
+    if (SERIES.spreadBps.enabled) {
+      const spreadBpsSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.spreadBps,
+        downColor: COLORS.spreadBps,
+        priceScaleId: 'spreadBps',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      spreadBpsSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.spreadBps.top,
+          bottom: SERIES.spreadBps.bottom,
+        },
+        autoScale: true,
+      })
+      spreadBpsSeriesRef.current = spreadBpsSeries
+    }
+
+    // PRICE_PCT OHLC bars
+    if (SERIES.pricePct.enabled) {
+      const pricePctSeries = chart.addSeries(BarSeries, {
+        upColor: COLORS.pricePct,
+        downColor: COLORS.pricePct,
+        priceScaleId: 'pricePct',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      pricePctSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.pricePct.top,
+          bottom: SERIES.pricePct.bottom,
+        },
+        autoScale: true,
+      })
+      pricePctSeriesRef.current = pricePctSeries
+    }
+
+    // ========== LINE SERIES ==========
+
+    // Book Imbalance line
+    if (SERIES.bookImbalance.enabled) {
+      const bookImbalanceSeries = chart.addSeries(LineSeries, {
+        color: COLORS.bookImbalance,
+        lineWidth: 1,
+        priceScaleId: 'bookImbalance',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      bookImbalanceSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.bookImbalance.top,
+          bottom: SERIES.bookImbalance.bottom,
+        },
+        autoScale: true,
+      })
+      bookImbalanceSeriesRef.current = bookImbalanceSeries
+    }
+
+    // Big Trades line
+    if (SERIES.bigTrades.enabled) {
+      const bigTradesSeries = chart.addSeries(LineSeries, {
+        color: COLORS.bigTrades,
+        lineWidth: 1,
+        priceScaleId: 'bigTrades',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      bigTradesSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.bigTrades.top,
+          bottom: SERIES.bigTrades.bottom,
+        },
+        autoScale: true,
+      })
+      bigTradesSeriesRef.current = bigTradesSeries
+    }
+
+    // Big Volume line
+    if (SERIES.bigVolume.enabled) {
+      const bigVolumeSeries = chart.addSeries(LineSeries, {
+        color: COLORS.bigVolume,
+        lineWidth: 1,
+        priceScaleId: 'bigVolume',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      bigVolumeSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.bigVolume.top,
+          bottom: SERIES.bigVolume.bottom,
+        },
+        autoScale: true,
+      })
+      bigVolumeSeriesRef.current = bigVolumeSeries
+    }
+
+    // Divergence line
+    if (SERIES.divergence.enabled) {
+      const divergenceSeries = chart.addSeries(LineSeries, {
+        color: COLORS.divergence,
+        lineWidth: 1,
+        priceScaleId: 'divergence',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      divergenceSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.divergence.top,
+          bottom: SERIES.divergence.bottom,
+        },
+        autoScale: true,
+      })
+      divergenceSeriesRef.current = divergenceSeries
+    }
+
+    // VD Strength line
+    if (SERIES.vdStrength.enabled) {
+      const vdStrengthSeries = chart.addSeries(LineSeries, {
+        color: COLORS.vdStrength,
+        lineWidth: 1,
+        priceScaleId: 'vdStrength',
+        crosshairMarkerVisible: true,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      vdStrengthSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: SERIES.vdStrength.top,
+          bottom: SERIES.vdStrength.bottom,
+        },
+        autoScale: true,
+      })
+      vdStrengthSeriesRef.current = vdStrengthSeries
+    }
 
     // Custom zoom handler anchored on the last data bar
     // Requires cmd (Mac) or ctrl (Windows) + scroll to zoom
@@ -485,9 +966,23 @@ export function Chart({ width, height }: ChartProps) {
       container.removeEventListener('wheel', handleWheel, { capture: true })
       chart.remove()
       chartRef.current = null
+      // Main series
       priceSeriesRef.current = null
       cvdSeriesRef.current = null
       rsiSeriesRef.current = null
+      // OHLC bar series
+      evrSeriesRef.current = null
+      smpSeriesRef.current = null
+      vwapSeriesRef.current = null
+      vdRatioSeriesRef.current = null
+      spreadBpsSeriesRef.current = null
+      pricePctSeriesRef.current = null
+      // Line series
+      bookImbalanceSeriesRef.current = null
+      bigTradesSeriesRef.current = null
+      bigVolumeSeriesRef.current = null
+      divergenceSeriesRef.current = null
+      vdStrengthSeriesRef.current = null
       hasInitialized.current = false
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps

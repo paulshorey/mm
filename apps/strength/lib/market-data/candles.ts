@@ -70,15 +70,66 @@ function resolveTimeframe(
   return selectTimeframe(startMs, endMs)
 }
 
-// [timestamp_ms, open, high, low, close, volume, cvd_close]
+/**
+ * Candle data tuple format with all metrics
+ *
+ * Index mapping:
+ * - 0: timestamp_ms
+ * - 1-4: price OHLC (open, high, low, close)
+ * - 5: volume
+ * - 6-9: cvd OHLC (cvd_open, cvd_high, cvd_low, cvd_close)
+ * - 10-13: evr OHLC (evr_open, evr_high, evr_low, evr_close)
+ * - 14-17: smp OHLC (smp_open, smp_high, smp_low, smp_close)
+ * - 18-21: vwap OHLC (vwap_open, vwap_high, vwap_low, vwap_close)
+ * - 22-25: vd_ratio OHLC (vd_ratio_open, vd_ratio_high, vd_ratio_low, vd_ratio_close)
+ * - 26-29: spread_bps OHLC (spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close)
+ * - 30-33: price_pct OHLC (price_pct_open, price_pct_high, price_pct_low, price_pct_close)
+ * - 34: book_imbalance_close
+ * - 35: big_trades
+ * - 36: big_volume
+ * - 37: divergence
+ * - 38: vd_strength
+ */
 export type CandleTuple = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
+  number, // 0: timestamp_ms
+  number, // 1: open
+  number, // 2: high
+  number, // 3: low
+  number, // 4: close
+  number, // 5: volume
+  number, // 6: cvd_open
+  number, // 7: cvd_high
+  number, // 8: cvd_low
+  number, // 9: cvd_close
+  number, // 10: evr_open
+  number, // 11: evr_high
+  number, // 12: evr_low
+  number, // 13: evr_close
+  number, // 14: smp_open
+  number, // 15: smp_high
+  number, // 16: smp_low
+  number, // 17: smp_close
+  number, // 18: vwap_open
+  number, // 19: vwap_high
+  number, // 20: vwap_low
+  number, // 21: vwap_close
+  number, // 22: vd_ratio_open
+  number, // 23: vd_ratio_high
+  number, // 24: vd_ratio_low
+  number, // 25: vd_ratio_close
+  number, // 26: spread_bps_open
+  number, // 27: spread_bps_high
+  number, // 28: spread_bps_low
+  number, // 29: spread_bps_close
+  number, // 30: price_pct_open
+  number, // 31: price_pct_high
+  number, // 32: price_pct_low
+  number, // 33: price_pct_close
+  number, // 34: book_imbalance_close
+  number, // 35: big_trades
+  number, // 36: big_volume
+  number, // 37: divergence
+  number, // 38: vd_strength
 ]
 
 export interface CandlesResult {
@@ -169,8 +220,22 @@ export async function getCandles(
   // Build query - table name uses double quotes due to dash in "candles-1m"
   const whereParts: string[] = ['ticker = $1', 'time >= $2', 'time <= $3']
   const params: Array<string | number> = [ticker, startISO, endISO]
+
+  // Select all metrics columns
+  const columns = `
+    time, open, high, low, close, volume,
+    cvd_open, cvd_high, cvd_low, cvd_close,
+    evr_open, evr_high, evr_low, evr_close,
+    smp_open, smp_high, smp_low, smp_close,
+    vwap_open, vwap_high, vwap_low, vwap_close,
+    vd_ratio_open, vd_ratio_high, vd_ratio_low, vd_ratio_close,
+    spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close,
+    price_pct_open, price_pct_high, price_pct_low, price_pct_close,
+    book_imbalance_close, big_trades, big_volume, divergence, vd_strength
+  `
+
   let query = `
-    SELECT time, open, high, low, close, volume, cvd_close
+    SELECT ${columns}
     FROM "${timeframe.table}"
     WHERE ${whereParts.join(' AND ')}
   `
@@ -179,7 +244,7 @@ export async function getCandles(
     params.push(normalizedLimit)
     const limitParam = `$${params.length}`
     query = `
-      SELECT time, open, high, low, close, volume, cvd_close
+      SELECT ${columns}
       FROM (
         ${query}
         ORDER BY time DESC
@@ -196,15 +261,47 @@ export async function getCandles(
 
   const result = await db.query(query, params)
 
-  // Convert to tuple format: [timestamp_ms, open, high, low, close, volume, cvd_close]
+  // Convert to tuple format with all metrics (see CandleTuple type for index mapping)
   const candles: CandleTuple[] = result.rows.map((row) => [
-    new Date(row.time).getTime(), // ISO -> Unix ms
-    parseFloat(row.open),
-    parseFloat(row.high),
-    parseFloat(row.low),
-    parseFloat(row.close),
-    parseFloat(row.volume),
-    parseFloat(row.cvd_close ?? 0),
+    new Date(row.time).getTime(), // 0: timestamp_ms
+    parseFloat(row.open), // 1: open
+    parseFloat(row.high), // 2: high
+    parseFloat(row.low), // 3: low
+    parseFloat(row.close), // 4: close
+    parseFloat(row.volume), // 5: volume
+    parseFloat(row.cvd_open ?? 0), // 6: cvd_open
+    parseFloat(row.cvd_high ?? 0), // 7: cvd_high
+    parseFloat(row.cvd_low ?? 0), // 8: cvd_low
+    parseFloat(row.cvd_close ?? 0), // 9: cvd_close
+    parseFloat(row.evr_open ?? 0), // 10: evr_open
+    parseFloat(row.evr_high ?? 0), // 11: evr_high
+    parseFloat(row.evr_low ?? 0), // 12: evr_low
+    parseFloat(row.evr_close ?? 0), // 13: evr_close
+    parseFloat(row.smp_open ?? 0), // 14: smp_open
+    parseFloat(row.smp_high ?? 0), // 15: smp_high
+    parseFloat(row.smp_low ?? 0), // 16: smp_low
+    parseFloat(row.smp_close ?? 0), // 17: smp_close
+    parseFloat(row.vwap_open ?? 0), // 18: vwap_open
+    parseFloat(row.vwap_high ?? 0), // 19: vwap_high
+    parseFloat(row.vwap_low ?? 0), // 20: vwap_low
+    parseFloat(row.vwap_close ?? 0), // 21: vwap_close
+    parseFloat(row.vd_ratio_open ?? 0), // 22: vd_ratio_open
+    parseFloat(row.vd_ratio_high ?? 0), // 23: vd_ratio_high
+    parseFloat(row.vd_ratio_low ?? 0), // 24: vd_ratio_low
+    parseFloat(row.vd_ratio_close ?? 0), // 25: vd_ratio_close
+    parseFloat(row.spread_bps_open ?? 0), // 26: spread_bps_open
+    parseFloat(row.spread_bps_high ?? 0), // 27: spread_bps_high
+    parseFloat(row.spread_bps_low ?? 0), // 28: spread_bps_low
+    parseFloat(row.spread_bps_close ?? 0), // 29: spread_bps_close
+    parseFloat(row.price_pct_open ?? 0), // 30: price_pct_open
+    parseFloat(row.price_pct_high ?? 0), // 31: price_pct_high
+    parseFloat(row.price_pct_low ?? 0), // 32: price_pct_low
+    parseFloat(row.price_pct_close ?? 0), // 33: price_pct_close
+    parseFloat(row.book_imbalance_close ?? 0), // 34: book_imbalance_close
+    parseFloat(row.big_trades ?? 0), // 35: big_trades
+    parseFloat(row.big_volume ?? 0), // 36: big_volume
+    parseFloat(row.divergence ?? 0), // 37: divergence
+    parseFloat(row.vd_strength ?? 0), // 38: vd_strength
   ])
 
   return {
