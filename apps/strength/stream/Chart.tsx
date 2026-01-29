@@ -13,7 +13,7 @@ import {
 } from 'lightweight-charts'
 import { useChartEventPatcher } from './useChartEventPatcher'
 
-// Type for candle data from API: [timestamp_ms, open, high, low, close, volume, cvd]
+// Type for candle data from API: [timestamp_ms, open, high, low, close, volume, cvd_close]
 type CandleTuple = [number, number, number, number, number, number, number]
 
 // Configuration
