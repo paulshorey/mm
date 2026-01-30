@@ -79,16 +79,13 @@ function resolveTimeframe(
  * - 5: volume
  * - 6-9: cvd OHLC (cvd_open, cvd_high, cvd_low, cvd_close)
  * - 10-13: evr OHLC (evr_open, evr_high, evr_low, evr_close)
- * - 14-17: smp OHLC (smp_open, smp_high, smp_low, smp_close)
- * - 18-21: vwap OHLC (vwap_open, vwap_high, vwap_low, vwap_close)
- * - 22-25: vd_ratio OHLC (vd_ratio_open, vd_ratio_high, vd_ratio_low, vd_ratio_close)
- * - 26-29: spread_bps OHLC (spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close)
- * - 30-33: price_pct OHLC (price_pct_open, price_pct_high, price_pct_low, price_pct_close)
- * - 34: book_imbalance_close
- * - 35: big_trades
- * - 36: big_volume
- * - 37: divergence
- * - 38: vd_strength
+ * - 14-17: vwap OHLC (vwap_open, vwap_high, vwap_low, vwap_close)
+ * - 18-21: spread_bps OHLC (spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close)
+ * - 22-25: price_pct OHLC (price_pct_open, price_pct_high, price_pct_low, price_pct_close)
+ * - 26: book_imbalance_close
+ * - 27: big_trades
+ * - 28: big_volume
+ * - 29: vd_strength
  */
 export type CandleTuple = [
   number, // 0: timestamp_ms
@@ -105,31 +102,22 @@ export type CandleTuple = [
   number, // 11: evr_high
   number, // 12: evr_low
   number, // 13: evr_close
-  number, // 14: smp_open
-  number, // 15: smp_high
-  number, // 16: smp_low
-  number, // 17: smp_close
-  number, // 18: vwap_open
-  number, // 19: vwap_high
-  number, // 20: vwap_low
-  number, // 21: vwap_close
-  number, // 22: vd_ratio_open
-  number, // 23: vd_ratio_high
-  number, // 24: vd_ratio_low
-  number, // 25: vd_ratio_close
-  number, // 26: spread_bps_open
-  number, // 27: spread_bps_high
-  number, // 28: spread_bps_low
-  number, // 29: spread_bps_close
-  number, // 30: price_pct_open
-  number, // 31: price_pct_high
-  number, // 32: price_pct_low
-  number, // 33: price_pct_close
-  number, // 34: book_imbalance_close
-  number, // 35: big_trades
-  number, // 36: big_volume
-  number, // 37: divergence
-  number, // 38: vd_strength
+  number, // 14: vwap_open
+  number, // 15: vwap_high
+  number, // 16: vwap_low
+  number, // 17: vwap_close
+  number, // 18: spread_bps_open
+  number, // 19: spread_bps_high
+  number, // 20: spread_bps_low
+  number, // 21: spread_bps_close
+  number, // 22: price_pct_open
+  number, // 23: price_pct_high
+  number, // 24: price_pct_low
+  number, // 25: price_pct_close
+  number, // 26: book_imbalance_close
+  number, // 27: big_trades
+  number, // 28: big_volume
+  number, // 29: vd_strength
 ]
 
 export interface CandlesResult {
@@ -226,12 +214,10 @@ export async function getCandles(
     time, open, high, low, close, volume,
     cvd_open, cvd_high, cvd_low, cvd_close,
     evr_open, evr_high, evr_low, evr_close,
-    smp_open, smp_high, smp_low, smp_close,
     vwap_open, vwap_high, vwap_low, vwap_close,
-    vd_ratio_open, vd_ratio_high, vd_ratio_low, vd_ratio_close,
     spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close,
     price_pct_open, price_pct_high, price_pct_low, price_pct_close,
-    book_imbalance_close, big_trades, big_volume, divergence, vd_strength
+    book_imbalance_close, big_trades, big_volume, vd_strength
   `
 
   let query = `
@@ -277,31 +263,22 @@ export async function getCandles(
     parseFloat(row.evr_high ?? 0), // 11: evr_high
     parseFloat(row.evr_low ?? 0), // 12: evr_low
     parseFloat(row.evr_close ?? 0), // 13: evr_close
-    parseFloat(row.smp_open ?? 0), // 14: smp_open
-    parseFloat(row.smp_high ?? 0), // 15: smp_high
-    parseFloat(row.smp_low ?? 0), // 16: smp_low
-    parseFloat(row.smp_close ?? 0), // 17: smp_close
-    parseFloat(row.vwap_open ?? 0), // 18: vwap_open
-    parseFloat(row.vwap_high ?? 0), // 19: vwap_high
-    parseFloat(row.vwap_low ?? 0), // 20: vwap_low
-    parseFloat(row.vwap_close ?? 0), // 21: vwap_close
-    parseFloat(row.vd_ratio_open ?? 0), // 22: vd_ratio_open
-    parseFloat(row.vd_ratio_high ?? 0), // 23: vd_ratio_high
-    parseFloat(row.vd_ratio_low ?? 0), // 24: vd_ratio_low
-    parseFloat(row.vd_ratio_close ?? 0), // 25: vd_ratio_close
-    parseFloat(row.spread_bps_open ?? 0), // 26: spread_bps_open
-    parseFloat(row.spread_bps_high ?? 0), // 27: spread_bps_high
-    parseFloat(row.spread_bps_low ?? 0), // 28: spread_bps_low
-    parseFloat(row.spread_bps_close ?? 0), // 29: spread_bps_close
-    parseFloat(row.price_pct_open ?? 0), // 30: price_pct_open
-    parseFloat(row.price_pct_high ?? 0), // 31: price_pct_high
-    parseFloat(row.price_pct_low ?? 0), // 32: price_pct_low
-    parseFloat(row.price_pct_close ?? 0), // 33: price_pct_close
-    parseFloat(row.book_imbalance_close ?? 0), // 34: book_imbalance_close
-    parseFloat(row.big_trades ?? 0), // 35: big_trades
-    parseFloat(row.big_volume ?? 0), // 36: big_volume
-    parseFloat(row.divergence ?? 0), // 37: divergence
-    parseFloat(row.vd_strength ?? 0), // 38: vd_strength
+    parseFloat(row.vwap_open ?? 0), // 14: vwap_open
+    parseFloat(row.vwap_high ?? 0), // 15: vwap_high
+    parseFloat(row.vwap_low ?? 0), // 16: vwap_low
+    parseFloat(row.vwap_close ?? 0), // 17: vwap_close
+    parseFloat(row.spread_bps_open ?? 0), // 18: spread_bps_open
+    parseFloat(row.spread_bps_high ?? 0), // 19: spread_bps_high
+    parseFloat(row.spread_bps_low ?? 0), // 20: spread_bps_low
+    parseFloat(row.spread_bps_close ?? 0), // 21: spread_bps_close
+    parseFloat(row.price_pct_open ?? 0), // 22: price_pct_open
+    parseFloat(row.price_pct_high ?? 0), // 23: price_pct_high
+    parseFloat(row.price_pct_low ?? 0), // 24: price_pct_low
+    parseFloat(row.price_pct_close ?? 0), // 25: price_pct_close
+    parseFloat(row.book_imbalance_close ?? 0), // 26: book_imbalance_close
+    parseFloat(row.big_trades ?? 0), // 27: big_trades
+    parseFloat(row.big_volume ?? 0), // 28: big_volume
+    parseFloat(row.vd_strength ?? 0), // 29: vd_strength
   ])
 
   return {
