@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCandles, TIMEFRAMES } from '@/lib/market-data/candles'
 
+export const dynamic = 'force-dynamic'
+
 // Default date range: 2010-01-01 to now
 const DEFAULT_START_MS = new Date('2010-01-01').getTime()
 

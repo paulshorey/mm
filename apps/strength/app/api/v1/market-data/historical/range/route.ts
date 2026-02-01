@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDateRange } from '@/lib/market-data/candles'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Historical Candles - Date Range
  * Returns the available date range for a ticker

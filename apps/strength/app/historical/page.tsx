@@ -1,6 +1,6 @@
 'use client'
 
-import { SimpleChart } from '../../pages/historical/SimpleChart'
+import { SimpleChart } from '../../features/historical/SimpleChart'
 
 /**
  * Historical Chart Page

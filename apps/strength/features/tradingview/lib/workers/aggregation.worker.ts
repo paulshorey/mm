@@ -43,7 +43,10 @@ function generateFutureTimestamps(
 /**
  * Extend LineData array into the future with the last known value
  */
-function extendDataIntoFuture(lineData: LineData[], hours: number = 12): LineData[] {
+function extendDataIntoFuture(
+  lineData: LineData[],
+  hours: number = 12
+): LineData[] {
   if (lineData.length === 0) return lineData
 
   const result = [...lineData]
@@ -142,7 +145,10 @@ function extractGlobalTimestamps(
 function aggregateStrengthDataWithInterpolation(
   allRawData: (WorkerStrengthRow[] | null)[],
   sortedTimestamps: number[],
-  getStrengthValue: (item: WorkerStrengthRow, intervals: string[]) => number | null,
+  getStrengthValue: (
+    item: WorkerStrengthRow,
+    intervals: string[]
+  ) => number | null,
   controlIntervals: string[]
 ): { time: number; value: number }[] {
   const aggregatedMap = new Map<number, { sum: number; count: number }>()
@@ -248,10 +254,10 @@ function aggregateStrengthData(
 
 /**
  * OPTIMIZED: Process all intervals in a single pass through the data
- * 
+ *
  * Old approach: For each interval, iterate through all data and forward-fill
  * New approach: Single pass extracts ALL interval values, forward-fill once per ticker
- * 
+ *
  * With 7 intervals and 2 tickers:
  * - Old: 14 forward-fill operations
  * - New: 2 forward-fill operations (one per ticker, handling all intervals)
@@ -272,7 +278,10 @@ function aggregateStrengthByInterval(
 
   // Initialize aggregation maps for each interval
   // Map<interval, Map<timestamp, { sum, count }>>
-  const intervalAggregates = new Map<string, Map<number, { sum: number; count: number }>>()
+  const intervalAggregates = new Map<
+    string,
+    Map<number, { sum: number; count: number }>
+  >()
   for (const interval of selectedIntervals) {
     intervalAggregates.set(interval, new Map())
   }
@@ -295,7 +304,8 @@ function aggregateStrengthByInterval(
       for (const interval of selectedIntervals) {
         const value = item[interval]
         if (value !== null && value !== undefined) {
-          const numericValue = typeof value === 'string' ? parseFloat(value) : Number(value)
+          const numericValue =
+            typeof value === 'string' ? parseFloat(value) : Number(value)
           if (Number.isFinite(numericValue)) {
             intervalValues.get(interval)!.set(timestamp, numericValue)
           }
@@ -564,55 +574,67 @@ function aggregatePriceByTicker(
 // WORKER MESSAGE HANDLER
 // ============================================================================
 
-self.onmessage = (event: MessageEvent<AggregationWorkerRequest>) => {
-  const startTime = performance.now()
+const workerScope =
+  typeof self !== 'undefined' && typeof (self as any).postMessage === 'function'
+    ? (self as any)
+    : null
 
-  try {
-    const { type, requestId, dataVersion, payload } = event.data
+// Guarded to avoid ReferenceError when this module is evaluated during SSR/build
+if (workerScope) {
+  workerScope.onmessage = (event: MessageEvent<AggregationWorkerRequest>) => {
+    const startTime = performance.now()
 
-    if (type !== 'aggregate') {
-      throw new Error(`Unknown message type: ${type}`)
+    try {
+      const { type, requestId, dataVersion, payload } = event.data
+
+      if (type !== 'aggregate') {
+        throw new Error(`Unknown message type: ${type}`)
+      }
+
+      const {
+        rawData,
+        intervals,
+        tickers,
+        strengthIntervals: strengthIntervals_all,
+      } = payload
+
+      // Perform all aggregations
+      // Average strength uses selected intervals (user controls what goes into average)
+      const strengthAverage = aggregateStrengthData(rawData, intervals)
+      const priceAverage = aggregatePriceData(rawData)
+      // Individual interval lines: compute ALL intervals (visibility controlled by UI)
+      // This avoids re-aggregation when user changes interval selection
+      const strengthIntervals = aggregateStrengthByInterval(
+        rawData,
+        strengthIntervals_all, // ALL intervals, not just selected
+        strengthIntervals_all
+      )
+      const priceTickers = aggregatePriceByTicker(rawData, tickers)
+
+      const processingTimeMs = performance.now() - startTime
+
+      const response: AggregationWorkerResponse = {
+        type: 'result',
+        requestId, // Echo back the request ID
+        dataVersion, // Echo back the data version for validation
+        payload: {
+          strengthAverage: strengthAverage.length > 0 ? strengthAverage : null,
+          priceAverage: priceAverage.length > 0 ? priceAverage : null,
+          strengthIntervals,
+          priceTickers,
+          processingTimeMs,
+        },
+      }
+
+      workerScope.postMessage(response)
+    } catch (error) {
+      workerScope.postMessage({
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
-
-    const { rawData, intervals, tickers, strengthIntervals: strengthIntervals_all } = payload
-
-    // Perform all aggregations
-    // Average strength uses selected intervals (user controls what goes into average)
-    const strengthAverage = aggregateStrengthData(rawData, intervals)
-    const priceAverage = aggregatePriceData(rawData)
-    // Individual interval lines: compute ALL intervals (visibility controlled by UI)
-    // This avoids re-aggregation when user changes interval selection
-    const strengthIntervals = aggregateStrengthByInterval(
-      rawData,
-      strengthIntervals_all,  // ALL intervals, not just selected
-      strengthIntervals_all
-    )
-    const priceTickers = aggregatePriceByTicker(rawData, tickers)
-
-    const processingTimeMs = performance.now() - startTime
-
-    const response: AggregationWorkerResponse = {
-      type: 'result',
-      requestId, // Echo back the request ID
-      dataVersion, // Echo back the data version for validation
-      payload: {
-        strengthAverage: strengthAverage.length > 0 ? strengthAverage : null,
-        priceAverage: priceAverage.length > 0 ? priceAverage : null,
-        strengthIntervals,
-        priceTickers,
-        processingTimeMs,
-      },
-    }
-
-    self.postMessage(response)
-  } catch (error) {
-    self.postMessage({
-      type: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
   }
 }
 
 // Export empty object to make TypeScript happy (worker files need this)
 export {}
-
