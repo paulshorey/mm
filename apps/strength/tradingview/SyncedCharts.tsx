@@ -538,16 +538,31 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
 
   /**
    * Effect: Calculate time range when data is ready
+   * 
+   * IMPORTANT: Do NOT update timeRange when:
+   * - Polling is paused (user is viewing historical data)
+   * - Historical data was just loaded (would cause chart to jump)
+   * 
+   * Only update timeRange when:
+   * - Initial data load (timeRange is null)
+   * - User changes hoursBack setting
+   * - Real-time data arrives (polling is active)
    */
   useEffect(() => {
     if (!chartData.strengthAverage || chartData.strengthAverage.length === 0)
       return
 
+    // Don't recalculate time range when polling is paused
+    // This prevents the chart from jumping when historical data is loaded
+    if (pollingPaused) {
+      return
+    }
+
     const newRange = calculateTimeRange(rawData, parseInt(hoursBack))
     if (newRange && newRange.from < newRange.to) {
       setTimeRange(newRange)
     }
-  }, [hoursBack, rawData, chartData.strengthAverage, setTimeRange])
+  }, [hoursBack, rawData, chartData.strengthAverage, setTimeRange, pollingPaused])
 
   /**
    * Determine what to render based on state
