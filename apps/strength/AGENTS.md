@@ -18,8 +18,10 @@ Inside:
 - price - /price page - will display new improved chart using highcharts library
 - page.tsx - / homepage - renders old (current version) chart using lightweight-charts
 - components - React components for the new
-- features - client-only chart code (tradingview, stream, historical). This was
-  moved out of /pages to avoid Next.js treating helper files as routes.
+- features - client-only chart code, moved out of /pages to avoid Next.js treating helper files as routes
+  - stream - real-time data streaming
+  - historical - historical data fetching
+  - tradingview - TradingView/lightweight-charts integration
 
 ## Configuration
 
