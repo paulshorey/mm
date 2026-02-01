@@ -215,7 +215,15 @@ export function useStrengthData({
    */
   const fetchHistoricalDataBefore = useCallback(
     async (beforeDate: Date, minutes: number) => {
-      if (!isMountedRef.current || currentTickersRef.current.length === 0) return
+      if (!isMountedRef.current) {
+        console.log('[useStrengthData] Component unmounted, skipping historical fetch')
+        return
+      }
+      
+      if (currentTickersRef.current.length === 0) {
+        console.log('[useStrengthData] No tickers selected, skipping historical fetch')
+        return
+      }
 
       // Prevent duplicate concurrent fetches
       if (isFetchingHistoricalRef.current) {
@@ -232,7 +240,7 @@ export function useStrengthData({
         const fromDate = new Date(toDate.getTime() - minutes * 60 * 1000)
 
         console.log(
-          `[useStrengthData] Fetching historical data: ${fromDate.toISOString()} to ${toDate.toISOString()} (${minutes} minutes)`
+          `[useStrengthData] Fetching historical data: ${fromDate.toISOString()} to ${toDate.toISOString()} (${minutes} minutes / ${Math.round(minutes/60)} hours)`
         )
 
         const historicalTickerData =
@@ -294,11 +302,14 @@ export function useStrengthData({
           return mergedData
         })
 
-        console.log('[useStrengthData] Historical data fetched and merged')
+        console.log(
+          `[useStrengthData] Historical data fetched and merged. New earliest: ${earliestDataTimestampRef.current?.toISOString() || 'unknown'}`
+        )
       } catch (err) {
-        console.error('Error fetching historical data:', err)
+        console.error('[useStrengthData] Error fetching historical data:', err)
         // Don't set error state - keep showing existing data
       } finally {
+        console.log('[useStrengthData] Historical fetch complete, resetting loading state')
         isFetchingHistoricalRef.current = false
         setIsLoadingHistorical(false)
       }

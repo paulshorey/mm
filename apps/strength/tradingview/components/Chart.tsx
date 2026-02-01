@@ -796,17 +796,20 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         // barsBefore tells us how many bars exist before the visible area
         const now = Date.now()
         const timeSinceLastLoad = now - lastLazyLoadTimeRef.current
-        const LAZY_LOAD_COOLDOWN_MS = 3000 // 3 second cooldown between loads
+        const LAZY_LOAD_COOLDOWN_MS = 2000 // 2 second cooldown between loads
         
-        if (
-          barsInfo.barsBefore !== null &&
-          barsInfo.barsBefore < LAZY_LOAD_BARS_THRESHOLD &&
-          !isLoadingHistoricalRef.current &&
-          timeSinceLastLoad > LAZY_LOAD_COOLDOWN_MS
-        ) {
-          // User scrolled near the beginning - request more history
-          lastLazyLoadTimeRef.current = now
-          onNeedMoreHistoryRef.current?.()
+        if (barsInfo.barsBefore !== null && barsInfo.barsBefore < LAZY_LOAD_BARS_THRESHOLD) {
+          // Check why we might not load
+          if (isLoadingHistoricalRef.current) {
+            // Already loading - this is expected, don't log spam
+          } else if (timeSinceLastLoad <= LAZY_LOAD_COOLDOWN_MS) {
+            // Cooldown active - don't log spam
+          } else {
+            // All conditions met - request more history
+            console.log(`[Chart] Triggering lazy load: barsBefore=${barsInfo.barsBefore}, threshold=${LAZY_LOAD_BARS_THRESHOLD}`)
+            lastLazyLoadTimeRef.current = now
+            onNeedMoreHistoryRef.current?.()
+          }
         }
 
         // Check if the latest bar is visible
