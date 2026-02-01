@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { CandleTuple } from '@/lib/market-data/candles'
-import { useChartEventPatcher } from './useChartEventPatcher'
-import { useChartSetup } from './hooks/useChartSetup'
-import { useDataPolling } from './hooks/useDataPolling'
-import { COLORS, PRICE_SCALE_RIGHT_OFFSET } from './lib/constants'
+import { useEventPatcher } from './ui/useEventPatcher'
+import { useChart } from './plot/useChart'
+import { usePolling } from './plot/usePolling'
+import { COLORS, PRICE_SCALE_RIGHT_OFFSET } from './plot/constants'
 
 interface ChartProps {
   width: number
@@ -20,10 +20,10 @@ export function Chart({ width, height }: ChartProps) {
   const [error, setError] = useState<string | null>(null)
 
   // Patch mouse events to handle 2x scale factor
-  useChartEventPatcher(containerRef)
+  useEventPatcher(containerRef)
 
   // Initialize chart and series
-  const { chartRef, seriesRefs, absorptionRefs, hasInitialized } = useChartSetup({
+  const { chartRef, seriesRefs, absorptionRefs, hasInitialized } = useChart({
     containerRef,
     dataRef,
     width,
@@ -31,11 +31,12 @@ export function Chart({ width, height }: ChartProps) {
   })
 
   // Data fetching and polling
-  const { fetchCandles, updateChartData, startPolling, stopPolling } = useDataPolling({
-    dataRef,
-    seriesRefs,
-    absorptionRefs,
-  })
+  const { fetchCandles, updateChartData, startPolling, stopPolling } =
+    usePolling({
+      dataRef,
+      seriesRefs,
+      absorptionRefs,
+    })
 
   // Load initial data
   useEffect(() => {
@@ -77,7 +78,14 @@ export function Chart({ width, height }: ChartProps) {
       isMounted = false
       stopPolling()
     }
-  }, [fetchCandles, updateChartData, startPolling, stopPolling, chartRef, width])
+  }, [
+    fetchCandles,
+    updateChartData,
+    startPolling,
+    stopPolling,
+    chartRef,
+    width,
+  ])
 
   if (error) {
     return (

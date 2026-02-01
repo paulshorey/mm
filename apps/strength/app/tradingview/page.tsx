@@ -1,4 +1,4 @@
-import SyncedChartsWrapper from '../../tradingview/SyncedChartsWrapper'
+import SyncedChartsWrapper from '../../pages/tradingview/SyncedChartsWrapper'
 import { ThemeWrapper } from '../../components/ThemeWrapper'
 
 export default function Page() {

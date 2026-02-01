@@ -12,7 +12,7 @@ import { useEffect, RefObject, useRef } from 'react'
  * @param containerRef - Ref to the chart container element
  * @param onUserScroll - Callback when user scrolls/pans the chart
  */
-export function useChartEventPatcher(
+export function useEventPatcher(
   containerRef: RefObject<HTMLDivElement | null>,
   onUserScroll?: () => void
 ) {
@@ -55,7 +55,8 @@ export function useChartEventPatcher(
       // Use the actual target's rect for more accurate coordinate calculation
       // This handles cases where the canvas has slight offset from container
       const target = e.target as HTMLElement
-      const rect = target?.getBoundingClientRect() || container.getBoundingClientRect()
+      const rect =
+        target?.getBoundingClientRect() || container.getBoundingClientRect()
       const scale = window.scaleFactor || 1
 
       // Calculate corrected coordinates relative to the target element

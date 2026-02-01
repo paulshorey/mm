@@ -3,7 +3,8 @@ import { ThemeWrapper } from '../../components/ThemeWrapper'
 
 // Dynamic import with no SSR - lightweight-charts requires window
 const StreamChartWrapper = dynamic(
-  () => import('../../stream/Wrapper').then((mod) => mod.StreamChartWrapper),
+  () =>
+    import('../../pages/stream/Wrapper').then((mod) => mod.StreamChartWrapper),
   { ssr: false }
 )
 

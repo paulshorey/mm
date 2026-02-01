@@ -76,7 +76,7 @@ export const SERIES = {
   vwap: {
     // ohlc
     // range: unbounded
-    enabled: true,
+    enabled: false,
     color: 'hsl(45 100% 50%)',
     top: 0,
     bottom: 0.4,

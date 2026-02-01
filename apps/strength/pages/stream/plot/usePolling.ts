@@ -1,38 +1,21 @@
 import { useCallback, useRef } from 'react'
-import { Time } from 'lightweight-charts'
-import { VerticalLinePrimitive } from '../../tradingview/lib/primitives/VerticalLinePrimitive'
 import type { CandleTuple } from '@/lib/market-data/candles'
 import {
   IDX,
   POLL_INTERVAL_MS,
   RECENT_CANDLES,
-  RSI_PERIOD,
-  ABSORPTION_MARKER,
   buildCandlesUrl,
-} from '../lib/constants'
-import {
-  candlesToPriceOhlc,
-  candlesToCvdOhlc,
-  candlesToEvrOhlc,
-  candlesToVwapOhlc,
-  candlesToSpreadBpsOhlc,
-  candlesToPricePctOhlc,
-  candlesToBookImbalanceData,
-  candlesToVolumeData,
-  candlesToBigTradesData,
-  candlesToBigVolumeData,
-  candlesToVdStrengthData,
-} from '../lib/dataTransformers'
-import { calculateRSI, detectAbsorptionPoints } from '../lib/indicators'
-import type { SeriesRefs, AbsorptionRefs } from './useChartSetup'
+} from './constants'
+import { useUpdateData } from './useUpdateData'
+import type { SeriesRefs, AbsorptionRefs } from './useChart'
 
-interface UseDataPollingProps {
+interface UsePollingProps {
   dataRef: React.MutableRefObject<CandleTuple[]>
   seriesRefs: SeriesRefs
   absorptionRefs: AbsorptionRefs
 }
 
-interface UseDataPollingReturn {
+interface UsePollingReturn {
   fetchCandles: (limit: number) => Promise<CandleTuple[]>
   updateChartData: (candles: CandleTuple[]) => void
   applyRecentCandles: (recentCandles: CandleTuple[]) => void
@@ -40,14 +23,16 @@ interface UseDataPollingReturn {
   stopPolling: () => void
 }
 
-export function useDataPolling({
+export function usePolling({
   dataRef,
   seriesRefs,
   absorptionRefs,
-}: UseDataPollingProps): UseDataPollingReturn {
+}: UsePollingProps): UsePollingReturn {
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const isPollingRef = useRef(false)
   const hasStartedPollingRef = useRef(false)
+
+  const { updateChartData } = useUpdateData({ seriesRefs, absorptionRefs })
 
   const fetchCandles = useCallback(async (limit: number) => {
     const response = await fetch(buildCandlesUrl(limit))
@@ -56,77 +41,6 @@ export function useDataPolling({
     }
     return (await response.json()) as CandleTuple[]
   }, [])
-
-  const updateChartData = useCallback(
-    (candles: CandleTuple[]) => {
-      // Update price series
-      if (seriesRefs.price.current) {
-        seriesRefs.price.current.setData(candlesToPriceOhlc(candles))
-      }
-
-      // Update CVD series (OHLC bars)
-      if (seriesRefs.cvd.current) {
-        seriesRefs.cvd.current.setData(candlesToCvdOhlc(candles))
-      }
-
-      // Update RSI
-      if (seriesRefs.rsi.current) {
-        seriesRefs.rsi.current.setData(calculateRSI(candles, RSI_PERIOD))
-      }
-
-      // Update OHLC bar series
-      if (seriesRefs.evr.current) {
-        seriesRefs.evr.current.setData(candlesToEvrOhlc(candles))
-      }
-      if (seriesRefs.vwap.current) {
-        seriesRefs.vwap.current.setData(candlesToVwapOhlc(candles))
-      }
-      if (seriesRefs.spreadBps.current) {
-        seriesRefs.spreadBps.current.setData(candlesToSpreadBpsOhlc(candles))
-      }
-      if (seriesRefs.pricePct.current) {
-        seriesRefs.pricePct.current.setData(candlesToPricePctOhlc(candles))
-      }
-
-      // Update line series
-      if (seriesRefs.bookImbalance.current) {
-        seriesRefs.bookImbalance.current.setData(
-          candlesToBookImbalanceData(candles)
-        )
-      }
-      if (seriesRefs.volume.current) {
-        seriesRefs.volume.current.setData(candlesToVolumeData(candles))
-      }
-      if (seriesRefs.bigTrades.current) {
-        seriesRefs.bigTrades.current.setData(candlesToBigTradesData(candles))
-      }
-      if (seriesRefs.bigVolume.current) {
-        seriesRefs.bigVolume.current.setData(candlesToBigVolumeData(candles))
-      }
-      if (seriesRefs.vdStrength.current) {
-        seriesRefs.vdStrength.current.setData(candlesToVdStrengthData(candles))
-      }
-
-      // Temporarily disable absorption markers:
-      // // Update absorption markers
-      // if (seriesRefs.price.current) {
-      //   const absorptionTimestamps = detectAbsorptionPoints(candles)
-      //   // Add markers for new absorption points (avoid duplicates)
-      //   for (const timestamp of absorptionTimestamps) {
-      //     if (!absorptionRefs.timestamps.current.has(timestamp)) {
-      //       const marker = new VerticalLinePrimitive(
-      //         (timestamp / 1000) as Time,
-      //         ABSORPTION_MARKER
-      //       )
-      //       seriesRefs.price.current.attachPrimitive(marker)
-      //       absorptionRefs.markers.current.push(marker)
-      //       absorptionRefs.timestamps.current.add(timestamp)
-      //     }
-      //   }
-      // }
-    },
-    [seriesRefs, absorptionRefs]
-  )
 
   const applyRecentCandles = useCallback(
     (recentCandles: CandleTuple[]) => {

@@ -98,7 +98,7 @@ export function candlesToPricePctOhlc(candles: CandleTuple[]): BarData[] {
  * Convert candles to LineData format for book_imbalance_close
  * Values are inverted (negated) for display
  */
-export function candlesToBookImbalanceData(candles: CandleTuple[]): LineData[] {
+export function candlesToBookImbalance(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[IDX.TIMESTAMP] / 1000) as Time,
     value: candle[IDX.BOOK_IMBALANCE_CLOSE],
@@ -108,7 +108,7 @@ export function candlesToBookImbalanceData(candles: CandleTuple[]): LineData[] {
 /**
  * Convert candles to LineData format for big_trades
  */
-export function candlesToBigTradesData(candles: CandleTuple[]): LineData[] {
+export function candlesToBigTrades(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[IDX.TIMESTAMP] / 1000) as Time,
     value: candle[IDX.BIG_TRADES],
@@ -118,7 +118,7 @@ export function candlesToBigTradesData(candles: CandleTuple[]): LineData[] {
 /**
  * Convert candles to LineData format for big_volume
  */
-export function candlesToBigVolumeData(candles: CandleTuple[]): LineData[] {
+export function candlesToBigVolume(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[IDX.TIMESTAMP] / 1000) as Time,
     value: candle[IDX.BIG_VOLUME],
@@ -128,7 +128,7 @@ export function candlesToBigVolumeData(candles: CandleTuple[]): LineData[] {
 /**
  * Convert candles to LineData format for volume
  */
-export function candlesToVolumeData(candles: CandleTuple[]): LineData[] {
+export function candlesToVolume(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[IDX.TIMESTAMP] / 1000) as Time,
     value: candle[IDX.VOLUME],
@@ -138,7 +138,7 @@ export function candlesToVolumeData(candles: CandleTuple[]): LineData[] {
 /**
  * Convert candles to LineData format for vd_strength
  */
-export function candlesToVdStrengthData(candles: CandleTuple[]): LineData[] {
+export function candlesToVdStrength(candles: CandleTuple[]): LineData[] {
   return candles.map((candle) => ({
     time: (candle[IDX.TIMESTAMP] / 1000) as Time,
     value: candle[IDX.VD_STRENGTH],

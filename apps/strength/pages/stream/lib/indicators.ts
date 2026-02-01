@@ -1,6 +1,6 @@
 import { LineData, Time } from 'lightweight-charts'
 import type { CandleTuple } from '@/lib/market-data/candles'
-import { IDX, RSI_PERIOD } from './constants'
+import { IDX, RSI_PERIOD } from '../plot/constants'
 
 /**
  * Calculate RSI (Relative Strength Index) for a given period

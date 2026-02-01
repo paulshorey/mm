@@ -8,7 +8,7 @@ import {
 } from 'lightweight-charts'
 import { VerticalLinePrimitive } from '../../tradingview/lib/primitives/VerticalLinePrimitive'
 import type { CandleTuple } from '@/lib/market-data/candles'
-import { COLORS, SERIES, PRICE_SCALE_RIGHT_OFFSET } from '../lib/constants'
+import { COLORS, SERIES, PRICE_SCALE_RIGHT_OFFSET } from './constants'
 import { timeFormatter } from '../lib/indicators'
 
 export interface SeriesRefs {
@@ -34,26 +34,26 @@ export interface AbsorptionRefs {
   timestamps: MutableRefObject<Set<number>>
 }
 
-interface UseChartSetupProps {
+interface UseChartProps {
   containerRef: MutableRefObject<HTMLDivElement | null>
   dataRef: MutableRefObject<CandleTuple[]>
   width: number
   height: number
 }
 
-interface UseChartSetupReturn {
+interface UseChartReturn {
   chartRef: MutableRefObject<IChartApi | null>
   seriesRefs: SeriesRefs
   absorptionRefs: AbsorptionRefs
   hasInitialized: MutableRefObject<boolean>
 }
 
-export function useChartSetup({
+export function useChart({
   containerRef,
   dataRef,
   width,
   height,
-}: UseChartSetupProps): UseChartSetupReturn {
+}: UseChartProps): UseChartReturn {
   const chartRef = useRef<IChartApi | null>(null)
   const hasInitialized = useRef(false)
 
