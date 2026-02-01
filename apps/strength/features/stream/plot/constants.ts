@@ -1,12 +1,13 @@
 import { Candle } from '@/lib/market-data/candles'
 import { BarData, LineData, Time } from 'lightweight-charts'
-import { calculateRSI } from '../lib/indicators'
+import { calculateRSI, calculateATR } from '../lib/indicators'
 
 // API Configuration
 export const TICKER = 'ES'
 export const POLL_INTERVAL_MS = 1000
-export const RECENT_CANDLES = 22
+export const RECENT_CANDLES = 22 // I guess it needs to be enough to calculate indicators
 export const RSI_PERIOD = 14
+export const ATR_PERIOD = 5
 
 // Extra width to extend chart past screen edge, pushing price scale's internal padding off-screen
 // This makes the price numbers appear flush against the right edge
@@ -115,6 +116,19 @@ export const SERIES: Record<string, SeriesConfig> = {
     priceScaleId: 'rsi',
     formatter: function (candles: Candle[]): LineData[] {
       return calculateRSI(candles, RSI_PERIOD)
+    },
+  },
+  // volatility (average true range)
+  atr: {
+    seriesType: 'Line',
+    enabled: true,
+    color: 'hsl(180 70% 50%)', // cyan
+    top: 0.65,
+    bottom: 0,
+    // Chart options
+    priceScaleId: 'atr',
+    formatter: function (candles: Candle[]): LineData[] {
+      return calculateATR(candles, ATR_PERIOD)
     },
   },
   // HL/LH trend
