@@ -50,6 +50,15 @@ export function SimpleChart({ ticker }: SimpleChartProps) {
   
   // Track if we're currently in a lazy load to prevent scroll position restoration from failing
   const isLazyLoadingRef = useRef(false)
+  
+  // Track if we've exhausted all available historical data (API returned empty array)
+  // Once exhausted, we stop trying to fetch more - this is intentional
+  const hasExhaustedHistoryRef = useRef(false)
+  
+  // Track consecutive network failures for retry limiting
+  // Reset on success, stop retrying after MAX_RETRY_ATTEMPTS failures
+  const networkFailureCountRef = useRef(0)
+  const MAX_RETRY_ATTEMPTS = 3
 
   /**
    * Fetch data from API
@@ -118,6 +127,18 @@ export function SimpleChart({ ticker }: SimpleChartProps) {
       return
     }
     
+    // Don't try to fetch if we've already exhausted all historical data
+    // (API returned empty array on a previous attempt)
+    if (hasExhaustedHistoryRef.current) {
+      return
+    }
+    
+    // Don't retry if we've hit max network failures
+    // This prevents infinite retry loops when server is down or API changed
+    if (networkFailureCountRef.current >= MAX_RETRY_ATTEMPTS) {
+      return
+    }
+    
     setIsLoadingMore(true)
     isLazyLoadingRef.current = true
     
@@ -126,6 +147,9 @@ export function SimpleChart({ ticker }: SimpleChartProps) {
       const fromDate = new Date(toDate.getTime() - LAZY_LOAD_FETCH_MINUTES * 60 * 1000)
       
       const historicalData = await fetchData(fromDate, toDate)
+      
+      // Reset failure count on successful fetch
+      networkFailureCountRef.current = 0
       
       if (historicalData.length > 0) {
         // Update earliest time
@@ -153,12 +177,22 @@ export function SimpleChart({ ticker }: SimpleChartProps) {
           
           return merged
         })
+      } else {
+        // API returned empty array - no more historical data available
+        // Mark as exhausted so we don't keep trying to fetch
+        hasExhaustedHistoryRef.current = true
+        isLazyLoadingRef.current = false
       }
     } catch (err) {
       console.error('[SimpleChart] Error loading more history:', err)
+      // Track network failures - allow retry up to MAX_RETRY_ATTEMPTS
+      networkFailureCountRef.current++
+      // Reset lazy loading flag on error so user can retry by scrolling again
+      isLazyLoadingRef.current = false
     } finally {
       setIsLoadingMore(false)
-      // Keep isLazyLoadingRef true until the chart update effect runs
+      // Note: isLazyLoadingRef is kept true on success until chart update effect runs
+      // It's reset on error or exhausted data to allow future attempts
     }
   }, [fetchData, isLoadingMore])
 
