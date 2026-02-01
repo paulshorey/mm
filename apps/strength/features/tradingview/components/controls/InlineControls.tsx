@@ -5,7 +5,7 @@ import IntervalControl from './IntervalControl'
 import TimeControl from './TimeControl'
 // import { ControlsDropdown } from './ControlsDropdown'
 import { COLORS } from '../../constants'
-import { useChartControlsStore } from '@/tradingview/state/useChartControlsStore'
+import { useChartControlsStore } from '@/features/tradingview/state/useChartControlsStore'
 
 export default function InlineControls({
   drawerNewsOpen,

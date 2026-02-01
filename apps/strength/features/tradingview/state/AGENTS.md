@@ -21,3 +21,7 @@ Zustand store for chart controls with URL query parameter synchronization.
 - `strengthIntervals` / `priceTickers` - Individual interval/ticker line data
 
 State changes automatically update URL, allowing users to bookmark specific chart configurations.
+
+## Documentation
+
+After you edit any of the concepts mentioned here, update this file ./apps/tradingview/stream/AGENTS.md with the changes. Keep this file concise and accurate.
