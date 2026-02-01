@@ -644,6 +644,22 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
         />
       )}
 
+      {/* Loading overlay - shown while fetching additional historical data */}
+      {isLoadingHistorical && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px]"
+          style={{ cursor: 'wait' }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            {/* Spinner */}
+            <div className="w-10 h-10 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            <span className="text-sm text-gray-300 bg-black/50 px-3 py-1 rounded">
+              Loading history...
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Last updated time (shows paused indicator when user is scrolling) */}
       <UpdatedTime
         isRealtime={dataState === 'ready'}
