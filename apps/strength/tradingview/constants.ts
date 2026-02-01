@@ -9,7 +9,14 @@ export const FETCH_DATA_HOURS_BACK = 240
 export const FETCH_DATA_ROWS = 7250
 
 // Time in ms to wait after user stops scrolling before resuming polling
-export const SCROLL_PAUSE_RESUME_MS = 300000 // 30 seconds
+// Note: This is now less important as we use smart pause/resume based on visible range
+export const SCROLL_PAUSE_RESUME_MS = 300000 // 5 minutes (fallback)
+
+// Lazy loading thresholds
+// Number of bars before visible area that triggers loading more historical data
+export const LAZY_LOAD_BARS_THRESHOLD = 50
+// Number of minutes of historical data to fetch when lazy loading
+export const LAZY_LOAD_FETCH_MINUTES = 120 // 2 hours of data per load
 
 export const SHOW_100_LINES = false
 

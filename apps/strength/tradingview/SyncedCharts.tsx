@@ -7,7 +7,7 @@ import { Chart, ChartRef } from './components/Chart'
 import { LoadingState, ErrorState } from './components/ChartStates'
 import { UpdatedTime } from './components/UpdatedTime'
 import { useChartControlsStore } from './state/useChartControlsStore'
-import { COLORS, FETCH_DATA_HOURS_BACK } from './constants'
+import { COLORS, FETCH_DATA_HOURS_BACK, LAZY_LOAD_FETCH_MINUTES } from './constants'
 import {
   useAggregationWorker,
   AggregationResult,
@@ -158,9 +158,31 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
   const pendingAggregationRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
-   * Handle user scroll/pan on chart
-   * Pauses real-time polling while user is interacting with the chart.
-   * After 30 seconds of no scrolling, polling resumes automatically.
+   * Controlled data fetching hook
+   * Handles ticker changes, loading state, and real-time updates
+   * Paused when user is scrolling/panning the chart (latest bar not visible)
+   */
+  const {
+    rawData,
+    dataState,
+    error,
+    lastUpdateTime,
+    dataVersion,
+    earliestDataTime,
+    latestDataTime,
+    fetchHistoricalDataBefore,
+    isLoadingHistorical,
+  } = useStrengthData({
+    tickers: chartTickers,
+    enabled: chartTickers.length > 0,
+    maxDataHours: FETCH_DATA_HOURS_BACK,
+    updateIntervalMs: 10000,
+    paused: pollingPaused,
+  })
+
+  /**
+   * Handle user scroll/pan on chart (legacy - kept for general scroll detection)
+   * The smart pause/resume is now handled by onLatestBarVisibilityChange
    */
   const handleUserScroll = useCallback(() => {
     // Clear any existing resume timer
@@ -168,19 +190,59 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       clearTimeout(scrollResumeTimerRef.current)
     }
 
-    // Pause polling if not already paused
-    if (!pollingPaused) {
-      setPollingPaused(true)
-      console.log('[SyncedCharts] User scrolling - polling paused')
-    }
-
-    // Set timer to resume polling after inactivity
+    // Set a fallback timer to resume polling after long inactivity
+    // This is a safety net in case onLatestBarVisibilityChange doesn't fire
     scrollResumeTimerRef.current = setTimeout(() => {
-      console.log('[SyncedCharts] Scroll inactivity - resuming polling')
+      console.log('[SyncedCharts] Scroll inactivity fallback - resuming polling')
       setPollingPaused(false)
       scrollResumeTimerRef.current = null
     }, SCROLL_PAUSE_RESUME_MS)
+  }, [])
+
+  /**
+   * Handle visibility change of the latest bar
+   * When the latest bar is visible, we should poll for new data (auto-scroll behavior)
+   * When the latest bar is NOT visible (user scrolled back), pause polling
+   */
+  const handleLatestBarVisibilityChange = useCallback((isVisible: boolean) => {
+    // Clear any pending scroll resume timer
+    if (scrollResumeTimerRef.current) {
+      clearTimeout(scrollResumeTimerRef.current)
+      scrollResumeTimerRef.current = null
+    }
+
+    if (isVisible) {
+      // Latest bar is visible - resume real-time updates
+      if (pollingPaused) {
+        console.log('[SyncedCharts] Latest bar visible - resuming polling')
+        setPollingPaused(false)
+      }
+    } else {
+      // Latest bar is NOT visible - pause real-time updates
+      // This prevents the chart from jumping to the latest data while user explores history
+      if (!pollingPaused) {
+        console.log('[SyncedCharts] Latest bar hidden - pausing polling')
+        setPollingPaused(true)
+      }
+    }
   }, [pollingPaused])
+
+  /**
+   * Handle request for more historical data (lazy loading)
+   * Called when user scrolls near the beginning of the chart data
+   */
+  const handleNeedMoreHistory = useCallback(() => {
+    if (!earliestDataTime || isLoadingHistorical) {
+      return
+    }
+
+    console.log(
+      `[SyncedCharts] Need more history - fetching ${LAZY_LOAD_FETCH_MINUTES} minutes before ${earliestDataTime.toISOString()}`
+    )
+
+    // Fetch more historical data before the earliest data point
+    fetchHistoricalDataBefore(earliestDataTime, LAZY_LOAD_FETCH_MINUTES)
+  }, [earliestDataTime, isLoadingHistorical, fetchHistoricalDataBefore])
 
   // Cleanup scroll timer on unmount
   useEffect(() => {
@@ -190,20 +252,6 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
       }
     }
   }, [])
-
-  /**
-   * Controlled data fetching hook
-   * Handles ticker changes, loading state, and real-time updates
-   * Paused when user is scrolling/panning the chart
-   */
-  const { rawData, dataState, error, lastUpdateTime, dataVersion } =
-    useStrengthData({
-      tickers: chartTickers,
-      enabled: chartTickers.length > 0,
-      maxDataHours: FETCH_DATA_HOURS_BACK,
-      updateIntervalMs: 10000,
-      paused: pollingPaused,
-    })
 
   /**
    * Handle aggregation results from the Web Worker
@@ -568,6 +616,9 @@ export function SyncedCharts({ availableHeight }: SyncedChartsProps) {
           height={availableHeight}
           timeRange={chartTimeRange}
           onUserScroll={handleUserScroll}
+          onNeedMoreHistory={handleNeedMoreHistory}
+          onLatestBarVisibilityChange={handleLatestBarVisibilityChange}
+          isLoadingHistorical={isLoadingHistorical}
         />
       )}
 

@@ -13,6 +13,7 @@ import {
   LineSeries,
   ISeriesApi,
   Time,
+  LogicalRange,
 } from 'lightweight-charts'
 import { getChartConfig, getLineSeriesConfig } from '../lib/chartConfig'
 import { updateSeriesEfficiently } from '../lib/chartUtils'
@@ -22,7 +23,7 @@ import ChartTitle from './ChartTitle'
 import { NoDataState } from './ChartStates'
 import classes from '../classes.module.scss'
 import { prepareDataWithRequiredTimestamps } from '../lib/primitives/forwardFillData'
-import { TIME_RANGE_HIGHLIGHTS, SHOW_100_LINES } from '../constants'
+import { TIME_RANGE_HIGHLIGHTS, SHOW_100_LINES, LAZY_LOAD_BARS_THRESHOLD } from '../constants'
 import {
   strengthIntervalsAll as STRENGTH_INTERVALS,
   StrengthIntervalsData,
@@ -46,6 +47,12 @@ interface ChartProps {
   timeRange?: { from: Time; to: Time } | null
   /** Called when user scrolls/pans the chart (visible time range changes) */
   onUserScroll?: () => void
+  /** Called when user scrolls near the beginning of data and needs more historical data */
+  onNeedMoreHistory?: () => void
+  /** Called when the visibility of the latest bar changes (true = latest bar is visible, false = scrolled away) */
+  onLatestBarVisibilityChange?: (isVisible: boolean) => void
+  /** Whether historical data is currently being loaded (to prevent duplicate requests) */
+  isLoadingHistorical?: boolean
 }
 
 export interface ChartRef {
@@ -73,6 +80,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       height,
       timeRange,
       onUserScroll,
+      onNeedMoreHistory,
+      onLatestBarVisibilityChange,
+      isLoadingHistorical = false,
     },
     ref
   ) => {
@@ -107,6 +117,24 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const lastPriceTickersRef = useRef<PriceTickersData>({})
     const lastStrengthIndicatorRef = useRef<LineData[] | null>(null)
     const lastPriceIndicatorRef = useRef<LineData[] | null>(null)
+    
+    // Refs for lazy loading and visibility tracking
+    const lastLatestBarVisibleRef = useRef<boolean>(true)
+    const isLoadingHistoricalRef = useRef<boolean>(false)
+    // Keep refs to callbacks to avoid stale closures
+    const onNeedMoreHistoryRef = useRef(onNeedMoreHistory)
+    const onLatestBarVisibilityChangeRef = useRef(onLatestBarVisibilityChange)
+    
+    // Update callback refs when they change
+    useEffect(() => {
+      onNeedMoreHistoryRef.current = onNeedMoreHistory
+      onLatestBarVisibilityChangeRef.current = onLatestBarVisibilityChange
+    }, [onNeedMoreHistory, onLatestBarVisibilityChange])
+    
+    // Update loading ref when prop changes
+    useEffect(() => {
+      isLoadingHistoricalRef.current = isLoadingHistorical
+    }, [isLoadingHistorical])
 
     // Use extracted hooks
     const { createTimeMarkers, markersInitialized } = useTimeMarkers()
@@ -674,6 +702,67 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         height,
       })
     }, [width, height])
+
+    // Subscribe to visible range changes for lazy loading and pause/resume control
+    useEffect(() => {
+      if (!chartRef.current || !hasInitialized.current) return
+      if (!strengthAverageSeriesRef.current) return
+
+      const chart = chartRef.current
+      const series = strengthAverageSeriesRef.current
+
+      /**
+       * Handle visible logical range changes
+       * - Detects when user scrolls near the beginning to trigger lazy loading
+       * - Detects when the latest bar is visible/hidden to control polling
+       */
+      const handleVisibleLogicalRangeChange = (
+        logicalRange: LogicalRange | null
+      ) => {
+        if (!logicalRange) return
+
+        const data = lastStrengthAverageRef.current
+        if (!data || data.length === 0) return
+
+        // Get bars info for the visible range
+        const barsInfo = series.barsInLogicalRange(logicalRange)
+        if (!barsInfo) return
+
+        // Check if we need to load more historical data
+        // barsBefore tells us how many bars exist before the visible area
+        if (
+          barsInfo.barsBefore !== null &&
+          barsInfo.barsBefore < LAZY_LOAD_BARS_THRESHOLD &&
+          !isLoadingHistoricalRef.current
+        ) {
+          // User scrolled near the beginning - request more history
+          onNeedMoreHistoryRef.current?.()
+        }
+
+        // Check if the latest bar is visible
+        // The last bar is at logical index (data.length - 1)
+        // If logicalRange.to is greater than or equal to (data.length - 1), the latest bar is visible
+        const lastBarLogicalIndex = data.length - 1
+        const isLatestBarVisible = logicalRange.to >= lastBarLogicalIndex - 1 // -1 for some buffer
+
+        // Only notify if visibility changed
+        if (isLatestBarVisible !== lastLatestBarVisibleRef.current) {
+          lastLatestBarVisibleRef.current = isLatestBarVisible
+          onLatestBarVisibilityChangeRef.current?.(isLatestBarVisible)
+        }
+      }
+
+      // Subscribe to visible range changes
+      chart
+        .timeScale()
+        .subscribeVisibleLogicalRangeChange(handleVisibleLogicalRangeChange)
+
+      return () => {
+        chart
+          .timeScale()
+          .unsubscribeVisibleLogicalRangeChange(handleVisibleLogicalRangeChange)
+      }
+    }, []) // Empty deps - uses refs for callbacks to avoid re-subscribing
 
     // Update time range when it changes
     useEffect(() => {
