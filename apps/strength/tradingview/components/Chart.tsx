@@ -122,6 +122,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     const lastLatestBarVisibleRef = useRef<boolean>(true)
     const isLoadingHistoricalRef = useRef<boolean>(false)
     const lastLazyLoadTimeRef = useRef<number>(0)
+    // Flag to skip timeRange application after scroll position restoration
+    const skipTimeRangeUpdateRef = useRef<boolean>(false)
     // Keep refs to callbacks to avoid stale closures
     const onNeedMoreHistoryRef = useRef(onNeedMoreHistory)
     const onLatestBarVisibilityChangeRef = useRef(onLatestBarVisibilityChange)
@@ -454,6 +456,9 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
             prependedBarsCount > 0 &&
             chartRef.current
           ) {
+            // Set flag to prevent timeRange effect from overriding our scroll restoration
+            skipTimeRangeUpdateRef.current = true
+            
             // Use requestAnimationFrame to ensure the chart has processed setData
             requestAnimationFrame(() => {
               if (chartRef.current && savedLogicalRange) {
@@ -464,6 +469,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
                     from: savedLogicalRange.from + prependedBarsCount,
                     to: savedLogicalRange.to + prependedBarsCount,
                   })
+                  console.log(`[Chart] Restored scroll position: prepended ${prependedBarsCount} bars, new range ${savedLogicalRange.from + prependedBarsCount} to ${savedLogicalRange.to + prependedBarsCount}`)
                 } catch (error) {
                   console.warn(
                     'Failed to restore scroll position after historical load:',
@@ -471,6 +477,11 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
                   )
                 }
               }
+              
+              // Clear the flag after a short delay to allow for any pending effects
+              setTimeout(() => {
+                skipTimeRangeUpdateRef.current = false
+              }, 100)
             })
           }
         }
@@ -840,6 +851,13 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
     // Update time range when it changes
     useEffect(() => {
       if (!chartRef.current || !timeRange || !hasInitialized.current) return
+
+      // Skip if we just restored scroll position after historical prepend
+      // This prevents the timeRange from overriding our scroll restoration
+      if (skipTimeRangeUpdateRef.current) {
+        console.log('[Chart] Skipping timeRange update - scroll position was just restored')
+        return
+      }
 
       // Validate time range before setting
       if (timeRange.from >= timeRange.to) {
