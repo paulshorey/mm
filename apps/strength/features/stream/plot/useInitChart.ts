@@ -5,11 +5,15 @@ import {
   ISeriesApi,
   LineSeries,
   BarSeries,
-  SeriesType,
 } from 'lightweight-charts'
 import { VerticalLinePrimitive } from '../../tradingview/lib/primitives/VerticalLinePrimitive'
 import type { Candle } from '@/lib/market-data/candles'
-import { COLORS, SERIES, PRICE_SCALE_RIGHT_OFFSET } from './constants'
+import {
+  COLORS,
+  SERIES,
+  PRICE_SCALE_RIGHT_OFFSET,
+  SeriesKey,
+} from './constants'
 import { timeFormatter } from '../lib/indicators'
 
 // Map seriesType string to Series class
@@ -18,22 +22,9 @@ const SERIES_TYPE_MAP = {
   Line: LineSeries,
 } as const
 
-export interface SeriesRefs {
-  // Main series
-  price: MutableRefObject<ISeriesApi<'Bar'> | null>
-  cvd: MutableRefObject<ISeriesApi<'Bar'> | null>
-  rsi: MutableRefObject<ISeriesApi<'Line'> | null>
-  // OHLC bar series
-  evr: MutableRefObject<ISeriesApi<'Bar'> | null>
-  vwap: MutableRefObject<ISeriesApi<'Bar'> | null>
-  spreadBps: MutableRefObject<ISeriesApi<'Bar'> | null>
-  pricePct: MutableRefObject<ISeriesApi<'Bar'> | null>
-  // Line series
-  bookImbalance: MutableRefObject<ISeriesApi<'Line'> | null>
-  volume: MutableRefObject<ISeriesApi<'Line'> | null>
-  bigTrades: MutableRefObject<ISeriesApi<'Line'> | null>
-  bigVolume: MutableRefObject<ISeriesApi<'Line'> | null>
-  vdStrength: MutableRefObject<ISeriesApi<'Line'> | null>
+// Series refs type - all series use Bar | Line union for simplicity
+export type SeriesRefs = {
+  [K in SeriesKey]: MutableRefObject<ISeriesApi<'Bar' | 'Line'> | null>
 }
 
 export interface AbsorptionRefs {
@@ -64,23 +55,11 @@ export function useInitChart({
   const chartRef = useRef<IChartApi | null>(null)
   const hasInitialized = useRef(false)
 
-  // Main series refs
-  const priceSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const cvdSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-
-  // OHLC bar series refs
-  const evrSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const vwapSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const spreadBpsSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-  const pricePctSeriesRef = useRef<ISeriesApi<'Bar'> | null>(null)
-
-  // Line series refs
-  const bookImbalanceSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const volumeSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const bigTradesSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const bigVolumeSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const vdStrengthSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  // Create refs for all series dynamically
+  // Using useRef with an object that persists across renders
+  const seriesRefsMap = useRef<
+    Record<string, ISeriesApi<'Bar' | 'Line'> | null>
+  >(Object.fromEntries(Object.keys(SERIES).map((key) => [key, null])))
 
   // Absorption marker refs
   const absorptionMarkersRef = useRef<VerticalLinePrimitive[]>([])
@@ -145,259 +124,38 @@ export function useInitChart({
     chartRef.current = chart
     hasInitialized.current = true
 
-    // ========== MAIN SERIES ==========
+    // Initialize all series from SERIES config
+    for (const [key, config] of Object.entries(SERIES)) {
+      if (!config.enabled) continue
 
-    if (SERIES.cvd.enabled) {
-      const cvdSeries = chart.addSeries(
-        SERIES_TYPE_MAP[SERIES.cvd.seriesType as keyof typeof SERIES_TYPE_MAP],
-        {
-          upColor: SERIES.cvd.color,
-          downColor: SERIES.cvd.color,
-          priceScaleId: 'left',
-          priceLineVisible: false,
-          lastValueVisible: true,
-        }
-      ) as ISeriesApi<'Bar'>
-      cvdSeries.priceScale().applyOptions({
-        scaleMargins: { top: SERIES.cvd.top, bottom: SERIES.cvd.bottom },
-        autoScale: true,
-      })
-      cvdSeriesRef.current = cvdSeries
-    }
+      const isBarSeries = config.seriesType === 'Bar'
+      const SeriesClass = SERIES_TYPE_MAP[config.seriesType]
 
-    if (SERIES.price.enabled) {
-      const priceSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.price.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          upColor: SERIES.price.color,
-          downColor: SERIES.price.color,
-          priceScaleId: 'right',
-          priceLineVisible: false,
-          lastValueVisible: true,
-        }
-      ) as ISeriesApi<'Bar'>
-      priceSeries.priceScale().applyOptions({
-        scaleMargins: { top: SERIES.price.top, bottom: SERIES.price.bottom },
-        autoScale: true,
-      })
-      priceSeriesRef.current = priceSeries
-    }
+      // Build series options based on type
+      const seriesOptions = {
+        priceScaleId: config.priceScaleId,
+        priceLineVisible: false,
+        lastValueVisible: config.lastValueVisible ?? false,
+        ...(isBarSeries
+          ? { upColor: config.color, downColor: config.color }
+          : {
+              color: config.color,
+              lineWidth: 1,
+              crosshairMarkerVisible: true,
+            }),
+      }
 
-    if (SERIES.rsi.enabled) {
-      const rsiSeries = chart.addSeries(
-        SERIES_TYPE_MAP[SERIES.rsi.seriesType as keyof typeof SERIES_TYPE_MAP],
-        {
-          color: SERIES.rsi.color,
-          lineWidth: 1,
-          priceScaleId: 'rsi',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      rsiSeries.priceScale().applyOptions({
-        scaleMargins: { top: SERIES.rsi.top, bottom: SERIES.rsi.bottom },
-        autoScale: true,
-      })
-      rsiSeriesRef.current = rsiSeries
-    }
+      const series = chart.addSeries(SeriesClass, seriesOptions)
 
-    // ========== ADDITIONAL OHLC BAR SERIES ==========
+      // Apply scale margins unless explicitly disabled
+      if (config.applyScaleMargins !== false) {
+        series.priceScale().applyOptions({
+          scaleMargins: { top: config.top, bottom: config.bottom },
+          autoScale: true,
+        })
+      }
 
-    if (SERIES.pricePct.enabled) {
-      const pricePctSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.pricePct.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          upColor: SERIES.pricePct.color,
-          downColor: SERIES.pricePct.color,
-          priceScaleId: 'metrics',
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Bar'>
-      pricePctSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.pricePct.top,
-          bottom: SERIES.pricePct.bottom,
-        },
-        autoScale: true,
-      })
-      pricePctSeriesRef.current = pricePctSeries
-    }
-    if (SERIES.evr.enabled) {
-      const evrSeries = chart.addSeries(
-        SERIES_TYPE_MAP[SERIES.evr.seriesType as keyof typeof SERIES_TYPE_MAP],
-        {
-          upColor: SERIES.evr.color,
-          downColor: SERIES.evr.color,
-          priceScaleId: 'metrics',
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Bar'>
-      evrSeriesRef.current = evrSeries
-    }
-    if (SERIES.vwap.enabled) {
-      const vwapSeries = chart.addSeries(
-        SERIES_TYPE_MAP[SERIES.vwap.seriesType as keyof typeof SERIES_TYPE_MAP],
-        {
-          upColor: SERIES.vwap.color,
-          downColor: SERIES.vwap.color,
-          priceScaleId: 'right',
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Bar'>
-      vwapSeriesRef.current = vwapSeries
-    }
-
-    if (SERIES.spreadBps.enabled) {
-      const spreadBpsSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.spreadBps.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          upColor: SERIES.spreadBps.color,
-          downColor: SERIES.spreadBps.color,
-          priceScaleId: 'spreadBps',
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Bar'>
-      spreadBpsSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.spreadBps.top,
-          bottom: SERIES.spreadBps.bottom,
-        },
-        autoScale: true,
-      })
-      spreadBpsSeriesRef.current = spreadBpsSeries
-    }
-
-    // ========== LINE SERIES ==========
-
-    if (SERIES.bookImbalance.enabled) {
-      const bookImbalanceSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.bookImbalance.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          color: SERIES.bookImbalance.color,
-          lineWidth: 1,
-          priceScaleId: 'bookImbalance',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      bookImbalanceSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.bookImbalance.top,
-          bottom: SERIES.bookImbalance.bottom,
-        },
-        autoScale: true,
-      })
-      bookImbalanceSeriesRef.current = bookImbalanceSeries
-    }
-
-    if (SERIES.volume.enabled) {
-      const volumeSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.volume.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          color: SERIES.volume.color,
-          lineWidth: 1,
-          priceScaleId: 'volume',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      volumeSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.volume.top,
-          bottom: SERIES.volume.bottom,
-        },
-        autoScale: true,
-      })
-      volumeSeriesRef.current = volumeSeries
-    }
-
-    if (SERIES.bigTrades.enabled) {
-      const bigTradesSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.bigTrades.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          color: SERIES.bigTrades.color,
-          lineWidth: 1,
-          priceScaleId: 'bigTrades',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      bigTradesSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.bigTrades.top,
-          bottom: SERIES.bigTrades.bottom,
-        },
-        autoScale: true,
-      })
-      bigTradesSeriesRef.current = bigTradesSeries
-    }
-
-    if (SERIES.bigVolume.enabled) {
-      const bigVolumeSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.bigVolume.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          color: SERIES.bigVolume.color,
-          lineWidth: 1,
-          priceScaleId: 'bigVolume',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      bigVolumeSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.bigVolume.top,
-          bottom: SERIES.bigVolume.bottom,
-        },
-        autoScale: true,
-      })
-      bigVolumeSeriesRef.current = bigVolumeSeries
-    }
-
-    if (SERIES.vdStrength.enabled) {
-      const vdStrengthSeries = chart.addSeries(
-        SERIES_TYPE_MAP[
-          SERIES.vdStrength.seriesType as keyof typeof SERIES_TYPE_MAP
-        ],
-        {
-          color: SERIES.vdStrength.color,
-          lineWidth: 1,
-          priceScaleId: 'vdStrength',
-          crosshairMarkerVisible: true,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        }
-      ) as ISeriesApi<'Line'>
-      vdStrengthSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: SERIES.vdStrength.top,
-          bottom: SERIES.vdStrength.bottom,
-        },
-        autoScale: true,
-      })
-      vdStrengthSeriesRef.current = vdStrengthSeries
+      seriesRefsMap.current[key] = series
     }
 
     // Custom zoom handler anchored on the last data bar
@@ -447,21 +205,10 @@ export function useInitChart({
       container.removeEventListener('wheel', handleWheel, { capture: true })
       chart.remove()
       chartRef.current = null
-      // Main series
-      priceSeriesRef.current = null
-      cvdSeriesRef.current = null
-      rsiSeriesRef.current = null
-      // OHLC bar series
-      pricePctSeriesRef.current = null
-      evrSeriesRef.current = null
-      vwapSeriesRef.current = null
-      spreadBpsSeriesRef.current = null
-      // Line series
-      bookImbalanceSeriesRef.current = null
-      volumeSeriesRef.current = null
-      bigTradesSeriesRef.current = null
-      bigVolumeSeriesRef.current = null
-      vdStrengthSeriesRef.current = null
+      // Clear all series refs
+      for (const key of Object.keys(SERIES)) {
+        seriesRefsMap.current[key] = null
+      }
       // Absorption markers
       absorptionMarkersRef.current = []
       absorptionTimestampsRef.current.clear()
@@ -478,22 +225,25 @@ export function useInitChart({
     })
   }, [width, height])
 
+  // Create stable ref objects for each series key
+  // This provides the same interface as before (seriesRefs.price.current, etc.)
+  const seriesRefs = Object.fromEntries(
+    Object.keys(SERIES).map((key) => [
+      key,
+      {
+        get current() {
+          return seriesRefsMap.current[key] ?? null
+        },
+        set current(value) {
+          seriesRefsMap.current[key] = value
+        },
+      },
+    ])
+  ) as SeriesRefs
+
   return {
     chartRef,
-    seriesRefs: {
-      price: priceSeriesRef,
-      cvd: cvdSeriesRef,
-      rsi: rsiSeriesRef,
-      pricePct: pricePctSeriesRef,
-      evr: evrSeriesRef,
-      vwap: vwapSeriesRef,
-      spreadBps: spreadBpsSeriesRef,
-      bookImbalance: bookImbalanceSeriesRef,
-      volume: volumeSeriesRef,
-      bigTrades: bigTradesSeriesRef,
-      bigVolume: bigVolumeSeriesRef,
-      vdStrength: vdStrengthSeriesRef,
-    },
+    seriesRefs,
     absorptionRefs: {
       markers: absorptionMarkersRef,
       timestamps: absorptionTimestampsRef,
