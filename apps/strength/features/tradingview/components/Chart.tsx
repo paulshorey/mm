@@ -278,6 +278,20 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
       // setVisibleRange fails if the series has no data
       // Time range is applied after data is set in the useEffect hooks below
 
+      // Track mouse position for zoom anchor (wheel event clientX/Y is unreliable for trackpad pinch)
+      let lastMouseX: number | null = null
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const containerRect = containerRef.current?.getBoundingClientRect()
+        if (containerRect) {
+          lastMouseX = e.clientX - containerRect.left
+        }
+      }
+
+      const handleMouseLeave = () => {
+        lastMouseX = null
+      }
+
       // Custom zoom handler anchored at cursor position
       // Requires cmd (Mac) or ctrl (Windows) + scroll to zoom
       const handleWheel = (e: WheelEvent) => {
@@ -292,10 +306,12 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         const visibleRange = timeScale.getVisibleLogicalRange()
         if (!visibleRange) return
 
-        // Get cursor position relative to container
+        // Use tracked mouse position (more reliable than wheel event clientX for trackpad)
         const containerRect = containerRef.current?.getBoundingClientRect()
         if (!containerRect) return
-        const cursorX = e.clientX - containerRect.left
+
+        // Fall back to wheel event position if mouse tracking hasn't captured position yet
+        const cursorX = lastMouseX ?? (e.clientX - containerRect.left)
 
         // Convert cursor X to logical index
         const cursorLogical = timeScale.coordinateToLogical(cursorX)
@@ -420,6 +436,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       // Use capture phase to intercept before lightweight-charts
       const container = containerRef.current
+      container.addEventListener('mousemove', handleMouseMove, { passive: true })
+      container.addEventListener('mouseleave', handleMouseLeave, { passive: true })
       container.addEventListener('wheel', handleWheel, {
         passive: false,
         capture: true,
@@ -439,6 +457,8 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
 
       // Cleanup
       return () => {
+        container.removeEventListener('mousemove', handleMouseMove)
+        container.removeEventListener('mouseleave', handleMouseLeave)
         container.removeEventListener('wheel', handleWheel, { capture: true })
         container.removeEventListener('touchstart', handleTouchStart, { capture: true })
         container.removeEventListener('touchmove', handleTouchMove, { capture: true })
