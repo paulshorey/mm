@@ -400,7 +400,7 @@ export function useChart({
       vdStrengthSeriesRef.current = vdStrengthSeries
     }
 
-    // Custom zoom handler anchored on the last data bar
+    // Custom zoom handler anchored at cursor position
     const handleWheel = (e: WheelEvent) => {
       const isZoomGesture = e.ctrlKey || e.metaKey
       if (!isZoomGesture) return
@@ -412,24 +412,33 @@ export function useChart({
       const visibleRange = timeScale.getVisibleLogicalRange()
       if (!visibleRange) return
 
-      const dataLength = dataRef.current.length
-      if (dataLength === 0) return
-      const lastBarIndex = dataLength - 1
+      // Get cursor position relative to container
+      const containerRect = containerRef.current?.getBoundingClientRect()
+      if (!containerRect) return
+      const cursorX = e.clientX - containerRect.left
+
+      // Convert cursor X to logical index
+      const cursorLogical = timeScale.coordinateToLogical(cursorX)
+      if (cursorLogical === null) return
 
       const zoomFactor = e.deltaY > 0 ? 1.05 : 0.95
 
       const currentFrom = visibleRange.from
       const currentTo = visibleRange.to
       const currentWidth = currentTo - currentFrom
-      const rightGap = currentTo - lastBarIndex
+
+      // Calculate cursor position as fraction of visible range (0 = left, 1 = right)
+      const cursorFraction = (cursorLogical - currentFrom) / currentWidth
+
       const newWidth = currentWidth * zoomFactor
 
       const minBars = 10
       const maxBars = 50000
       if (newWidth < minBars || newWidth > maxBars) return
 
-      const newTo = lastBarIndex + rightGap
-      const newFrom = newTo - newWidth
+      // Anchor at cursor: keep cursorLogical at the same screen position
+      const newFrom = cursorLogical - cursorFraction * newWidth
+      const newTo = newFrom + newWidth
 
       timeScale.setVisibleLogicalRange({
         from: newFrom,
@@ -437,14 +446,102 @@ export function useChart({
       })
     }
 
+    // Pinch-to-zoom for mobile devices
+    let lastPinchDistance: number | null = null
+    let lastPinchMidpointX: number | null = null
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch0 = e.touches[0]
+      const touch1 = e.touches[1]
+      if (e.touches.length === 2 && touch0 && touch1) {
+        const dx = touch1.clientX - touch0.clientX
+        const dy = touch1.clientY - touch0.clientY
+        lastPinchDistance = Math.sqrt(dx * dx + dy * dy)
+        lastPinchMidpointX = (touch0.clientX + touch1.clientX) / 2
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || lastPinchDistance === null || lastPinchMidpointX === null) return
+
+      const touch0 = e.touches[0]
+      const touch1 = e.touches[1]
+      if (!touch0 || !touch1) return
+
+      e.preventDefault()
+
+      const dx = touch1.clientX - touch0.clientX
+      const dy = touch1.clientY - touch0.clientY
+      const currentDistance = Math.sqrt(dx * dx + dy * dy)
+      const currentMidpointX = (touch0.clientX + touch1.clientX) / 2
+
+      const timeScale = chart.timeScale()
+      const visibleRange = timeScale.getVisibleLogicalRange()
+      if (!visibleRange) return
+
+      const containerRect = containerRef.current?.getBoundingClientRect()
+      if (!containerRect) return
+      const anchorX = currentMidpointX - containerRect.left
+
+      const anchorLogical = timeScale.coordinateToLogical(anchorX)
+      if (anchorLogical === null) return
+
+      // Spreading fingers apart = zoom in (smaller factor)
+      const zoomFactor = lastPinchDistance / currentDistance
+
+      const currentFrom = visibleRange.from
+      const currentTo = visibleRange.to
+      const currentWidth = currentTo - currentFrom
+      const anchorFraction = (anchorLogical - currentFrom) / currentWidth
+
+      const newWidth = currentWidth * zoomFactor
+
+      const minBars = 10
+      const maxBars = 50000
+      if (newWidth < minBars || newWidth > maxBars) return
+
+      const newFrom = anchorLogical - anchorFraction * newWidth
+      const newTo = newFrom + newWidth
+
+      timeScale.setVisibleLogicalRange({
+        from: newFrom,
+        to: newTo,
+      })
+
+      lastPinchDistance = currentDistance
+      lastPinchMidpointX = currentMidpointX
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastPinchDistance = null
+        lastPinchMidpointX = null
+      }
+    }
+
     const container = containerRef.current
     container.addEventListener('wheel', handleWheel, {
       passive: false,
       capture: true,
     })
+    container.addEventListener('touchstart', handleTouchStart, {
+      passive: true,
+      capture: true,
+    })
+    container.addEventListener('touchmove', handleTouchMove, {
+      passive: false,
+      capture: true,
+    })
+    container.addEventListener('touchend', handleTouchEnd, {
+      passive: true,
+      capture: true,
+    })
 
     return () => {
       container.removeEventListener('wheel', handleWheel, { capture: true })
+      container.removeEventListener('touchstart', handleTouchStart, { capture: true })
+      container.removeEventListener('touchmove', handleTouchMove, { capture: true })
+      container.removeEventListener('touchend', handleTouchEnd, { capture: true })
       chart.remove()
       chartRef.current = null
       // Main series
