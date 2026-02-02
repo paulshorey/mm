@@ -396,15 +396,6 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         const visibleRange = timeScale.getVisibleLogicalRange()
         if (!visibleRange) return
 
-        // Get midpoint position relative to container
-        const containerRect = containerRef.current?.getBoundingClientRect()
-        if (!containerRect) return
-        const anchorX = currentMidpointX - containerRect.left
-
-        // Convert anchor X to logical index
-        const anchorLogical = timeScale.coordinateToLogical(anchorX)
-        if (anchorLogical === null) return
-
         // Calculate zoom factor from pinch distance change
         // Inverted: spreading fingers apart (larger distance) = zoom in (smaller factor)
         const zoomFactor = lastPinchDistance / currentDistance
@@ -412,6 +403,14 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         const currentFrom = visibleRange.from
         const currentTo = visibleRange.to
         const currentWidth = currentTo - currentFrom
+
+        // On mobile, anchor zoom at the last actual data point (right edge of real data)
+        // This is data.length - 1 - FUTURE_PADDING_BARS (not the future-padded empty time)
+        const data = lastStrengthAverageRef.current
+        const lastActualDataIndex = data
+          ? Math.max(0, data.length - 1 - FUTURE_PADDING_BARS)
+          : currentTo // Fallback to visible range end if no data
+        const anchorLogical = lastActualDataIndex
 
         // Calculate anchor position as fraction of visible range
         const anchorFraction = (anchorLogical - currentFrom) / currentWidth
@@ -423,7 +422,7 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         const maxBars = 50000
         if (newWidth < minBars || newWidth > maxBars) return
 
-        // Anchor at midpoint between fingers
+        // Anchor at the last actual data point (right edge)
         const newFrom = anchorLogical - anchorFraction * newWidth
         const newTo = newFrom + newWidth
 
