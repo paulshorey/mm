@@ -446,14 +446,102 @@ export function useChart({
       })
     }
 
+    // Pinch-to-zoom for mobile devices
+    let lastPinchDistance: number | null = null
+    let lastPinchMidpointX: number | null = null
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch0 = e.touches[0]
+      const touch1 = e.touches[1]
+      if (e.touches.length === 2 && touch0 && touch1) {
+        const dx = touch1.clientX - touch0.clientX
+        const dy = touch1.clientY - touch0.clientY
+        lastPinchDistance = Math.sqrt(dx * dx + dy * dy)
+        lastPinchMidpointX = (touch0.clientX + touch1.clientX) / 2
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 2 || lastPinchDistance === null || lastPinchMidpointX === null) return
+
+      const touch0 = e.touches[0]
+      const touch1 = e.touches[1]
+      if (!touch0 || !touch1) return
+
+      e.preventDefault()
+
+      const dx = touch1.clientX - touch0.clientX
+      const dy = touch1.clientY - touch0.clientY
+      const currentDistance = Math.sqrt(dx * dx + dy * dy)
+      const currentMidpointX = (touch0.clientX + touch1.clientX) / 2
+
+      const timeScale = chart.timeScale()
+      const visibleRange = timeScale.getVisibleLogicalRange()
+      if (!visibleRange) return
+
+      const containerRect = containerRef.current?.getBoundingClientRect()
+      if (!containerRect) return
+      const anchorX = currentMidpointX - containerRect.left
+
+      const anchorLogical = timeScale.coordinateToLogical(anchorX)
+      if (anchorLogical === null) return
+
+      // Spreading fingers apart = zoom in (smaller factor)
+      const zoomFactor = lastPinchDistance / currentDistance
+
+      const currentFrom = visibleRange.from
+      const currentTo = visibleRange.to
+      const currentWidth = currentTo - currentFrom
+      const anchorFraction = (anchorLogical - currentFrom) / currentWidth
+
+      const newWidth = currentWidth * zoomFactor
+
+      const minBars = 10
+      const maxBars = 50000
+      if (newWidth < minBars || newWidth > maxBars) return
+
+      const newFrom = anchorLogical - anchorFraction * newWidth
+      const newTo = newFrom + newWidth
+
+      timeScale.setVisibleLogicalRange({
+        from: newFrom,
+        to: newTo,
+      })
+
+      lastPinchDistance = currentDistance
+      lastPinchMidpointX = currentMidpointX
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        lastPinchDistance = null
+        lastPinchMidpointX = null
+      }
+    }
+
     const container = containerRef.current
     container.addEventListener('wheel', handleWheel, {
       passive: false,
       capture: true,
     })
+    container.addEventListener('touchstart', handleTouchStart, {
+      passive: true,
+      capture: true,
+    })
+    container.addEventListener('touchmove', handleTouchMove, {
+      passive: false,
+      capture: true,
+    })
+    container.addEventListener('touchend', handleTouchEnd, {
+      passive: true,
+      capture: true,
+    })
 
     return () => {
       container.removeEventListener('wheel', handleWheel, { capture: true })
+      container.removeEventListener('touchstart', handleTouchStart, { capture: true })
+      container.removeEventListener('touchmove', handleTouchMove, { capture: true })
+      container.removeEventListener('touchend', handleTouchEnd, { capture: true })
       chart.remove()
       chartRef.current = null
       // Main series

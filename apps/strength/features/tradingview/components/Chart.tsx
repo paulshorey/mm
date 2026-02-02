@@ -332,16 +332,117 @@ export const Chart = forwardRef<ChartRef, ChartProps>(
         })
       }
 
+      // Pinch-to-zoom for mobile devices
+      let lastPinchDistance: number | null = null
+      let lastPinchMidpointX: number | null = null
+
+      const handleTouchStart = (e: TouchEvent) => {
+        const touch0 = e.touches[0]
+        const touch1 = e.touches[1]
+        if (e.touches.length === 2 && touch0 && touch1) {
+          // Calculate initial distance between two fingers
+          const dx = touch1.clientX - touch0.clientX
+          const dy = touch1.clientY - touch0.clientY
+          lastPinchDistance = Math.sqrt(dx * dx + dy * dy)
+          // Calculate midpoint X position
+          lastPinchMidpointX = (touch0.clientX + touch1.clientX) / 2
+        }
+      }
+
+      const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches.length !== 2 || lastPinchDistance === null || lastPinchMidpointX === null) return
+
+        const touch0 = e.touches[0]
+        const touch1 = e.touches[1]
+        if (!touch0 || !touch1) return
+
+        e.preventDefault()
+
+        // Calculate current distance between fingers
+        const dx = touch1.clientX - touch0.clientX
+        const dy = touch1.clientY - touch0.clientY
+        const currentDistance = Math.sqrt(dx * dx + dy * dy)
+
+        // Calculate current midpoint
+        const currentMidpointX = (touch0.clientX + touch1.clientX) / 2
+
+        const timeScale = chart.timeScale()
+        const visibleRange = timeScale.getVisibleLogicalRange()
+        if (!visibleRange) return
+
+        // Get midpoint position relative to container
+        const containerRect = containerRef.current?.getBoundingClientRect()
+        if (!containerRect) return
+        const anchorX = currentMidpointX - containerRect.left
+
+        // Convert anchor X to logical index
+        const anchorLogical = timeScale.coordinateToLogical(anchorX)
+        if (anchorLogical === null) return
+
+        // Calculate zoom factor from pinch distance change
+        // Inverted: spreading fingers apart (larger distance) = zoom in (smaller factor)
+        const zoomFactor = lastPinchDistance / currentDistance
+
+        const currentFrom = visibleRange.from
+        const currentTo = visibleRange.to
+        const currentWidth = currentTo - currentFrom
+
+        // Calculate anchor position as fraction of visible range
+        const anchorFraction = (anchorLogical - currentFrom) / currentWidth
+
+        const newWidth = currentWidth * zoomFactor
+
+        // Apply zoom limits
+        const minBars = 10
+        const maxBars = 50000
+        if (newWidth < minBars || newWidth > maxBars) return
+
+        // Anchor at midpoint between fingers
+        const newFrom = anchorLogical - anchorFraction * newWidth
+        const newTo = newFrom + newWidth
+
+        timeScale.setVisibleLogicalRange({
+          from: newFrom,
+          to: newTo,
+        })
+
+        // Update last values for next move event
+        lastPinchDistance = currentDistance
+        lastPinchMidpointX = currentMidpointX
+      }
+
+      const handleTouchEnd = (e: TouchEvent) => {
+        if (e.touches.length < 2) {
+          lastPinchDistance = null
+          lastPinchMidpointX = null
+        }
+      }
+
       // Use capture phase to intercept before lightweight-charts
       const container = containerRef.current
       container.addEventListener('wheel', handleWheel, {
         passive: false,
         capture: true,
       })
+      container.addEventListener('touchstart', handleTouchStart, {
+        passive: true,
+        capture: true,
+      })
+      container.addEventListener('touchmove', handleTouchMove, {
+        passive: false,
+        capture: true,
+      })
+      container.addEventListener('touchend', handleTouchEnd, {
+        passive: true,
+        capture: true,
+      })
 
       // Cleanup
       return () => {
         container.removeEventListener('wheel', handleWheel, { capture: true })
+        container.removeEventListener('touchstart', handleTouchStart, { capture: true })
+        container.removeEventListener('touchmove', handleTouchMove, { capture: true })
+        container.removeEventListener('touchend', handleTouchEnd, { capture: true })
         chart.remove()
         chartRef.current = null
         strengthAverageSeriesRef.current = null
