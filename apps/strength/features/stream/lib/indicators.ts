@@ -190,7 +190,7 @@ export function indicatorTR(candles: Candle[]): LineData[] {
   for (let i = 0; i < candles.length; i++) {
     const current = candles[i]
     const previous = candles[i - 1]
-    if (current) {
+    if (current && candles[i]) {
       const tr = _tr(current, previous?.close ?? null)
       trValues.push({
         time: (candles[i].time / 1000) as Time,
