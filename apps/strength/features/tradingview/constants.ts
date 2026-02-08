@@ -29,6 +29,7 @@ export const LAZY_LOAD_COOLDOWN_MS = 2000
 export const FUTURE_PADDING_HOURS = 12
 export const FUTURE_PADDING_BARS = FUTURE_PADDING_HOURS * 60 // Convert to minutes (bars)
 
+export const SHOW_0_LINE = false
 export const SHOW_100_LINES = false
 
 // Color palette - Dark theme
@@ -57,6 +58,18 @@ export const COLORS = {
   strength_i: 'hsla(35 100% 50% / 0.55)', // Orange transparent
   strength_ii: 'hsla(35 100% 50% / 0.44)', // Orange transparent
   strength_iii: 'hsla(35 100% 50% / 0.22)', // Orange transparent
+
+  strength_1: 'hsla(35 100% 50% / 0.25)', // Orange
+  strength_3: 'hsla(35 100% 50% / 0.3)', // Orange
+  strength_5: 'hsla(35 100% 50% / 0.35)', // Orange
+  strength_7: 'hsla(35 100% 50% / 0.4)', // Orange
+  strength_13: 'hsla(35 100% 50% / 0.45)', // Orange
+  strength_29: 'hsla(35 100% 50% / 0.5)', // Orange
+  strength_59: 'hsla(35 100% 50% / 0.6)', // Orange
+  strength_109: 'hsla(35 100% 50% / 0.7)', // Orange
+  strength_181: 'hsla(35 100% 50% / 0.8)', // Orange
+  strength_D: 'hsla(35 100% 50% / 0.5)', // Orange
+  strength_W: 'hsla(35 100% 50% / 0.5)', // Orange
 
   // price_i: 'hsla(275 85% 70% / 0.5)', // Purple transparent
   price_i: 'hsla(233 100% 75% / 0.67)', // Blue transparent
