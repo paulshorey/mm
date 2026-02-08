@@ -5,13 +5,17 @@ import {
   useState,
   MutableRefObject,
 } from 'react'
-import type { IChartApi } from 'lightweight-charts'
+import type { IChartApi, LogicalRange } from 'lightweight-charts'
 import type { Candle } from '@/lib/market-data/candles'
 import {
   POLL_INTERVAL_MS,
   RECENT_CANDLES,
   PRICE_SCALE_RIGHT_OFFSET,
+  LAZY_LOAD_BARS_THRESHOLD,
+  LAZY_LOAD_FETCH_HOURS,
+  LAZY_LOAD_COOLDOWN_MS,
   buildCandlesUrl,
+  buildCandlesUrlRange,
 } from './constants'
 import { usePlotData } from './usePlotData'
 import type { SeriesRefs, AbsorptionRefs } from './useInitChart'
@@ -40,6 +44,10 @@ export function usePollData({
   const isPollingRef = useRef(false)
   const hasStartedPollingRef = useRef(false)
 
+  // Lazy loading state
+  const isLoadingHistoricalRef = useRef(false)
+  const lastLazyLoadTimeRef = useRef(0)
+
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,6 +60,17 @@ export function usePollData({
     }
     return (await response.json()) as Candle[]
   }, [])
+
+  const fetchCandlesRange = useCallback(
+    async (startMs: number, endMs: number) => {
+      const response = await fetch(buildCandlesUrlRange(startMs, endMs))
+      if (!response.ok) {
+        throw new Error(`Failed to fetch candles: ${response.status}`)
+      }
+      return (await response.json()) as Candle[]
+    },
+    []
+  )
 
   const applyRecentCandles = useCallback(
     (recentCandles: Candle[]) => {
@@ -97,6 +116,111 @@ export function usePollData({
     },
     [dataRef, plotChartData]
   )
+
+  /**
+   * Fetch historical candles before the earliest data point and prepend them.
+   * Restores the user's scroll position after prepending so the view doesn't jump.
+   */
+  const fetchHistoricalBefore = useCallback(async () => {
+    if (isLoadingHistoricalRef.current) return
+    const data = dataRef.current
+    if (data.length === 0) return
+
+    const earliest = data[0]
+    if (!earliest) return
+
+    isLoadingHistoricalRef.current = true
+
+    try {
+      const endMs = earliest.time // exclusive: up to (but not including) current earliest
+      const startMs = endMs - LAZY_LOAD_FETCH_HOURS * 60 * 60 * 1000
+
+      const historicalCandles = await fetchCandlesRange(startMs, endMs)
+      if (historicalCandles.length === 0) return
+
+      // De-duplicate: only keep candles with timestamps before our earliest
+      const earliestTime = earliest.time
+      const newCandles = historicalCandles.filter(
+        (c) => c.time < earliestTime
+      )
+      if (newCandles.length === 0) return
+
+      // Save visible logical range before prepending
+      const chart = chartRef.current
+      let savedLogicalRange: LogicalRange | null = null
+      if (chart) {
+        savedLogicalRange = chart.timeScale().getVisibleLogicalRange()
+      }
+
+      const prependedCount = newCandles.length
+
+      // Prepend historical data and re-plot everything
+      dataRef.current = [...newCandles, ...data]
+      plotChartData(dataRef.current)
+
+      // Restore scroll position: offset visible range by number of prepended bars
+      if (chart && savedLogicalRange && prependedCount > 0) {
+        requestAnimationFrame(() => {
+          if (!chart) return
+          try {
+            chart.timeScale().setVisibleLogicalRange({
+              from: savedLogicalRange!.from + prependedCount,
+              to: savedLogicalRange!.to + prependedCount,
+            })
+          } catch {
+            // Scroll position restoration failed - not critical
+          }
+        })
+      }
+    } catch (err) {
+      console.error('Error fetching historical candles:', err)
+    } finally {
+      isLoadingHistoricalRef.current = false
+    }
+  }, [chartRef, dataRef, fetchCandlesRange, plotChartData])
+
+  /**
+   * Subscribe to visible range changes to detect when user scrolls near
+   * the beginning of available data, triggering lazy loading of more history.
+   */
+  useEffect(() => {
+    const chart = chartRef.current
+    const priceSeries = seriesRefs.price?.current
+    if (!chart || !priceSeries) return
+
+    const handleVisibleLogicalRangeChange = (
+      logicalRange: LogicalRange | null
+    ) => {
+      if (!logicalRange) return
+      if (dataRef.current.length === 0) return
+
+      const barsInfo = priceSeries.barsInLogicalRange(logicalRange)
+      if (!barsInfo) return
+
+      const now = Date.now()
+      const timeSinceLastLoad = now - lastLazyLoadTimeRef.current
+
+      if (
+        barsInfo.barsBefore !== null &&
+        barsInfo.barsBefore < LAZY_LOAD_BARS_THRESHOLD &&
+        !isLoadingHistoricalRef.current &&
+        timeSinceLastLoad > LAZY_LOAD_COOLDOWN_MS
+      ) {
+        lastLazyLoadTimeRef.current = now
+        void fetchHistoricalBefore()
+      }
+    }
+
+    chart
+      .timeScale()
+      .subscribeVisibleLogicalRangeChange(handleVisibleLogicalRangeChange)
+
+    return () => {
+      chart
+        .timeScale()
+        .unsubscribeVisibleLogicalRangeChange(handleVisibleLogicalRangeChange)
+    }
+  }, [chartRef, seriesRefs.price, dataRef, fetchHistoricalBefore])
 
   const pollLatest = useCallback(async () => {
     if (isPollingRef.current) return

@@ -76,39 +76,19 @@ function resolveTimeframe(
 export interface Candle {
   // Timestamp
   time: number
-  // Price OHLC
+  // OHLCV
   open: number
   high: number
   low: number
   close: number
   volume: number
-  // CVD OHLC
+  // CVD
   cvd_open: number
   cvd_high: number
   cvd_low: number
   cvd_close: number
-  // EVR OHLC
-  evr_open: number
-  evr_high: number
-  evr_low: number
-  evr_close: number
-  // VWAP OHLC
-  vwap_open: number
-  vwap_high: number
-  vwap_low: number
-  vwap_close: number
-  // Spread BPS OHLC
-  spread_bps_open: number
-  spread_bps_high: number
-  spread_bps_low: number
-  spread_bps_close: number
-  // Price PCT OHLC
-  price_pct_open: number
-  price_pct_high: number
-  price_pct_low: number
-  price_pct_close: number
   // Line metrics
-  book_imbalance_close: number
+  book_imbalance: number
   big_trades: number
   big_volume: number
   vd_strength: number
@@ -207,11 +187,7 @@ export async function getCandles(
   const columns = `
     time, open, high, low, close, volume,
     cvd_open, cvd_high, cvd_low, cvd_close,
-    evr_open, evr_high, evr_low, evr_close,
-    vwap_open, vwap_high, vwap_low, vwap_close,
-    spread_bps_open, spread_bps_high, spread_bps_low, spread_bps_close,
-    price_pct_open, price_pct_high, price_pct_low, price_pct_close,
-    book_imbalance_close, big_trades, big_volume, vd_strength
+    book_imbalance, big_trades, big_volume, vd_strength
   `
 
   let query = `
@@ -253,23 +229,7 @@ export async function getCandles(
     cvd_high: parseFloat(row.cvd_high ?? 0),
     cvd_low: parseFloat(row.cvd_low ?? 0),
     cvd_close: parseFloat(row.cvd_close ?? 0),
-    evr_open: parseFloat(row.evr_open ?? 0),
-    evr_high: parseFloat(row.evr_high ?? 0),
-    evr_low: parseFloat(row.evr_low ?? 0),
-    evr_close: parseFloat(row.evr_close ?? 0),
-    vwap_open: parseFloat(row.vwap_open ?? 0),
-    vwap_high: parseFloat(row.vwap_high ?? 0),
-    vwap_low: parseFloat(row.vwap_low ?? 0),
-    vwap_close: parseFloat(row.vwap_close ?? 0),
-    spread_bps_open: parseFloat(row.spread_bps_open ?? 0),
-    spread_bps_high: parseFloat(row.spread_bps_high ?? 0),
-    spread_bps_low: parseFloat(row.spread_bps_low ?? 0),
-    spread_bps_close: parseFloat(row.spread_bps_close ?? 0),
-    price_pct_open: parseFloat(row.price_pct_open ?? 0),
-    price_pct_high: parseFloat(row.price_pct_high ?? 0),
-    price_pct_low: parseFloat(row.price_pct_low ?? 0),
-    price_pct_close: parseFloat(row.price_pct_close ?? 0),
-    book_imbalance_close: parseFloat(row.book_imbalance_close ?? 0),
+    book_imbalance: parseFloat(row.book_imbalance ?? 0),
     big_trades: parseFloat(row.big_trades ?? 0),
     big_volume: parseFloat(row.big_volume ?? 0),
     vd_strength: parseFloat(row.vd_strength ?? 0),

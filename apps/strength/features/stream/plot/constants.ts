@@ -3,7 +3,6 @@ import { BarData, LineData, Time } from 'lightweight-charts'
 import {
   indicatorRSI,
   indicatorRSI_OHLC,
-  indicatorATR,
   pivotPoints,
   indicatorTR,
 } from '../lib/indicators'
@@ -14,6 +13,14 @@ export const POLL_INTERVAL_MS = 1000
 export const RECENT_CANDLES = 22 // I guess it needs to be enough to indicator indicators
 export const RSI_PERIOD = 14
 export const ATR_PERIOD = 5
+
+// Lazy loading thresholds
+// Number of bars before visible area that triggers loading more historical data
+export const LAZY_LOAD_BARS_THRESHOLD = 30
+// Number of hours of historical data to fetch per lazy load request
+export const LAZY_LOAD_FETCH_HOURS = 4 // 4 hours = 240 candles at 1m
+// Cooldown between lazy load requests (in ms)
+export const LAZY_LOAD_COOLDOWN_MS = 2000
 
 // Extra width to extend chart past screen edge, pushing price scale's internal padding off-screen
 // This makes the price numbers appear flush against the right edge
@@ -191,103 +198,6 @@ export const SERIES: Record<string, SeriesConfig> = {
       }))
     },
   },
-
-  // DISABLED:
-  vwap: {
-    seriesType: 'Bar',
-    enabled: false,
-    color: 'hsl(45 100% 50%)',
-    top: 0,
-    bottom: 0.4,
-    priceScaleId: 'right',
-    applyScaleMargins: false, // shares scale with price
-    formatter: function (candles: Candle[]): BarData[] {
-      return candles
-        .filter(
-          (candle) =>
-            candle.vwap_open &&
-            candle.vwap_high &&
-            candle.vwap_low &&
-            candle.vwap_close
-        )
-        .map((candle) => ({
-          time: (candle.time / 1000) as Time,
-          open: candle.vwap_open,
-          high: candle.vwap_high,
-          low: candle.vwap_low,
-          close: candle.vwap_close,
-        }))
-    },
-  },
-  // HL/LH trend
-  bookImbalance: {
-    seriesType: 'Line',
-    enabled: false,
-    color: 'hsl(0 70% 60%)',
-    top: 0.35,
-    bottom: 0.15,
-    priceScaleId: 'bookImbalance',
-    formatter: function (candles: Candle[]): LineData[] {
-      return candles.map((candle) => ({
-        time: (candle.time / 1000) as Time,
-        value: candle.book_imbalance_close,
-      }))
-    },
-  },
-  // 0-middle volatility:
-  pricePct: {
-    seriesType: 'Bar',
-    enabled: false,
-    color: 'hsl(15 90% 55%)',
-    top: 0.6,
-    bottom: 0,
-    priceScaleId: 'metrics',
-    formatter: function (candles: Candle[]): BarData[] {
-      return candles.map((candle) => ({
-        time: (candle.time / 1000) as Time,
-        open: candle.price_pct_open,
-        high: candle.price_pct_high,
-        low: candle.price_pct_low,
-        close: candle.price_pct_close,
-      }))
-    },
-  },
-  evr: {
-    seriesType: 'Bar',
-    enabled: false,
-    color: 'hsl(280 70% 65%)',
-    top: 0.6,
-    bottom: 0,
-    priceScaleId: 'metrics',
-    applyScaleMargins: false,
-    formatter: function (candles: Candle[]): BarData[] {
-      return candles.map((candle) => ({
-        time: (candle.time / 1000) as Time,
-        open: candle.evr_open * 7,
-        high: candle.evr_high * 7,
-        low: candle.evr_low * 7,
-        close: candle.evr_close * 7,
-      }))
-    },
-  },
-  // not used
-  spreadBps: {
-    seriesType: 'Bar',
-    enabled: false,
-    color: 'hsl(200 80% 55%)',
-    top: 0.8,
-    bottom: 0,
-    priceScaleId: 'spreadBps',
-    formatter: function (candles: Candle[]): BarData[] {
-      return candles.map((candle) => ({
-        time: (candle.time / 1000) as Time,
-        open: normalizeSpreadBps(candle.spread_bps_open),
-        high: normalizeSpreadBps(candle.spread_bps_high),
-        low: normalizeSpreadBps(candle.spread_bps_low),
-        close: normalizeSpreadBps(candle.spread_bps_close),
-      }))
-    },
-  },
 }
 
 // Export type for series keys
@@ -313,7 +223,6 @@ export function buildCandlesUrl(limit: number) {
   return `${BASE_CANDLES_URL}&limit=${limit}`
 }
 
-// Helper function for spreadBps normalization
-function normalizeSpreadBps(spreadBps: number): number {
-  return Math.min(1, Math.max(-1, spreadBps * 10))
+export function buildCandlesUrlRange(startMs: number, endMs: number) {
+  return `${BASE_CANDLES_URL}&start=${startMs}&end=${endMs}`
 }
