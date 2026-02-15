@@ -1,11 +1,11 @@
 {
-  "name": "strength",
+  "name": "market-view-next",
   "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --port 3333",
     "build": "next build",
-    "env:pull": "node ../../scripts/fetch-infisical.mjs /m/apps/strength apps/strength/.env",
+    "env:pull": "node ../../scripts/fetch-infisical.mjs /m/apps/market-view-ts apps/market-view-ts/.env",
     "analyze": "ANALYZE=true next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

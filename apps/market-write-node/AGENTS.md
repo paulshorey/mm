@@ -1,8 +1,12 @@
-# Market Data Platform
+# Market Write (NodeJS service)
 
-Multi-timeframe financial data pipeline for futures and crypto. Ingests live trade data, aggregates into candles with order flow metrics, and serves via REST API. The long-term goal is a backtesting platform where strategies can reference any timeframe at 1-minute resolution.
+Multi-timeframe financial data pipeline for futures and crypto. Ingests live trades data, calculates metrics and indicators such as RSI/CVD/VWAP, aggregates raw trade data into candles time buckets.
 
-See [docs/plan.md](docs/plan.md) for what's built and what's next.
+Aggregates raw data into 1-minute bars, calculated and written every second using rolling window sampling. Every 1-minute bar is a full legitimate 1-minute bar with a high/low value and total volume caculated over the past 60 seconds. But each candle is written every second, so every second in time has its own candle with its own close value. Instead of a new candle waiting for the previous one to close, a new candle is started every second, and an old canlde is written every second.
+
+TODO: Aggregate 1-minute data into higher timeframes such as 15-minutes, 60-minutes, and even 1-day, but calculate and update every minute also using rolling window sampling.
+
+TODO: Indicators must be calculated per each candle, sampling candles of the same second_index (for minute candles) and same minute_index (for higher timeframes).
 
 ## Core Innovation: Rolling-Window Sampling
 
@@ -13,13 +17,23 @@ Standard platforms calculate a 60-minute candle once per hour. This platform cal
 - Indicators like RSI are calculated per minute_index independently (60 separate RSI calculators for a 60m timeframe)
 - Backtesting can evaluate any timeframe at any minute, not just at period boundaries
 
-**Example**: To get RSI-14 on 60m data at 10:31 (minute_index=31), query 14 rows where `minute_index=31` ordered by timestamp DESC. Each row is 60 minutes apart (9:31, 8:31, 7:31...) -- exactly what the indicator needs.
+**Example**: To get RSI-14 on 60m data at 10:31 (minute_index=31), query 14 rows where `minute_index=31` ordered by timestamp DESC. Each row is 60 minutes apart (9:31, 8:31, 7:31...).
 
 ```sql
-SELECT close FROM ohlcv_60m
+SELECT close FROM candles_60m
 WHERE symbol = 'ES' AND minute_index = 31
 ORDER BY ts DESC LIMIT 14;
 ```
+
+**Example**: To get RSI-14 on 1m data at 10:31:47 (second_index:47), query 14 rows where `second_index:47` ordered by timestamp DESC. Each row is 60 seconds apart (10:30:47, 10:29:47, 10:28:47...).
+
+```sql
+SELECT close FROM candles_1m
+WHERE symbol = 'ES' AND minute_index = 31
+ORDER BY ts DESC LIMIT 14;
+```
+
+Same indicator calculation as in a typical system, only here the current candle is always fully closed.
 
 ## Tech Stack
 
@@ -31,14 +45,12 @@ ORDER BY ts DESC LIMIT 14;
 
 ## Database Conventions
 
-- Table names: `ohlcv_{interval}m` (e.g., `ohlcv_60m`). One table per timeframe, all sharing the same schema.
+- Table names: `candles_{interval}m` (e.g., `candles_60m`). One table per timeframe, all sharing the same schema.
 - Primary key: `(symbol, ts)`. All symbols share one table, differentiated by `symbol` column.
 - Critical index: `(symbol, minute_index, ts DESC)` for indicator lookups.
 - `minute_index` cycles 0 to N-1 for an N-minute timeframe.
 - Column names: snake_case in DB, camelCase in TypeScript.
 - Indicators stored in same row as OHLCV (no JOINs needed).
-
-See [docs/data-storage/overview.md](docs/data-storage/overview.md) for full schema, partitioning, and query patterns.
 
 ## Project Structure
 
@@ -61,6 +73,5 @@ docs/                       # Architecture docs, examples, research notes
 See [docs/index.md](docs/index.md) for the full map. Key sections:
 
 - **data-storage/**: Database schema, partitioning, optimization, Databento ingestion
-- **data-indicators/**: Indicator calculation with rolling windows, RSI reference implementation
+- **data-indicators/**: Indicator calculation with rolling windows, RSI reference implementation, pivot detection research
 - **data-backtesting/**: Backtesting architecture, order flow patterns, optimization
-- **data-analysis/**: Pivot detection research, Python analysis scripts

@@ -1,7 +1,7 @@
 {
-  "name": "market-data",
+  "name": "market-write-node",
   "version": "1.0.1",
-  "description": "Market data polling and API service for futures and crypto prices",
+  "description": "Ingest futures and crypto market data, calculate indicators, aggregate candles and higher timeframes",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

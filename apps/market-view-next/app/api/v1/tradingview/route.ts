@@ -1,10 +1,72 @@
 import { NextRequest } from 'next/server'
 import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
 import { strengthGets } from '@lib/common/sql/strength/gets'
+import { strengthAdd } from '@lib/common/sql/strength/add'
+import { parseStrengthText } from '@lib/common/sql/strength/parse-text'
 import { cc } from '@lib/common/cc'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+/**
+ * POST /api/v1/tradingview
+ *
+ * Accepts TradingView webhook text body with strength data and saves to database.
+ * Migrated from apps/market-data/src/api/strength/v1.ts
+ *
+ * Expected body format (text/plain):
+ *   ticker=ES interval=60 time=2024-01-01 strength=0.75 price=5000 volume=1000
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Parse text body
+    const bodyText = await request.text()
+    const strengthData = parseStrengthText(bodyText)
+
+    // Check if we have the required fields
+    if (strengthData?.strength === undefined || strengthData?.interval === undefined || strengthData?.ticker === undefined) {
+      return formatResponse(
+        {
+          ok: false,
+          error: 'Missing required fields: ticker, interval, strength',
+        },
+        400
+      )
+    }
+
+    // Validate parsed data
+    if (strengthData.strength === null || strengthData.interval === null || strengthData.ticker === null) {
+      cc.error('/api/v1/tradingview invalid strengthData', { bodyText })
+      return formatResponse(
+        {
+          ok: false,
+          error: 'Invalid strengthData',
+        },
+        400
+      )
+    }
+
+    // Save to database
+    const result = await strengthAdd(strengthData)
+
+    return formatResponse({
+      ok: true,
+      message: 'Strength data saved successfully',
+      resultId: result?.id,
+      data: strengthData,
+    })
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error))
+    cc.error(`POST /api/v1/tradingview error: ${err.message}`, err)
+    return formatResponse(
+      {
+        ok: false,
+        error: err.message,
+      },
+      400
+    )
+  }
+}
 
 export async function GET(request: NextRequest) {
   // const callId = Math.random().toString(36).substring(7)

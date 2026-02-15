@@ -11,7 +11,7 @@ matching regex: /\/pull\//
   display: none !important;
 }
 
-[data-url*="/paulshorey/m/pull/20/partials/deployed_event"] {
+[data-url*="/paulshorey/m/pull/"] {
   display: none !important;
 }
 

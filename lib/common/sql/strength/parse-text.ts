@@ -1,13 +1,14 @@
-import { StrengthDataAdd } from "./types.js";
+import { StrengthDataAdd } from "./types";
 
 /**
  * Parses strength data from text format: key=value key=value
  * TradingView message: ticker={{ticker}} interval={{interval}} time={{time}} strength={{plot("strength")}} price={{price}} volume={{volume}}
- * Adapted from apps/trade/dydx/lib/parseStrengthText.ts
+ * The strength value is saved to the column that matches the interval value
  */
 export function parseStrengthText(bodyText: string): StrengthDataAdd {
   const data = {} as StrengthDataAdd;
 
+  // Split by spaces and parse key=value pairs
   const pairs = bodyText.trim().split(/\s+/);
 
   for (const pair of pairs) {

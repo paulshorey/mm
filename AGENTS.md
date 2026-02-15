@@ -4,16 +4,15 @@ This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo t
 
 **Apps:**
 
-- strength - ./apps/strength - financial charts and data analysis built with lightweight-charts
-- price-ui - ./apps/price-ui - financial charts and data analysis built with HighCharts
-- log - ./apps/log - logging and observability for all data types
-- trade ./apps/trade - day trading and investment positions management
-- facts - ./apps/facts - (additional app in monorepo)
+- market-view-ts - ./apps/market-view-ts - TypeScript app to display financial charts and data analysis visualizations
+- market-write-ts - ./apps/market-write-ts - TypeScript server that connects to data providers, ingests price and volume data per trade, calculates indicators, aggregates candles and higher timeframes for backtestsing
+- log - ./apps/log - logging and observability dashboard
+- trade ./apps/trade - trades, orders, and position management
 
 **Shared Libraries:**
 
 - common - ./lib/common - shared utilities imported by all apps
-  - ./lib/common/sql - database functions for log, order, and strength tables
+  - ./lib/common/sql - database functions to get/add/edit each data type
   - ./lib/common/twillio - Twilio integration for SMS alerts
   - ./lib/common/fe - client-side React components, hooks, and utility functions
   - ./lib/common/cc - cloud console logging
