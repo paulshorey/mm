@@ -1,9 +1,0 @@
-//@version=6
-indicator(title="cci", format=format.price, precision=2, timeframe="", timeframe_gaps=true)
-price = hlc3
-
-cciPriceMaLength = 20
-cciPriceMa = ta.sma(price, cciPriceMaLength)
-cci = (price - cciPriceMa) / (0.015 * ta.dev(price, cciPriceMaLength))
-plot(cci, "CCI", color=#2962FF)
-

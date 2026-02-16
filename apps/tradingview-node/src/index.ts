@@ -3,8 +3,8 @@ import cors from "cors";
 import express from "express";
 import { formatResponse } from "./lib/http.js";
 import { Router } from "express";
-import { createGetTradingView } from "./api/v1/tradingview/getTradingView.js";
-import { createPostTradingView } from "./api/v1/tradingview/postTradingView.js";
+import { createGetTradingView } from "./api/v1/tradingview/get.js";
+import { createPostTradingView } from "./api/v1/tradingview/post.js";
 import { getStrengthRows, strengthAdd } from "./lib/strength.js";
 
 export function createApp(options?: {
@@ -25,10 +25,7 @@ export function createApp(options?: {
   });
   const tradingViewRouter = Router();
   tradingViewRouter.get("/", createGetTradingView({ getStrengthRows: getStrengthRowsFn }));
-  tradingViewRouter.post(
-    "/",
-    createPostTradingView({ strengthAdd: strengthAddFn, ...(sqlLogAddFn && { sqlLogAdd: sqlLogAddFn }) }),
-  );
+  tradingViewRouter.post("/", createPostTradingView({ strengthAdd: strengthAddFn, ...(sqlLogAddFn && { sqlLogAdd: sqlLogAddFn }) }));
   app.use("/api/v1/tradingview", tradingViewRouter);
 
   return app;
