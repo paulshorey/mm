@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { sqlLogAdd } from "@lib/common/sql/log/add";
-import { formatResponse } from "../../lib/http.js";
-import { parseStrengthText, strengthAdd } from "../../lib/strength.js";
+import { formatResponse } from "../../../lib/http.js";
+import { parseStrengthText, strengthAdd } from "../../../lib/strength.js";
 
 export const postTradingView = async (req: Request, res: Response) => {
   try {

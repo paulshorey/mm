@@ -3,26 +3,33 @@ import cors from "cors";
 import express from "express";
 import { formatResponse } from "./lib/http.js";
 import { Router } from "express";
-import { getTradingView } from "./api/strength/getTradingView.js";
-import { postTradingView } from "./api/strength/postTradingView.js";
+import { createGetTradingView } from "./api/v1/tradingview/getTradingView.js";
+import { postTradingView } from "./api/v1/tradingview/postTradingView.js";
+import { getStrengthRows } from "./lib/strength.js";
 
-// APP
-const app = express();
-const port = Number(process.env.PORT) || 3000;
-app.use(cors());
-app.use(express.json());
-app.use(express.text({ type: "*/*" }));
+export function createApp(options?: { getStrengthRows?: typeof getStrengthRows }) {
+  const getStrengthRowsFn = options?.getStrengthRows ?? getStrengthRows;
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+  app.use(express.text({ type: "*/*" }));
 
-// ENDPOINTS
-app.get("/health", (_req, res) => {
-  formatResponse(res, { ok: true });
-});
-const tradingViewRouter = Router();
-tradingViewRouter.get("/", getTradingView);
-tradingViewRouter.post("/", postTradingView);
-app.use("/api/v1/tradingview", tradingViewRouter);
+  app.get("/health", (_req, res) => {
+    formatResponse(res, { ok: true });
+  });
+  const tradingViewRouter = Router();
+  tradingViewRouter.get("/", createGetTradingView({ getStrengthRows: getStrengthRowsFn }));
+  tradingViewRouter.post("/", postTradingView);
+  app.use("/api/v1/tradingview", tradingViewRouter);
 
-// START
-app.listen(port, "::", () => {
-  console.log(`TradingView API server running on port ${port}`);
-});
+  return app;
+}
+
+// START - only when run directly, not when imported for tests
+if (process.env.NODE_ENV !== "test") {
+  const app = createApp();
+  const port = Number(process.env.PORT) || 3000;
+  app.listen(port, "::", () => {
+    console.log(`TradingView API server running on port ${port}`);
+  });
+}

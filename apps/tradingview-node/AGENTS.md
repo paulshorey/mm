@@ -8,6 +8,14 @@ Express service that owns the TradingView strength API previously hosted in `mar
 - `GET /api/v1/tradingview`: reads `strength_v1` rows with optional query filters.
 - `GET /health`: basic liveness check.
 
+## Testing
+
+- **Framework**: Node.js built-in test runner (`node:test`) + supertest for HTTP assertions. No additional test framework.
+- **Run**: `pnpm test` (or `pnpm --filter tradingview-node test` from repo root).
+- **Setup**: `src/test/setup.ts` runs via `--import` before tests; sets `NEON_DATABASE_URL` placeholder so db module does not throw. `NODE_ENV=test` prevents the server from starting when importing `createApp` for tests.
+- **Mock data**: `src/test/mockData.ts` exports `mockStrengthRows` for unit tests. Uses types from `src/types/strength.ts`.
+- **Testability**: `createApp(options?)` in `src/index.ts` accepts `getStrengthRows` override for dependency injection. `createGetTradingView(deps)` in `getTradingView.ts` receives the fetcher.
+
 ## Notes
 
 - Keep route behavior compatible with prior Next.js API contract (`ok`, `status`, `rows`, `error`).

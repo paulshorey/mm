@@ -1,14 +1,15 @@
 ---
-description: "Technical code research. Activate when the agent needs to look up implementation details, API documentation, error solutions, code patterns, library usage, configuration examples, or architecture patterns. Uses Cursor's built-in web search and fetch tools."
-alwaysApply: false
+description: "Web research. Use Cursor's built-in web search and fetch for all research—technical, exploratory, or otherwise. No other research tools."
+alwaysApply: true
 ---
 
 # Deep Technical Search
 
-Use Cursor's built-in web search and fetch tools for technical code research. This is for specific, implementation-focused questions where you know roughly what you're looking for.
+Always search the web deeply and completely before implementing code.
 
 ## When to activate
 
+- Any task needing external information beyond repo context
 - Choosing between specific implementation approaches or code patterns
 - Looking up library, API, or framework documentation
 - Troubleshooting an error, bug, or unexpected behavior

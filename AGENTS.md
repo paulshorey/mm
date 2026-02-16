@@ -55,15 +55,9 @@ Check both `lint` and `build` at the same time using `npm run build`.
 
 If I present you with a contradictory or confusing request, ask to clarify.
 
-### Web search
+### Web research
 
-Do not guess. When the answer is not obvious, research before writing code. Use the appropriate rule:
-
-- **Technical questions** (API docs, error fixes, code patterns, config, library usage) --> use `.cursor/rules/deep-search.mdc`. Search hard with Cursor's built-in web tools. Run multiple queries, read full pages, verify information is current.
-
-- **Broad/exploratory questions** (unclear approach, trade-offs between fundamentally different strategies, need community perspective, unfamiliar territory) --> use `.cursor/rules/perplexity-research.mdc`. Use Perplexity to explore the landscape, find real-world experiences, and discover unknowns.
-
-- **Complex questions** that need both --> start with Perplexity to orient and understand the landscape, then use deep-search for implementation specifics.
+Do not guess. When the answer is not obvious, search the web, research before writing any code. Follow `.cursor/rules/deep-search.mdc`.
 
 ## Workflow
 
