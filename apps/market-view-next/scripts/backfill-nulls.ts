@@ -1,5 +1,5 @@
 /**
- * Backfill script to forward-fill null interval columns in tradingview_v1 table.
+ * Backfill script to forward-fill null interval columns in strength_v1 table.
  *
  * Run from apps/strength:
  *   npx tsx scripts/backfill-nulls.ts
@@ -81,7 +81,7 @@ async function backfillNulls() {
       // Fetch rows starting from cutoff date, ordered by timenow ASC (oldest first)
       const rowsResult = await pool.query(
         `
-        SELECT * FROM tradingview_v1
+        SELECT * FROM strength_v1
         WHERE ticker = $1 AND timenow >= $2
         ORDER BY timenow ASC
       `,
@@ -134,7 +134,7 @@ async function backfillNulls() {
 
           await pool.query(
             `
-            UPDATE tradingview_v1
+            UPDATE strength_v1
             SET ${setClauses.join(', ')}
             WHERE ticker = $1 AND timenow = $2
           `,

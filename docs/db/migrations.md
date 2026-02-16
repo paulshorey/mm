@@ -2,31 +2,55 @@
 
 Use connection URLs (host, port, user, password, and SSL options are parsed from the URL). Replace `OLD_DATABASE_URL`, `NEW_DATABASE_URL`, and `TABLE_NAME` with real values.
 
-### Schema only:
+### Schema only
 
 ```bash
 pg_dump "$OLD_DATABASE_URL" --schema-only -t public.TABLE_NAME \
   | psql "$NEW_DATABASE_URL" -v ON_ERROR_STOP=1
 ```
 
-### With data:
+### Schema and data (single-file dump)
+
+Dump to a file, then restore. Allows retry and works with pooled connections (Neon, Railway).
+
+```bash
+pg_dump "$OLD_DATABASE_URL" -Fc -t public.TABLE_NAME -f migration.dump
+pg_restore -d "$NEW_DATABASE_URL" -Fc -v migration.dump
+```
+
+### Data only
+
+When the schema already exists in the target:
+
+```bash
+pg_dump "$OLD_DATABASE_URL" -a -t public.TABLE_NAME -f migration.dump
+pg_restore -d "$NEW_DATABASE_URL" -a -v migration.dump
+```
+
+### Schema and data (pipe, quick one-liner)
+
+For small or medium tables:
 
 ```bash
 pg_dump "$OLD_DATABASE_URL" -t public.TABLE_NAME \
   | psql "$NEW_DATABASE_URL" -v ON_ERROR_STOP=1
 ```
 
+### Extra large tables
+
+For very large tables, see [backups.md](./backups.md)—use parallel directory format (`-Fd -j`) with a direct (non-pooled) connection when available. Pooled connections often fail with parallel dump.
+
 ### Tips
 
-### Schema name
+#### Schema name
 
 Usually `public`. Use `-t public.log_v1` or just `-t log_v1`.
 
-### `ON_ERROR_STOP=1`
+#### `ON_ERROR_STOP=1`
 
 Makes psql exit on first error instead of continuing.
 
-### Dry run
+#### Dry run
 
 Omit the `| psql ...` part and redirect to a file to inspect the SQL first:
 
@@ -36,11 +60,11 @@ pg_dump "$OLD_DATABASE_URL" --schema-only -t public.TABLE_NAME > schema.sql
 
 Then apply: `psql "$NEW_DATABASE_URL" -v ON_ERROR_STOP=1 -f schema.sql`
 
-### Multiple tables
+#### Multiple tables
 
 Use `-t public.table1 -t public.table2` or `-t 'public.table*'` (pattern).
 
-### Sequence reset
+#### Sequence reset
 
 After data migration with serial/identity columns:
 

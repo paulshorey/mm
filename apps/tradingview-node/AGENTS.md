@@ -5,7 +5,7 @@ Express service that owns the TradingView strength API previously hosted in `mar
 ## Endpoints
 
 - `POST /api/v1/tradingview`: accepts TradingView text payload and writes strength data.
-- `GET /api/v1/tradingview`: reads `tradingview_v1` rows with optional query filters.
+- `GET /api/v1/tradingview`: reads `strength_v1` rows with optional query filters.
 - `GET /health`: basic liveness check.
 
 ## Testing

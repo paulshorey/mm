@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 /**
  * Neon PostgreSQL connection pool.
- * Used for tradingview_v1 table operations (separate from the TimescaleDB pool).
+ * Used for strength_v1 table operations (separate from the TimescaleDB pool).
  */
 
 let neonPool: Pool | null = null;
