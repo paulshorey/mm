@@ -370,7 +370,7 @@ for (const file of FILES) {
   try {
     execFileSync("npx", ["tsx", SCRIPT, file], {
       stdio: "inherit",
-      cwd: path.resolve(__dirname, "../.."),
+      cwd: path.resolve(__dirname, ".."),
     });
     completed++;
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
