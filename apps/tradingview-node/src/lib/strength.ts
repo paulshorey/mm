@@ -131,7 +131,7 @@ const updateRowWithForwardFill = async (
   values.push(average);
   paramIndex++;
 
-  setClauses.push(`"created_at" = COALESCE("created_at", $${paramIndex})`);
+  setClauses.push(`"updated_at" = COALESCE("updated_at", $${paramIndex})`);
   values.push(new Date());
   paramIndex++;
 
