@@ -15,6 +15,9 @@ import {
 const LAZY_LOAD_BARS_THRESHOLD = 50 // Load more when fewer than 50 bars before visible area
 const LAZY_LOAD_FETCH_MINUTES = 120 // Fetch 2 hours of data per load
 const INITIAL_FETCH_HOURS = 24 // Initial load: 24 hours of data
+const TRADINGVIEW_API_URL =
+  process.env.NEXT_PUBLIC_TRADINGVIEW_API_URL ||
+  'http://localhost:3000/api/v1/tradingview'
 
 interface SimpleChartProps {
   ticker: string
@@ -62,7 +65,7 @@ export function SimpleChart({ ticker }: SimpleChartProps) {
         timenow_lt: toDate.toISOString(),
       })
 
-      const response = await fetch(`/api/v1/tradingview?${params}`)
+      const response = await fetch(`${TRADINGVIEW_API_URL}?${params}`)
       const json = await response.json()
 
       if (json.error) {

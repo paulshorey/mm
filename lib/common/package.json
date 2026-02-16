@@ -2,6 +2,7 @@
   "name": "@lib/common",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "tailwindcss": "^4.1.11",
     "@mantine/core": "7.17.8",

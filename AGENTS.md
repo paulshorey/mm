@@ -5,7 +5,10 @@ This project is a monorepo of multiple NextJS apps. It uses Vercel's TurboRepo t
 **Apps:**
 
 - market-view-ts - ./apps/market-view-ts - TypeScript app to display financial charts and data analysis visualizations
+- market-view-next - ./apps/market-view-next - Next.js UI for charting and data visualization
 - market-write-ts - ./apps/market-write-ts - TypeScript server that connects to data providers, ingests price and volume data per trade, calculates indicators, aggregates candles and higher timeframes for backtestsing
+- market-write-node - ./apps/market-write-node - Node.js/Express market data ingestion service
+- tradingview-node - ./apps/tradingview-node - Node.js/Express API for TradingView webhook ingest and strength reads
 - log - ./apps/log - logging and observability dashboard
 - trade ./apps/trade - trades, orders, and position management
 
@@ -52,7 +55,15 @@ Check both `lint` and `build` at the same time using `npm run build`.
 
 If I present you with a contradictory or confusing request, ask to clarify.
 
-If the solution is not obvious, search the web about best practices. Search for more information about the library or framework we're using.
+### Web search
+
+Do not guess. When the answer is not obvious, research before writing code. Use the appropriate rule:
+
+- **Technical questions** (API docs, error fixes, code patterns, config, library usage) --> use `.cursor/rules/deep-search.mdc`. Search hard with Cursor's built-in web tools. Run multiple queries, read full pages, verify information is current.
+
+- **Broad/exploratory questions** (unclear approach, trade-offs between fundamentally different strategies, need community perspective, unfamiliar territory) --> use `.cursor/rules/perplexity-research.mdc`. Use Perplexity to explore the landscape, find real-world experiences, and discover unknowns.
+
+- **Complex questions** that need both --> start with Perplexity to orient and understand the landscape, then use deep-search for implementation specifics.
 
 ## Workflow
 

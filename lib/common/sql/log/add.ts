@@ -2,7 +2,10 @@
 
 import { LogRowAdd } from "./types";
 import { getDb } from "../../lib/db/neon";
-import { getCurrentIpAddress } from "../../lib/nextjs/getCurrentIpAddress";
+import {
+  getCurrentIpAddress,
+  type IpAddressContext,
+} from "../../lib/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
 /**
@@ -20,8 +23,12 @@ import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
  * If `sqlQuery` fails, it attempts to log the failure as a new error record.
  *
  * @param row - A `LogRow` object containing the log details.
+ * @param ipContext - Optional request context for IP resolution when outside Next.js (e.g. Express). Pass { getHeader: (n) => req.get(n), ip: req.ip }.
  */
-export const sqlLogAdd = async function (row: LogRowAdd) {
+export const sqlLogAdd = async function (
+  row: LogRowAdd,
+  ipContext?: IpAddressContext
+) {
   "use server";
 
   // SMS
@@ -36,7 +43,7 @@ export const sqlLogAdd = async function (row: LogRowAdd) {
   const node_env = process.env.NODE_ENV || "";
   const server_name = process.env.SERVER_NAME || "";
   const app_name = process.env.APP_NAME || "";
-  const addr = (await getCurrentIpAddress()) || {};
+  const addr = (await getCurrentIpAddress(ipContext)) || {};
   const category = row.stack?.category || null;
   const tag = row.stack?.tag || null;
 

@@ -1,0 +1,66 @@
+---
+description: "Broad exploratory research via Perplexity MCP. Activate when the problem itself is unclear, when multiple fundamentally different approaches exist, when community perspective would help, or when entering unfamiliar territory where you need to discover unknowns."
+alwaysApply: false
+---
+
+# Perplexity Deep Research
+
+Use the Perplexity MCP server (`perplexity_research`) for broad, exploratory research. This is for questions where you don't yet know exactly what to search for — where you need to understand the landscape before narrowing down to a specific implementation.
+
+## When to activate
+
+- The problem itself is unclear or could be framed multiple ways
+- Multiple fundamentally different approaches exist and you're not sure which direction is right
+- You're entering unfamiliar territory and need to discover what you don't know
+- Community perspective would help — real people's experiences, recommendations, and warnings
+- The question goes beyond code: it involves tooling choices, service comparisons, workflow design, or strategic decisions
+- You want to find out what problems other people ran into with a given approach before committing to it
+
+## How to query Perplexity
+
+Don't send a terse technical query. Perplexity works best when you give it the full picture and ask it to explore broadly.
+
+- Explain all the angles and perspectives you're already aware of
+- Describe the complexities and caveats you expect to encounter
+- Tell it what you're unsure about — the unknowns are the whole point
+- Ask it to search online forums, community discussions, Reddit threads, and developer blogs
+- Ask for real-world experiences, not just documentation summaries
+
+## What to ask for
+
+- What do developers actually recommend, and why?
+- What are real-world experiences with the various tools and solutions?
+- What are the failure stories — what went wrong for people who tried each approach?
+- What unknowns and risks aren't obvious from official documentation?
+- What are the common gotchas that only show up in production or at scale?
+- Are there better alternatives that we might not have considered?
+
+## Query example
+
+```text
+I'm working on [describe the problem and context]. I've considered
+[approach A] and [approach B], but I'm not sure which direction is best.
+
+Here's what I know so far: [explain complexities, constraints, caveats].
+Here's what I'm unsure about: [list open questions and unknowns].
+
+Please search developer forums, Reddit, Hacker News, and community
+discussions to find:
+- What people actually recommend from experience (not just docs)
+- Real-world gotchas, failure stories, and lessons learned
+- Alternatives I might not have considered
+- The general community sentiment on each approach
+```
+
+## Output
+
+Present findings as a landscape of options with community sentiment, then narrow to a recommended direction. Include:
+
+- What the community consensus is (if one exists)
+- Where opinions are divided, and why
+- Surprising findings or risks you didn't anticipate
+- A recommended direction with reasoning
+
+## Fast-path exception
+
+For simple fact checks, quick lookups, or questions with obvious answers, use Cursor's built-in search instead. Perplexity is for exploration, not trivia.
