@@ -26,11 +26,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 // App configurations: Infisical path -> local .env path
+// Infisical uses /m/apps/{app-name}; project uses /apps/{app-name}
 const APPS = {
   '/m/apps/log': 'apps/log/.env',
-  '/m/apps/price-ui': 'apps/price-ui/.env',
-  '/m/apps/strength': 'apps/strength/.env',
-  '/m/apps/trade': 'apps/trade/.env',
+  '/m/apps/market-view-next': 'apps/market-view-next/.env',
+  '/m/apps/market-write-node': 'apps/market-write-node/.env',
+  '/m/apps/tradingview-node': 'apps/tradingview-node/.env',
 };
 
 async function fetchSecrets(infisicalPath, outputFile, options) {
