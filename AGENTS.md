@@ -16,7 +16,7 @@ This project is a monorepo of multiple apps. It uses TurboRepo to build, test, a
   - ./lib/common/twillio - Twilio integration for SMS alerts
   - ./lib/common/fe - client-side React components, hooks, and utility functions
   - ./lib/common/cc - cloud console logging
-  - ./lib/common/lib/db/neon.ts - Neon/PostgreSQL database connection
+  - ./lib/common/lib/db/postgres.ts - PostgreSQL database connection
   - ./lib/common/lib/nextjs - Next.js utility functions
 
 - ./lib/config - build configuration and tooling (eslint, typescript, tailwind, postcss)
@@ -36,7 +36,7 @@ Always use `pnpm` instead of `npm`.
 
 - Use `@/path/to/file` for imports within the same app
 - Use `@lib/common/...` to import from `../../lib/common/...`
-- Examples: `import { cc } from '@lib/common/cc'` or `import { getDb } from '@lib/common/lib/db/neon'`
+- Examples: `import { cc } from '@lib/common/cc'` or `import { getDb } from '@lib/common/lib/db/postgres'`
 
 **Within `@lib` (shared library):**
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { StrengthDataAdd } from "./types";
-import { getDb } from "../../lib/db/neon";
+import { getDb } from "../../lib/db/postgres";
 import { cc } from "../../cc";
 import { ALL_INTERVALS, FORWARD_FILL_DEPTH, calculateAverage, StrengthRow, StrengthInterval } from "./utils";
 

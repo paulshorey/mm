@@ -10,7 +10,7 @@ This package contains reusable utilities used by all apps in the monorepo.
   - `./fe/lib` - Client-side utility functions
   - `./fe/styles` - Shared Mantine theme and styles
 - `./lib` - Core utilities:
-  - `./lib/db/neon.ts` - PostgreSQL/Neon database connection utility
+  - `./lib/db/postgres.ts` - PostgreSQL database connection utility
   - `./lib/nextjs` - Next.js utilities (formatResponse, getCurrentIpAddress)
 - `./sql` - Database functions for each table:
   - `./sql/log` - Log data management
@@ -25,15 +25,15 @@ This package contains reusable utilities used by all apps in the monorepo.
 All apps import from `@lib/common` using specific subpaths:
 
 ```typescript
-import { cc } from '@lib/common/cc'
-import { getDb } from '@lib/common/lib/db/neon'
-import { strengthGets } from '@lib/common/sql/strength/gets'
-import { ErrorBoundary } from '@lib/common/fe/components/wrappers/ErrorBoundary'
-import { theme } from '@lib/common/fe/styles/theme'
+import { cc } from "@lib/common/cc";
+import { getDb } from "@lib/common/lib/db/postgres";
+import { strengthGets } from "@lib/common/sql/strength/gets";
+import { ErrorBoundary } from "@lib/common/fe/components/wrappers/ErrorBoundary";
+import { theme } from "@lib/common/fe/styles/theme";
 ```
 
 ## Notes
 
-- All imports within this package use relative paths (e.g., `../../lib/db/neon`)
+- All imports within this package use relative paths (e.g., `../../lib/db/postgres`)
 - This is a workspace package, not published to npm
 - Used by: apps/trade, apps/log, apps/strength, apps/facts, apps/price-ui

@@ -1,11 +1,8 @@
 "use server";
 
 import { LogRowAdd } from "./types";
-import { getDb } from "../../lib/db/neon";
-import {
-  getCurrentIpAddress,
-  type IpAddressContext,
-} from "../../lib/nextjs/getCurrentIpAddress";
+import { getDb } from "../../lib/db/postgres";
+import { getCurrentIpAddress, type IpAddressContext } from "../../lib/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
 
 /**
@@ -25,10 +22,7 @@ import { sendToMyselfSMS } from "../../twillio/sendToMyselfSMS";
  * @param row - A `LogRow` object containing the log details.
  * @param ipContext - Optional request context for IP resolution when outside Next.js (e.g. Express). Pass { getHeader: (n) => req.get(n), ip: req.ip }.
  */
-export const sqlLogAdd = async function (
-  row: LogRowAdd,
-  ipContext?: IpAddressContext
-) {
+export const sqlLogAdd = async function (row: LogRowAdd, ipContext?: IpAddressContext) {
   "use server";
 
   // SMS

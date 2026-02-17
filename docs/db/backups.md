@@ -32,7 +32,7 @@ Use connection URLs (host, port, user, password, and SSL options are parsed from
 
 ### Recommended: Single-file (custom format)
 
-Produces one compressed `.dump` file. Works with pooled connections (Neon, Railway). Restore supports parallel workers.
+Produces one compressed `.dump` file. Works with pooled connections (Postgres, Railway). Restore supports parallel workers.
 
 **Backup:**
 
@@ -90,7 +90,7 @@ pg_restore -d "$DATABASE_URL" -Fd -j 4 -v backup_dir
 
 **Caveats:**
 
-- `pg_dump -j 4` opens 5 connections. Pooled connections (Neon `-pooler`, PgBouncer) often fail with "Broken pipe"—use single-file mode instead.
+- `pg_dump -j 4` opens 5 connections. Pooled connections (Postgres `-pooler`, PgBouncer) often fail with "Broken pipe"—use single-file mode instead.
 - Use a **direct** (non-pooled) connection URL when available.
 - `-j 4` is a starting point; increase based on CPU cores. Ensure `max_connections` allows it.
 
