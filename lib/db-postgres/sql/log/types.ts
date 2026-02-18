@@ -22,7 +22,6 @@ export type LogRowAdd = {
   tag?: string;
   type?: string;
   title?: string;
-  sms?: boolean;
   server_name?: string;
   app_name?: string;
   node_env?: string;

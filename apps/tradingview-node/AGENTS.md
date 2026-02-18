@@ -32,4 +32,6 @@ Deploy as a **shared monorepo** (do not set Root Directory—the service depends
 - Strength parsing/read/write logic is centralized in `src/services/strength.ts`.
 - Shared types and utilities are in `src/types/strength.ts` and `src/lib/*`.
 - Invalid TradingView payloads and runtime handler failures should be logged via `sqlLogAdd` (`@lib/db-postgres/sql/log/add`) for observability.
-- Import shared logging directly from `@lib/db-postgres/sql/log/add`.
+- Route handlers should enrich log `stack` with request metadata (including IP context) before calling `sqlLogAdd`.
+- Alerting behavior (SMS for warn/error paths) is application logic and should be handled in handlers, not in `@lib/db-postgres`.
+- Reusable request-aware logging glue for Express handlers lives in `src/lib/logging.ts` (`logRequestEvent`).

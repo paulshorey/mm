@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
+import { formatResponse } from '@lib/common/nextjs/formatResponse'
 import { cc } from '@lib/common/cc'
 import { sendToMyselfMMS } from '@lib/common/twillio/sendToMyselfMMS'
 

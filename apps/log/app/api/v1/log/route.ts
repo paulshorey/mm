@@ -1,62 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { formatResponse } from '@lib/common/lib/nextjs/formatResponse'
+import { formatResponse } from '@lib/common/nextjs/formatResponse'
+import { getCurrentIpAddress } from '@lib/common/nextjs/getCurrentIpAddress'
+import { sendToMyselfSMS } from '@lib/common/twillio/sendToMyselfSMS'
 import { sqlLogAdd } from '@lib/db-postgres/sql/log/add'
+import { buildRequestLogData } from '@/app/api/v1/lib/requestLog'
 
 export const maxDuration = 60
 
 async function handleRequest(request: NextRequest): Promise<NextResponse> {
   try {
-    // Extract POST data
-    let bodyData = null
-    let bodyText = ''
+    const { logData } = await buildRequestLogData(request)
 
-    if (request.method === 'POST') {
-      const contentType = request.headers.get('Content-Type')
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          bodyData = await request.json()
-        } catch {
-          bodyText = await request.text()
-        }
-      } else if (contentType && contentType.includes('form')) {
-        bodyData = Object.fromEntries(await request.formData())
-      } else {
-        bodyText = await request.text()
-      }
-    }
-
-    // Extract URL querystring parameters
-    const searchParams = Object.fromEntries(
-      request.nextUrl.searchParams.entries()
-    )
-
-    // Extract important headers
-    const headers = {
-      'user-agent': request.headers.get('user-agent'),
-      'content-type': request.headers.get('content-type'),
-      accept: request.headers.get('accept'),
-      origin: request.headers.get('origin'),
-      referer: request.headers.get('referer'),
-      'x-forwarded-for': request.headers.get('x-forwarded-for'),
-      'x-real-ip': request.headers.get('x-real-ip'),
-    }
-
-    // Create data object for logging
-    const logData = {
-      method: request.method,
-      url: request.nextUrl.href,
-      pathname: request.nextUrl.pathname,
-      searchParams,
-      headers,
-      bodyData,
-      bodyText,
-    }
+    const addr = await getCurrentIpAddress()
 
     // Log to database
     await sqlLogAdd({
       name: 'log',
       message: `log endpoint`,
-      stack: logData,
+      stack: { ...logData, ...addr },
     })
 
     return formatResponse({
@@ -71,6 +32,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
   } catch (error: Error) {
     // Log the error as well
     try {
+      const addr = await getCurrentIpAddress()
       await sqlLogAdd({
         name: 'error',
         message: `Log endpoint error: ${error.message}`,
@@ -78,8 +40,10 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
           error: error.stack,
           method: request.method,
           url: request.nextUrl.href,
+          ...addr,
         },
       })
+      await sendToMyselfSMS(`Log endpoint error: ${error.message}`)
     } catch (logError) {
       console.error('Failed to log error:', logError)
     }

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { sqlLogAdd as sqlLogAddReal } from "@lib/db-postgres/sql/log/add";
 import { formatResponse } from "../../../lib/http.js";
+import { logRequestEvent } from "../../../lib/logging.js";
 import { parseStrengthText } from "../../../lib/strength.js";
 import type { StrengthDataAdd } from "../../../types/strength.js";
 
@@ -15,20 +16,19 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
     const strengthData = parseStrengthText(bodyText);
 
     if (strengthData?.strength === undefined || strengthData?.interval === undefined || strengthData?.ticker === undefined) {
-      const ipContext = {
-        getHeader: (name: string) => req.get(name) ?? undefined,
-        ip: req.ip,
-      };
-      await sqlLogAdd(
-        {
+      const message = "POST /api/v1/tradingview missing required fields: ticker, interval, strength";
+      await logRequestEvent({
+        req,
+        sqlLogAdd,
+        sendSms: true,
+        row: {
           name: "warn",
-          message: "POST /api/v1/tradingview missing required fields: ticker, interval, strength",
+          message,
           stack: {
             bodyText: bodyText.slice(0, 500),
           },
         },
-        ipContext,
-      );
+      });
       return formatResponse(
         res,
         {
@@ -40,20 +40,19 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
     }
 
     if (strengthData.strength === null || strengthData.interval === null || strengthData.ticker === null) {
-      const ipContext = {
-        getHeader: (name: string) => req.get(name) ?? undefined,
-        ip: req.ip,
-      };
-      await sqlLogAdd(
-        {
+      const message = "POST /api/v1/tradingview invalid strengthData payload";
+      await logRequestEvent({
+        req,
+        sqlLogAdd,
+        sendSms: true,
+        row: {
           name: "warn",
-          message: "POST /api/v1/tradingview invalid strengthData payload",
+          message,
           stack: {
             bodyText: bodyText.slice(0, 500),
           },
         },
-        ipContext,
-      );
+      });
       return formatResponse(
         res,
         {
@@ -74,20 +73,18 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
     });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    const ipContext = {
-      getHeader: (name: string) => req.get(name) ?? undefined,
-      ip: req.ip,
-    };
-    await sqlLogAdd(
-      {
+    await logRequestEvent({
+      req,
+      sqlLogAdd,
+      sendSms: true,
+      row: {
         name: "error",
         message: err.message,
         stack: {
           stack: err.stack,
         },
       },
-      ipContext,
-    );
+    });
     console.error("POST /api/v1/tradingview error:", err);
     return formatResponse(
       res,

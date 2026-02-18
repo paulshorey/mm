@@ -16,4 +16,5 @@ Database-first package for the `POSTGRES_URL` database.
 ## Notes
 
 - Keep SQL and migration contracts database-first; generated language bindings are derived artifacts.
-- Avoid framework-specific concerns in shared SQL modules where possible.
+- Keep `sql/*` helpers focused on database access only (query shape, serialization, SQL defaults).
+- Do not import `@lib/common` from this package. Runtime concerns like request IP lookup, response formatting, and SMS alerts belong in apps or `@lib/common`.

@@ -32,3 +32,4 @@ import { theme } from "@lib/common/fe/styles/theme";
 - Used by: apps/trade, apps/log, apps/strength, apps/facts, apps/price-ui
 - New database-first workspace packages exist at `@lib/db-postgres` and `@lib/db-timescale`.
 - SQL helpers now live in `@lib/db-postgres/sql/*`.
+- `@lib/common` owns shared business utilities (for example `nextjs/getCurrentIpAddress` and `twillio/*`) that app routes can compose with DB helpers.

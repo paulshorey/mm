@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { sqlLogAdd } from "@lib/db-postgres/sql/log/add";
 import { formatResponse, getQueryString } from "../../../lib/http.js";
+import { logRequestEvent } from "../../../lib/logging.js";
 import type { StrengthWhere } from "../../../types/strength.js";
 import type { StrengthRowGet } from "../../../types/strength.js";
 
@@ -35,20 +36,17 @@ export const createGetTradingView = (deps: { getStrengthRows: GetStrengthRows })
       }
 
       if (!ticker) {
-        const ipContext = {
-          getHeader: (name: string) => req.get(name) ?? undefined,
-          ip: req.ip,
-        };
-        await sqlLogAdd(
-          {
+        const message = "GET /api/v1/tradingview missing required fields: ticker";
+        await logRequestEvent({
+          req,
+          sqlLogAdd,
+          sendSms: true,
+          row: {
             name: "warn",
-            message: "GET /api/v1/tradingview missing required fields: ticker",
-            stack: {
-              where,
-            },
+            message,
+            stack: { where },
           },
-          ipContext,
-        );
+        });
       }
 
       const rows = await getStrengthRows(where);

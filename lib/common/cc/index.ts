@@ -1,5 +1,24 @@
 import { sqlLogAdd } from "@lib/db-postgres/sql/log/add";
+import { getCurrentIpAddress } from "../nextjs/getCurrentIpAddress";
+import { sendToMyselfSMS } from "../twillio/sendToMyselfSMS";
 import { consoleAction } from "./lib/consoleAction";
+
+const addAddressToStack = async (stack: Record<string, any>) => {
+  const addr = await getCurrentIpAddress();
+  return { ...stack, ...addr };
+};
+
+const persistLog = async (
+  name: "log" | "info" | "warn" | "error",
+  message: string,
+  stack: Record<string, any>,
+  sendSms = false,
+) => {
+  await sqlLogAdd({ name, message, stack: await addAddressToStack(stack) });
+  if (sendSms) {
+    await sendToMyselfSMS(message);
+  }
+};
 
 /**
  * A logging utility for both server-side and client-side operations.
@@ -16,7 +35,7 @@ export const cc = {
   log: async function (message: string, stack: Record<string, any> = {}) {
     try {
       consoleAction("log", message, stack);
-      await sqlLogAdd({ name: "log", message, stack });
+      await persistLog("log", message, stack);
     } catch (e) {
       console.error(e);
     }
@@ -24,7 +43,7 @@ export const cc = {
   info: async function (message: string, stack: Record<string, any> = {}) {
     try {
       consoleAction("info", message, stack);
-      await sqlLogAdd({ name: "info", message, stack });
+      await persistLog("info", message, stack);
     } catch (e) {
       console.error(e);
     }
@@ -32,12 +51,7 @@ export const cc = {
   warn: async function (message: string, stack: Record<string, any> = {}) {
     try {
       consoleAction("warn", message, stack);
-      await sqlLogAdd({
-        name: "warn",
-        message,
-        sms: true,
-        stack,
-      });
+      await persistLog("warn", message, stack, true);
     } catch (e) {
       console.error(e);
     }
@@ -45,12 +59,7 @@ export const cc = {
   error: async function (message: string, stack: Record<string, any> = {}) {
     try {
       consoleAction("error", message, stack);
-      await sqlLogAdd({
-        name: "error",
-        message,
-        sms: true,
-        stack,
-      });
+      await persistLog("error", message, stack, true);
     } catch (e) {
       console.error(e);
     }
