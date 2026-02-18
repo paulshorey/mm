@@ -44,9 +44,9 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
         await logRequestEvent({
           req,
           sqlLogAdd,
-          sendSms: true,
+          sendSms: false,
           row: {
-            name: "log",
+            name: "warn",
             message,
             stack: {
               bodyText: bodyText.slice(0, 500),

@@ -18,17 +18,16 @@ export function FilterBadge({
     return null
   }
 
-  const isActive = searchParams.get(field) === String(value)
+  const valueAsString = String(value)
+  const isActive = searchParams.get(field) === valueAsString
 
   const newParams = new URLSearchParams(searchParams.toString())
   if (isActive) {
     newParams.delete(field)
   } else {
-    newParams.set(field, String(value))
+    newParams.set(field, valueAsString)
   }
 
-  const displayValue =
-    typeof value === 'boolean' ? (value ? 'dev' : 'pro') : value
   return (
     <Badge className="pr-2">
       <Link
@@ -40,7 +39,7 @@ export function FilterBadge({
         }}
       >
         {' '}
-        {displayValue.toString()}{' '}
+        {valueAsString}{' '}
       </Link>
     </Badge>
   )

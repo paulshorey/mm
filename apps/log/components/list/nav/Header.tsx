@@ -1,19 +1,50 @@
 'use client'
 
-import { Where } from '@lib/db-postgres/sql/types'
 import { colors } from '@/constants/ui'
 import Link from 'next/link'
 import React from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
+import type { WhereFilters } from '@/lib/searchParams'
 
-export const Header = ({ where }: { where: Where }) => {
+type TableNav = {
+  route: string
+  label: string
+}
+
+type DebugInfo = {
+  tableName: string
+  sortColumn: string
+}
+
+export const Header = ({
+  where,
+  tableRoute,
+  tables,
+  debug,
+}: {
+  where: WhereFilters
+  tableRoute: string
+  tables: TableNav[]
+  debug?: DebugInfo
+}) => {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const clearParams = new URLSearchParams()
+  const debugParam = searchParams.get('debug')
+  const isDebugMode = debugParam === '1' || debugParam === 'true'
+  if (isDebugMode) {
+    clearParams.set('debug', '1')
+  }
+  const clearHref = clearParams.toString()
+    ? `${pathname}?${clearParams.toString()}`
+    : pathname
+
   return (
     <div className="flex justify-between pt-2 px-3">
-      <div>
+      <div className="flex items-center gap-3">
         {Object.keys(where).length > 0 && (
           <Link
-            href={pathname}
+            href={clearHref}
             style={{
               color: colors.red,
             }}
@@ -22,32 +53,29 @@ export const Header = ({ where }: { where: Where }) => {
             ◀ clear
           </Link>
         )}
+        {debug && (
+          <span className="text-xs" style={{ color: colors.gray }}>
+            table: {debug.tableName} | sort: {debug.sortColumn}
+          </span>
+        )}
       </div>
       <nav className="flex gap-2">
-        <Link
-          href="/log"
-          style={{
-            color: colors.gray,
-          }}
-        >
-          Logs
-        </Link>
-        <Link
-          href="/order"
-          style={{
-            color: colors.gray,
-          }}
-        >
-          Orders
-        </Link>
-        <Link
-          href="/strength"
-          style={{
-            color: colors.gray,
-          }}
-        >
-          Strength
-        </Link>
+        {tables.map((table) => {
+          const href = `/${table.route}`
+          const isActive = table.route === tableRoute
+
+          return (
+            <Link
+              key={table.route}
+              href={href}
+              style={{
+                color: isActive ? colors.green : colors.gray,
+              }}
+            >
+              {table.label}
+            </Link>
+          )
+        })}
       </nav>
     </div>
   )

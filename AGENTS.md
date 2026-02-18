@@ -50,16 +50,16 @@ If DB contracts change:
 
 - Update migration(s), regenerate snapshot/types/contracts, and ensure adapters stay in sync. See scripts in `lib/db-postgres/package.json` and `lib/db-timescale/package.json`.
 
-## Session checks
+## Setup workspace:
 
-Start:
+Install any dependencies you need (like tsc).
 
 - `pnpm install`
 - `pnpm run init` if envs are missing (first-session setup)
 
-Finish:
+## Finish task:
 
-- Run `pnpm build`, fix issues, then run `pnpm build` again.
+- Run `pnpm build`, fix issues, then run `pnpm build` again until there are no more issues to fix.
 
 ## AGENTS maintenance
 

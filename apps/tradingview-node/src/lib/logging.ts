@@ -5,12 +5,7 @@ import { sendToMyselfSMS } from "@lib/common/twillio/sendToMyselfSMS";
 
 type SqlLogAdd = (row: LogRowAdd) => Promise<unknown>;
 
-export const logRequestEvent = async (args: {
-  req: Request;
-  row: LogRowAdd;
-  sqlLogAdd: SqlLogAdd;
-  sendSms?: boolean;
-}) => {
+export const logRequestEvent = async (args: { req: Request; row: LogRowAdd; sqlLogAdd: SqlLogAdd; sendSms?: boolean }) => {
   const { req, row, sqlLogAdd, sendSms = false } = args;
   const addr = await getCurrentIpAddress({
     getHeader: (name: string) => req.get(name) ?? undefined,
