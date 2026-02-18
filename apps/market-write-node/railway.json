@@ -3,7 +3,7 @@
   "build": {
     "builder": "RAILPACK",
     "buildCommand": "pnpm --filter market-write-node build",
-    "watchPatterns": ["apps/market-write-node/**", "lib/common/**"]
+    "watchPatterns": ["apps/market-write-node/**"]
   },
   "deploy": {
     "startCommand": "pnpm --filter market-write-node start",

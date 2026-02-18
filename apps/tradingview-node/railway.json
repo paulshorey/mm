@@ -3,7 +3,7 @@
   "build": {
     "builder": "RAILPACK",
     "buildCommand": "pnpm --filter tradingview-node build",
-    "watchPatterns": ["apps/tradingview-node/**", "lib/common/**"]
+    "watchPatterns": ["apps/tradingview-node/**"]
   },
   "deploy": {
     "startCommand": "pnpm --filter tradingview-node start",

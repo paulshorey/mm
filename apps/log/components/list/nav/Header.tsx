@@ -27,8 +27,7 @@ export const Header = ({ where }: { where: Where }) => {
         <Link
           href="/log"
           style={{
-            color: colors.gray, //pathname === '/' ? colors.gray : colors.green,
-            // textDecoration: pathname === '/' ? 'none' : 'underline',
+            color: colors.gray,
           }}
         >
           Logs
@@ -36,8 +35,7 @@ export const Header = ({ where }: { where: Where }) => {
         <Link
           href="/order"
           style={{
-            color: colors.gray, //pathname === '/orders' ? colors.gray : colors.green,
-            // textDecoration: pathname === '/orders' ? 'none' : 'underline',
+            color: colors.gray,
           }}
         >
           Orders
@@ -45,8 +43,7 @@ export const Header = ({ where }: { where: Where }) => {
         <Link
           href="/strength"
           style={{
-            color: colors.gray, //pathname === '/strength' ? colors.gray : colors.green,
-            // textDecoration: pathname === '/strength' ? 'none' : 'underline',
+            color: colors.gray,
           }}
         >
           Strength

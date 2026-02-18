@@ -23,14 +23,14 @@ export function ListData({
 }) {
   //////////////////////////////////////////////////////////////
   // Fetch data
-  const [logs, setLogs] = useState<RowGet[]>([])
+  const [items, setItems] = useState<RowGet[]>([])
   useEffect(() => {
     ;(table === 'log'
       ? logGets
       : table === 'strength'
         ? strengthGets
         : orderGets)({ where }).then(({ rows }) => {
-      setLogs(rows || [])
+      setItems(rows || [])
     })
   }, [where])
 
@@ -38,7 +38,7 @@ export function ListData({
   // Render data
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
-  const sections = logs.map((log: RowGet, i: number) => {
+  const sections = items.map((log: RowGet, i: number) => {
     let message =
       table === 'log'
         ? log.message
