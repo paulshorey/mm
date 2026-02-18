@@ -1,5 +1,7 @@
 # Migration
 
+> For the current database-first workflow (migration scripts, baselining, schema/type regeneration), see `docs/db/management-playbook.md`.
+
 ## Quick guide (primary): migrate `order_v1` from old DB to new DB
 
 Run these in this exact order:

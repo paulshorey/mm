@@ -27,3 +27,12 @@ Each package contains:
 - Use forward-only migrations with immutable timestamped filenames.
 - Never edit an applied migration.
 - Regenerate schema snapshots and generated language artifacts in CI.
+
+## Workflow guide
+
+Use `docs/db/management-playbook.md` for migration operations:
+
+- first-time baseline on existing DBs
+- adding/editing columns
+- adding tables
+- regenerating TypeScript schema types

@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "db:schema:snapshot": "bash scripts/snapshot-schema.sh",
+    "db:types:generate": "node scripts/generate-types.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate:baseline": "node scripts/baseline.mjs",
+    "db:migration:new": "node scripts/new-migration.mjs",
+    "db:sync": "pnpm db:migrate && pnpm db:schema:snapshot && pnpm db:types:generate"
+  },
   "dependencies": {
     "pg": "^8.16.3"
   },

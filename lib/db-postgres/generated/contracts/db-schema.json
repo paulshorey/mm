@@ -1,0 +1,283 @@
+{
+  "log_v1": [
+    {
+      "column": "id",
+      "nullable": false,
+      "type": "number"
+    },
+    {
+      "column": "name",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "message",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "stack",
+      "nullable": true,
+      "type": "unknown"
+    },
+    {
+      "column": "access_key",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "server_name",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "app_name",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "node_env",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "category",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "tag",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "time",
+      "nullable": true,
+      "type": "Date"
+    },
+    {
+      "column": "created_at",
+      "nullable": true,
+      "type": "Date"
+    }
+  ],
+  "order_v1": [
+    {
+      "column": "id",
+      "nullable": false,
+      "type": "number"
+    },
+    {
+      "column": "client_id",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "type",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "ticker",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "side",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "amount",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "price",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "server_name",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "app_name",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "node_env",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "created_at",
+      "nullable": true,
+      "type": "Date"
+    }
+  ],
+  "strength_v1": [
+    {
+      "column": "id",
+      "nullable": false,
+      "type": "number"
+    },
+    {
+      "column": "price",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "volume",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "ticker",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "timenow",
+      "nullable": true,
+      "type": "Date"
+    },
+    {
+      "column": "updated_at",
+      "nullable": true,
+      "type": "Date"
+    },
+    {
+      "column": "240",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "12",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "4",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "60",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "30",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "1",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "2",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "average",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "5",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "13",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "39",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "71",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "30S",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "3",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "59",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "7",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "19",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "101",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "10",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "11",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "9",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "29",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "109",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "181",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "D",
+      "nullable": true,
+      "type": "number"
+    },
+    {
+      "column": "W",
+      "nullable": true,
+      "type": "number"
+    }
+  ]
+}

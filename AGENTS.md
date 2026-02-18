@@ -13,10 +13,10 @@ This project is a monorepo of multiple apps. It uses TurboRepo to build, test, a
 
 - common - ./lib/common - shared utilities imported by all apps
   - ./lib/common/twillio - Twilio integration for SMS alerts
-  - ./lib/common/fe - client-side React components, hooks, and utility functions
+  - ./lib/common/fe - front-end React components, hooks, and utility functions
   - ./lib/common/cc - cloud console logging
-  - ./lib/common/lib/db/postgres.ts - PostgreSQL database connection
-  - ./lib/common/lib/nextjs - Next.js utility functions
+  - ./lib/common/db/postgres.ts - PostgreSQL database connection
+  - ./lib/common/nextjs - Next.js utility functions
 
 - db-postgres - ./lib/db-postgres - database-first source of truth package for POSTGRES_URL (migrations, schema snapshots, SQL query contracts, TS adapter)
 - db-timescale - ./lib/db-timescale - database-first source of truth package for TIMESCALE_URL (migrations, schema snapshots, SQL query contracts, TS adapter)
