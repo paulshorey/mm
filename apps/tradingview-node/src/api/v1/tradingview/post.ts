@@ -4,6 +4,7 @@ import { formatResponse } from "@/src/lib/http.js";
 import { logRequestEvent } from "@/src/lib/logging.js";
 import { parseStrengthText } from "@/src/lib/strength.js";
 import type { StrengthDataAdd } from "@/src/types/strength.js";
+import { sendToMyselfSMS } from "@lib/common/twillio/sendToMyselfSMS";
 
 type StrengthAdd = (data: StrengthDataAdd) => Promise<{ id: number }>;
 type SqlLogAdd = typeof sqlLogAddReal;
@@ -16,19 +17,20 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
       const strengthData = parseStrengthText(bodyText);
 
       if (strengthData?.strength === undefined || strengthData?.interval === undefined || strengthData?.ticker === undefined) {
-        const message = "POST /api/v1/tradingview missing required fields: ticker, interval, strength " + bodyText;
-        await logRequestEvent({
-          req,
-          sqlLogAdd,
-          sendSms: false,
-          row: {
-            name: "warn",
-            message,
-            stack: {
-              bodyText: bodyText.slice(0, 500),
-            },
-          },
-        });
+        await sendToMyselfSMS(bodyText.slice(0, 500));
+        // const message = "POST /api/v1/tradingview missing required fields: ticker, interval, strength";
+        // await logRequestEvent({
+        //   req,
+        //   sqlLogAdd,
+        //   sendSms: false,
+        //   row: {
+        //     name: "warn",
+        //     message,
+        //     stack: {
+        //       bodyText: bodyText.slice(0, 500),
+        //     },
+        //   },
+        // });
         return formatResponse(
           res,
           {
