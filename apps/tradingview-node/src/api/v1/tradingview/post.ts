@@ -16,11 +16,11 @@ export const createPostTradingView = (deps: { strengthAdd: StrengthAdd; sqlLogAd
       const strengthData = parseStrengthText(bodyText);
 
       if (strengthData?.strength === undefined || strengthData?.interval === undefined || strengthData?.ticker === undefined) {
-        const message = "POST /api/v1/tradingview missing required fields: ticker, interval, strength";
+        const message = "POST /api/v1/tradingview missing required fields: ticker, interval, strength " + bodyText;
         await logRequestEvent({
           req,
           sqlLogAdd,
-          sendSms: true,
+          sendSms: false,
           row: {
             name: "warn",
             message,

@@ -29,13 +29,11 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min)
 function generateKnowledgeGraph() {
   const coreColors = ['#f59e0b', '#fbbf24', '#84cc16', '#22c55e']
   const planetColors = ['#f97316', '#fb923c', '#facc15', '#a3e635', '#4ade80']
-  const rogueColors = ['#fde047', '#facc15', '#bef264']
 
   const nodes: SpaceNode[] = []
   const links: SpaceLink[] = []
   const seenLinks = new Set<string>()
-  const clusterNodeIds: string[][] = []
-  const coreNodeIds: string[] = []
+  const topNodeIds: string[] = []
 
   const addLink = (source: string, target: string, config?: Partial<SpaceLink>) => {
     if (source === target) return
@@ -54,75 +52,120 @@ function generateKnowledgeGraph() {
     })
   }
 
-  const clusterCount = 8
-  for (let c = 0; c < clusterCount; c++) {
-    const armAngle = (c / clusterCount) * Math.PI * 2 + rand(-0.25, 0.25)
-    const armRadius = rand(190, 360)
-    const center = {
-      x: Math.cos(armAngle) * armRadius,
-      y: rand(-120, 120),
-      z: Math.sin(armAngle) * armRadius,
+  const topLevelCount = 7
+  for (let top = 0; top < topLevelCount; top++) {
+    const topAngle = (top / topLevelCount) * Math.PI * 2 + rand(-0.2, 0.2)
+    const topRadius = rand(260, 460)
+    const topCenter = {
+      x: Math.cos(topAngle) * topRadius,
+      y: rand(-140, 140),
+      z: Math.sin(topAngle) * topRadius,
     }
 
-    const coreId = `core-${c}`
-    coreNodeIds.push(coreId)
-    clusterNodeIds[c] = [coreId]
+    const coreId = `top-${top}`
+    topNodeIds.push(coreId)
     nodes.push({
       id: coreId,
-      val: rand(12, 18),
-      color: coreColors[c % coreColors.length] ?? '#dbeafe',
-      ...center,
+      val: rand(14, 20),
+      color: coreColors[top % coreColors.length] ?? '#f59e0b',
+      ...topCenter,
     })
 
-    const satellites = Math.floor(rand(11, 17))
-    for (let i = 0; i < satellites; i++) {
-      const nodeId = `cluster-${c}-${i}`
-      clusterNodeIds[c]?.push(nodeId)
-      const orbit = rand(60, 170)
+    const secondLevelCount = Math.floor(rand(6, 11))
+    const secondLevelIds: string[] = []
+    for (let second = 0; second < secondLevelCount; second++) {
+      const secondId = `second-${top}-${second}`
+      secondLevelIds.push(secondId)
+      const orbit = rand(120, 290)
       const theta = rand(0, Math.PI * 2)
-      const phi = rand(0.2, Math.PI - 0.2)
-      const x = center.x + orbit * Math.sin(phi) * Math.cos(theta)
-      const y = center.y + orbit * Math.cos(phi)
-      const z = center.z + orbit * Math.sin(phi) * Math.sin(theta)
+      const phi = rand(0.25, Math.PI - 0.25)
+      const x = topCenter.x + orbit * Math.sin(phi) * Math.cos(theta)
+      const y = topCenter.y + orbit * Math.cos(phi)
+      const z = topCenter.z + orbit * Math.sin(phi) * Math.sin(theta)
 
       nodes.push({
-        id: nodeId,
-        val: rand(2.2, 7.2),
-        color: planetColors[(c + i) % planetColors.length] ?? '#818cf8',
+        id: secondId,
+        val: rand(5.6, 9.5),
+        color: planetColors[(top + second) % planetColors.length] ?? '#fb923c',
         x,
         y,
         z,
       })
 
-      addLink(coreId, nodeId, {
+      addLink(coreId, secondId, {
         color: 'rgba(251, 191, 36, 0.44)',
-        width: rand(0.6, 1.6),
+        width: rand(0.7, 1.5),
         particles: 2,
         speed: rand(0.004, 0.013),
       })
 
-      if (i > 1 && Math.random() > 0.35) {
-        addLink(`cluster-${c}-${Math.floor(Math.random() * i)}`, nodeId, {
-          color: 'rgba(249, 115, 22, 0.3)',
-          width: rand(0.3, 0.95),
-          particles: 1,
-        })
+      if (second > 1 && Math.random() > 0.5) {
+        const siblingSecond = secondLevelIds[Math.floor(Math.random() * second)]
+        if (siblingSecond) {
+          addLink(siblingSecond, secondId, {
+            color: 'rgba(249, 115, 22, 0.24)',
+            width: rand(0.2, 0.6),
+            particles: 1,
+            speed: rand(0.002, 0.008),
+          })
+        }
       }
 
-      if (i > 2 && Math.random() > 0.7) {
-        addLink(`cluster-${c}-${i - 1}`, nodeId, {
+      const thirdLevelCount = Math.floor(rand(4, 9))
+      const thirdLevelIds: string[] = []
+      for (let third = 0; third < thirdLevelCount; third++) {
+        const thirdId = `third-${top}-${second}-${third}`
+        thirdLevelIds.push(thirdId)
+        const thirdOrbit = rand(58, 170)
+        const thirdTheta = rand(0, Math.PI * 2)
+        const thirdPhi = rand(0.28, Math.PI - 0.28)
+        const tx = x + thirdOrbit * Math.sin(thirdPhi) * Math.cos(thirdTheta)
+        const ty = y + thirdOrbit * Math.cos(thirdPhi)
+        const tz = z + thirdOrbit * Math.sin(thirdPhi) * Math.sin(thirdTheta)
+
+        nodes.push({
+          id: thirdId,
+          val: rand(1.8, 4.3),
+          color: planetColors[(top + second + third + 2) % planetColors.length] ?? '#a3e635',
+          x: tx,
+          y: ty,
+          z: tz,
+        })
+
+        addLink(secondId, thirdId, {
           color: 'rgba(163, 230, 53, 0.34)',
-          width: rand(0.4, 1.1),
-          particles: 2,
-          speed: rand(0.005, 0.016),
+          width: rand(0.25, 0.8),
+          particles: 1,
+          speed: rand(0.003, 0.011),
+        })
+
+        if (third > 1 && Math.random() > 0.72) {
+          const siblingThird = thirdLevelIds[Math.floor(Math.random() * third)]
+          if (siblingThird) {
+            addLink(siblingThird, thirdId, {
+              color: 'rgba(132, 204, 22, 0.2)',
+              width: rand(0.15, 0.4),
+              particles: 1,
+              speed: rand(0.002, 0.007),
+            })
+          }
+        }
+      }
+
+      if (Math.random() > 0.82) {
+        addLink(secondId, coreId, {
+          color: 'rgba(249, 115, 22, 0.3)',
+          width: rand(0.2, 0.5),
+          particles: 1,
+          speed: rand(0.002, 0.008),
         })
       }
     }
   }
 
-  for (let i = 0; i < coreNodeIds.length; i++) {
-    const next = coreNodeIds[(i + 1) % coreNodeIds.length]
-    const current = coreNodeIds[i]
+  for (let i = 0; i < topNodeIds.length; i++) {
+    const next = topNodeIds[(i + 1) % topNodeIds.length]
+    const current = topNodeIds[i]
     if (!next || !current) continue
 
     addLink(current, next, {
@@ -133,42 +176,15 @@ function generateKnowledgeGraph() {
       speed: rand(0.003, 0.01),
     })
 
-    if (Math.random() > 0.28) {
-      const skip = coreNodeIds[(i + 2) % coreNodeIds.length]
+    if (Math.random() > 0.35) {
+      const skip = topNodeIds[(i + 2) % topNodeIds.length]
       if (skip) {
         addLink(current, skip, {
-          color: 'rgba(34, 197, 94, 0.3)',
-          width: rand(0.6, 1.3),
+          color: 'rgba(34, 197, 94, 0.24)',
+          width: rand(0.45, 1.05),
           curvature: rand(-0.45, 0.45),
           particles: 2,
-        })
-      }
-    }
-  }
-
-  const rogueCount = 26
-  for (let i = 0; i < rogueCount; i++) {
-    const rogueId = `rogue-${i}`
-    nodes.push({
-      id: rogueId,
-      val: rand(1.3, 4.2),
-      color: rogueColors[i % rogueColors.length] ?? '#fde68a',
-      x: rand(-460, 460),
-      y: rand(-280, 280),
-      z: rand(-460, 460),
-    })
-
-    const anchorCluster = Math.floor(rand(0, clusterCount))
-    const anchorNodes = clusterNodeIds[anchorCluster] ?? []
-    for (let j = 0; j < Math.floor(rand(1, 3)); j++) {
-      const anchor = anchorNodes[Math.floor(Math.random() * anchorNodes.length)]
-      if (anchor) {
-        addLink(rogueId, anchor, {
-          color: 'rgba(132, 204, 22, 0.28)',
-          width: rand(0.25, 0.9),
-          curvature: rand(-0.55, 0.55),
-          particles: 1,
-          speed: rand(0.003, 0.009),
+          speed: rand(0.002, 0.008),
         })
       }
     }
