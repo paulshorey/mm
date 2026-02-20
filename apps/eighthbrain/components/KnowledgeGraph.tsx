@@ -1,20 +1,17 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { useMemo, useEffect, useRef, useState } from 'react'
-
-const ForceGraph3D = dynamic(() => import('react-force-graph-3d'), { ssr: false })
+import { useEffect, useMemo, useRef } from 'react'
+import * as THREE from 'three'
+import { WebGPURenderer } from 'three/webgpu'
+import WebGPU from 'three/addons/capabilities/WebGPU.js'
 
 type SpaceNode = {
   id: string
-  name: string
   val: number
   color: string
-  cluster: number
-  kind: 'core' | 'cluster' | 'rogue'
-  x?: number
-  y?: number
-  z?: number
+  x: number
+  y: number
+  z: number
 }
 
 type SpaceLink = {
@@ -29,7 +26,6 @@ type SpaceLink = {
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min)
 
-// Generate a denser "knowledge cosmos" with clustered constellations and sporadic outliers.
 function generateKnowledgeGraph() {
   const coreColors = ['#f59e0b', '#fbbf24', '#84cc16', '#22c55e']
   const planetColors = ['#f97316', '#fb923c', '#facc15', '#a3e635', '#4ade80']
@@ -73,11 +69,8 @@ function generateKnowledgeGraph() {
     clusterNodeIds[c] = [coreId]
     nodes.push({
       id: coreId,
-      name: `Cluster Core ${c + 1}`,
       val: rand(12, 18),
       color: coreColors[c % coreColors.length] ?? '#dbeafe',
-      cluster: c,
-      kind: 'core',
       ...center,
     })
 
@@ -94,11 +87,8 @@ function generateKnowledgeGraph() {
 
       nodes.push({
         id: nodeId,
-        name: `Node ${c + 1}.${i + 1}`,
         val: rand(2.2, 7.2),
         color: planetColors[(c + i) % planetColors.length] ?? '#818cf8',
-        cluster: c,
-        kind: 'cluster',
         x,
         y,
         z,
@@ -161,11 +151,8 @@ function generateKnowledgeGraph() {
     const rogueId = `rogue-${i}`
     nodes.push({
       id: rogueId,
-      name: `Rogue Signal ${i + 1}`,
       val: rand(1.3, 4.2),
       color: rogueColors[i % rogueColors.length] ?? '#fde68a',
-      cluster: -1,
-      kind: 'rogue',
       x: rand(-460, 460),
       y: rand(-280, 280),
       z: rand(-460, 460),
@@ -191,64 +178,290 @@ function generateKnowledgeGraph() {
 }
 
 export function KnowledgeGraph() {
-  const [mounted, setMounted] = useState(false)
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
-  const graphRef = useRef<any>()
-  const zoomLayerRef = useRef<HTMLDivElement | null>(null)
+  const mountRef = useRef<HTMLDivElement | null>(null)
   const graphData = useMemo(generateKnowledgeGraph, [])
 
   useEffect(() => {
-    setMounted(true)
-    const updateSize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight })
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+    const mountEl = mountRef.current
+    if (!mountEl) return
+    if (!WebGPU.isAvailable()) return
 
-  useEffect(() => {
-    if (!mounted) return
-    const zoomLayer = zoomLayerRef.current
-    if (!zoomLayer) return
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 9000)
+    camera.position.set(0, 160, 2100)
 
-    let zoomAnimation: Animation | null = null
-    const startScale = 0.1
-    const endScale = 3.4
-    const zoomDurationMs = 28000
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const renderer = new WebGPURenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+    })
+    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.08
+    const maxPixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+    let currentPixelRatio = maxPixelRatio
+    renderer.setPixelRatio(currentPixelRatio)
+    renderer.setSize(mountEl.clientWidth, mountEl.clientHeight)
+    renderer.domElement.style.pointerEvents = 'none'
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
+    mountEl.appendChild(renderer.domElement)
 
-    // Let the browser compositor own the zoom tween for smoother long-running animation.
-    zoomLayer.style.willChange = 'transform'
-    zoomLayer.style.transform = `scale(${startScale})`
+    const ambient = new THREE.AmbientLight(0x403318, 0.95)
+    const key = new THREE.DirectionalLight(0xfff2bf, 0.9)
+    key.position.set(230, 250, 180)
+    scene.add(ambient, key)
 
-    if (prefersReducedMotion) {
-      zoomLayer.style.transform = `scale(${endScale})`
-    } else if (typeof zoomLayer.animate === 'function') {
-      zoomAnimation = zoomLayer.animate(
-        [{ transform: `scale(${startScale})` }, { transform: `scale(${endScale})` }],
-        {
-          delay: 1200,
-          duration: zoomDurationMs,
-          easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-          fill: 'forwards',
-        }
-      )
-    } else {
-      zoomLayer.style.transition = `transform ${zoomDurationMs}ms cubic-bezier(0.16, 1, 0.3, 1) 1200ms`
-      zoomLayer.style.transform = `scale(${endScale})`
+    const starsGeometry = new THREE.BufferGeometry()
+    const starCount = 3000
+    const starPos = new Float32Array(starCount * 3)
+    for (let i = 0; i < starCount; i++) {
+      const i3 = i * 3
+      starPos[i3] = rand(-2600, 2600)
+      starPos[i3 + 1] = rand(-1700, 1700)
+      starPos[i3 + 2] = rand(-2600, 2600)
     }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPos, 3))
+    const starsMaterial = new THREE.PointsMaterial({
+      size: 2.1,
+      sizeAttenuation: true,
+      color: new THREE.Color('#fef3c7'),
+      transparent: true,
+      opacity: 0.62,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+    const stars = new THREE.Points(starsGeometry, starsMaterial)
+    scene.add(stars)
+
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16)
+    const nodeMaterial = new THREE.MeshStandardMaterial({
+      roughness: 0.34,
+      metalness: 0.1,
+      emissive: new THREE.Color('#2a1a00'),
+      emissiveIntensity: 0.45,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.98,
+    })
+    const nodeMesh = new THREE.InstancedMesh(sphereGeometry, nodeMaterial, graphData.nodes.length)
+    const nodeDummy = new THREE.Object3D()
+    const nodePosById = new Map<string, THREE.Vector3>()
+    graphData.nodes.forEach((node, i) => {
+      const pos = new THREE.Vector3(node.x, node.y, node.z)
+      nodePosById.set(node.id, pos)
+      nodeDummy.position.copy(pos)
+      const scale = Math.max(2.2, node.val * 1.35)
+      nodeDummy.scale.setScalar(scale)
+      nodeDummy.updateMatrix()
+      nodeMesh.setMatrixAt(i, nodeDummy.matrix)
+      nodeMesh.setColorAt(i, new THREE.Color(node.color))
+    })
+    nodeMesh.instanceMatrix.needsUpdate = true
+    if (nodeMesh.instanceColor) nodeMesh.instanceColor.needsUpdate = true
+    scene.add(nodeMesh)
+
+    const linePositions: number[] = []
+    const lineColors: number[] = []
+
+    type LinkSegment = {
+      start: THREE.Vector3
+      end: THREE.Vector3
+      color: THREE.Color
+      speed: number
+    }
+    const segments: LinkSegment[] = []
+
+    graphData.links.forEach((link) => {
+      const start = nodePosById.get(link.source)
+      const end = nodePosById.get(link.target)
+      if (!start || !end) return
+
+      const c = new THREE.Color(link.color)
+      linePositions.push(start.x, start.y, start.z, end.x, end.y, end.z)
+      lineColors.push(c.r, c.g, c.b, c.r, c.g, c.b)
+      segments.push({ start, end, color: c, speed: link.speed })
+    })
+
+    const lineGeometry = new THREE.BufferGeometry()
+    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
+    lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3))
+    const lineMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      depthTest: false,
+    })
+    const lineMesh = new THREE.LineSegments(lineGeometry, lineMaterial)
+    lineMesh.frustumCulled = false
+    scene.add(lineMesh)
+
+    const flowCount = Math.min(260, segments.length * 2)
+    const flowGeometry = new THREE.SphereGeometry(0.95, 10, 10)
+    const flowMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#bef264'),
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+    const flowMesh = new THREE.InstancedMesh(flowGeometry, flowMaterial, flowCount)
+    const flowDummy = new THREE.Object3D()
+    const flowState = Array.from({ length: flowCount }, (_, i) => {
+      const seg = segments[i % segments.length]
+      return {
+        seg,
+        offset: Math.random(),
+        speedMul: rand(0.55, 1.45),
+      }
+    })
+    scene.add(flowMesh)
+
+    const startDistance = 2300
+    const endDistance = 240
+    const startHeight = 180
+    const endHeight = 20
+    const startAngle = -0.32
+    const endAngle = 0.12
+    const zoomDelayMs = 1200
+    const zoomDurationMs = 28000
+    const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t))
+
+    let destroyed = false
+    let startTs = 0
+    let previousTs = 0
+    let emaFrameMs = 16
+    let frameCounter = 0
+    let hiddenStartedAt = 0
+    let pausedDuration = 0
+
+    const resize = (pixelRatio = currentPixelRatio) => {
+      const width = mountEl.clientWidth || window.innerWidth
+      const height = mountEl.clientHeight || window.innerHeight
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setPixelRatio(pixelRatio)
+      renderer.setSize(width, height)
+    }
+    resize()
+
+    const resizeObserver = new ResizeObserver(() => {
+      resize()
+    })
+    resizeObserver.observe(mountEl)
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenStartedAt = performance.now()
+      } else if (hiddenStartedAt) {
+        pausedDuration += performance.now() - hiddenStartedAt
+        hiddenStartedAt = 0
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    const webGpuDeviceLossPromise = (renderer as unknown as { backend?: { device?: { lost?: Promise<unknown> } } })
+      .backend?.device?.lost
+    if (webGpuDeviceLossPromise) {
+      webGpuDeviceLossPromise.then(() => {
+        if (!destroyed) {
+          destroyed = true
+          renderer.setAnimationLoop(null)
+        }
+      })
+    }
+
+    const adjustPixelRatio = () => {
+      const highLoad = emaFrameMs > 19.5
+      const lowLoad = emaFrameMs < 14.5
+      let next = currentPixelRatio
+      if (highLoad && currentPixelRatio > 1) {
+        next = Math.max(1, currentPixelRatio - 0.1)
+      } else if (lowLoad && currentPixelRatio < maxPixelRatio) {
+        next = Math.min(maxPixelRatio, currentPixelRatio + 0.1)
+      }
+      if (next !== currentPixelRatio) {
+        currentPixelRatio = Number(next.toFixed(2))
+        resize(currentPixelRatio)
+      }
+    }
+
+    const animate = (ts: number) => {
+      if (destroyed) return
+      if (document.hidden) return
+      if (startTs === 0) startTs = ts
+      if (previousTs === 0) previousTs = ts
+
+      const rawFrameMs = Math.min(100, Math.max(1, ts - previousTs))
+      previousTs = ts
+      emaFrameMs = emaFrameMs * 0.92 + rawFrameMs * 0.08
+      frameCounter += 1
+      if (frameCounter % 45 === 0) adjustPixelRatio()
+
+      const elapsed = ts - startTs - pausedDuration
+      const zoomElapsed = Math.max(0, elapsed - zoomDelayMs)
+      const zoomT = Math.min(zoomElapsed / zoomDurationMs, 1)
+      const eased = easeOutExpo(zoomT)
+
+      const angle = startAngle + (endAngle - startAngle) * eased + elapsed * 0.00002
+      const distance = startDistance + (endDistance - startDistance) * eased
+      const y = startHeight + (endHeight - startHeight) * eased + Math.sin(elapsed * 0.00055) * 9
+      camera.position.set(Math.cos(angle) * distance, y, Math.sin(angle) * distance)
+      camera.lookAt(0, 0, 0)
+
+      const time = elapsed * 0.001
+      stars.rotation.y = time * 0.008
+      stars.rotation.x = Math.sin(time * 0.13) * 0.015
+
+      for (let i = 0; i < flowState.length; i++) {
+        const flow = flowState[i]
+        if (!flow) continue
+        const seg = flow.seg
+        if (!seg) continue
+
+        const t = (time * (seg.speed * 22) * flow.speedMul + flow.offset) % 1
+        flowDummy.position.lerpVectors(seg.start, seg.end, t)
+        const pulse = 0.8 + Math.sin((t + i * 0.073) * Math.PI * 2) * 0.25
+        flowDummy.scale.setScalar(pulse)
+        flowDummy.updateMatrix()
+        flowMesh.setMatrixAt(i, flowDummy.matrix)
+      }
+      flowMesh.instanceMatrix.needsUpdate = true
+
+      renderer.render(scene, camera)
+    }
+
+    renderer.setAnimationLoop(animate)
+
+    renderer.init().catch(() => {
+      if (!destroyed) {
+        destroyed = true
+        renderer.setAnimationLoop(null)
+      }
+    })
 
     return () => {
-      if (zoomAnimation) zoomAnimation.cancel()
-      zoomLayer.style.transition = ''
-      zoomLayer.style.willChange = 'auto'
-    }
-  }, [mounted])
+      destroyed = true
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      resizeObserver.disconnect()
+      renderer.setAnimationLoop(null)
 
-  if (!mounted) {
-    return (
-      <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-indigo-900/20 to-purple-900/20" />
-    )
-  }
+      starsGeometry.dispose()
+      starsMaterial.dispose()
+      sphereGeometry.dispose()
+      nodeMaterial.dispose()
+      lineGeometry.dispose()
+      lineMaterial.dispose()
+      flowGeometry.dispose()
+      flowMaterial.dispose()
+
+      renderer.dispose()
+      if (mountEl.contains(renderer.domElement)) {
+        mountEl.removeChild(renderer.domElement)
+      }
+    }
+  }, [graphData])
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -275,49 +488,7 @@ export function KnowledgeGraph() {
       <div className="absolute bottom-[14%] left-[8%] h-56 w-56 rounded-full bg-fuchsia-500/18 blur-3xl" />
       <div className="absolute top-[42%] left-[40%] h-36 w-36 rounded-full bg-cyan-500/16 blur-3xl" />
 
-      <div
-        ref={zoomLayerRef}
-        className="pointer-events-none absolute inset-0 opacity-[0.58]"
-        style={{ transform: 'scale(0.1)', transformOrigin: '50% 50%', backfaceVisibility: 'hidden' }}
-      >
-        <ForceGraph3D
-          ref={graphRef}
-          graphData={graphData}
-          rendererConfig={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
-          backgroundColor="rgba(0,0,0,0)"
-          nodeColor={(node: unknown) => {
-            const c = (node as { color?: string }).color
-            return typeof c === 'string' && c.startsWith('#') ? c : '#f59e0b'
-          }}
-          linkColor={(link: unknown) => {
-            const c = (link as { color?: string }).color
-            return typeof c === 'string' ? c : 'rgba(250, 204, 21, 0.3)'
-          }}
-          linkWidth={(link: unknown) => (link as SpaceLink).width ?? 0.8}
-          linkCurvature={(link: unknown) => (link as SpaceLink).curvature ?? 0.12}
-          linkDirectionalParticles={(link: unknown) => (link as SpaceLink).particles ?? 1}
-          linkDirectionalParticleColor={(link: unknown) => (link as SpaceLink).color ?? '#bef264'}
-          linkDirectionalParticleWidth={(link: unknown) => {
-            const width = (link as SpaceLink).width ?? 1
-            return Math.max(0.6, width * 0.85)
-          }}
-          linkDirectionalParticleSpeed={(link: unknown) => (link as SpaceLink).speed ?? 0.008}
-          nodeOpacity={0.93}
-          nodeResolution={8}
-          d3AlphaDecay={0.04}
-          d3VelocityDecay={0.21}
-          warmupTicks={120}
-          cooldownTicks={180}
-          cooldownTime={8000}
-          linkDirectionalParticleResolution={2}
-          enableNodeDrag={false}
-          enableNavigationControls={false}
-          enablePointerInteraction={false}
-          showNavInfo={false}
-          width={dimensions.width}
-          height={dimensions.height}
-        />
-      </div>
+      <div ref={mountRef} className="pointer-events-none absolute inset-0 opacity-[0.7]" />
     </div>
   )
 }
