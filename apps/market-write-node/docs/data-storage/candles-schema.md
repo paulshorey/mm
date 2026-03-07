@@ -59,16 +59,24 @@ will still be recalculated on a finer saved resolution.
 
 This app is **not** moving toward traditional closed-bar aggregates only.
 
-The intended next stages are:
+The intended next stage is:
 
 - `1h` candles written every `1m`
-- `1d` candles written every `30m`
 
-Those future tables should follow the same pattern as `candles_1m_1s`:
+That future table should follow the same pattern as `candles_1m_1s`:
 
 - candle timeframe and saved resolution are distinct
 - each row is a trailing rolling window
 - both historical and live ingest should share the same aggregation logic
+
+## Downstream usage
+
+This table is meant to be canonical source-of-truth timeseries data for
+downstream consumers.
+
+A future `market-analyze-python` app is expected to read from these canonical
+timeseries tables and write separate derived-feature tables for ML training and
+inference workloads.
 
 ## SQL
 

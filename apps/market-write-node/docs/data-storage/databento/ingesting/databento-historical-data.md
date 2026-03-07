@@ -2,6 +2,8 @@
 
 Historical backfills are handled by `scripts/tbbo-1m-1s.ts`.
 
+They must produce the same canonical source-of-truth rows as live ingest.
+
 ## Input format
 
 The script expects JSONL trade files:
@@ -48,3 +50,6 @@ Backfills must match live behavior closely. Any change to:
 
 should be shared between live and historical ingest rather than implemented
 twice.
+
+This script is part of the source-of-truth writer pipeline, not a downstream
+feature-generation pipeline.

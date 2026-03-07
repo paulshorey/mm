@@ -7,8 +7,7 @@
 --   - stored in candles_1m_1s
 --
 -- This script intentionally defines only the current source-of-truth table.
--- Higher-timeframe rolling writers will be added later as separate application
--- work once the 1m@1s pipeline is stable.
+-- The next planned writer layer is 1h candles at 1m resolution.
 -- ============================================================================
 
 DROP TABLE IF EXISTS candles_1m_1s CASCADE;

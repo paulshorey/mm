@@ -2,6 +2,10 @@
 
 This folder documents the current write pipeline only.
 
+## Read this first
+
+- `project-context.md` - concise project purpose, boundaries, and downstream plan
+
 ## Current system
 
 - ingest TBBO trades from Databento
@@ -13,7 +17,6 @@ This folder documents the current write pipeline only.
 
 - current: `1m` candles at `1s` resolution
 - future: `1h` candles at `1m` resolution
-- future: `1d` candles at `30m` resolution
 
 ## Kept documents
 

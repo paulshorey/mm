@@ -3,6 +3,10 @@
 The pipeline derives cumulative volume delta (CVD) directly from classified
 TBBO trades.
 
+This is part of the canonical timeseries dataset written by
+`market-write-node`. Downstream apps can build further CVD-derived features on
+top of these persisted rows.
+
 ## Per-trade contribution
 
 For each trade:

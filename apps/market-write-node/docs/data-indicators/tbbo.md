@@ -3,6 +3,9 @@
 `candles_1m_1s` stores a rolling 60-second candle plus a small set of order-flow
 metrics derived directly from TBBO trades and top-of-book snapshots.
 
+These are canonical stored row values for the writer pipeline itself, not the
+full downstream feature set that future analysis apps may derive from them.
+
 ## Metrics stored today
 
 | Metric | Meaning |
@@ -30,6 +33,9 @@ Older experiments referenced metrics such as:
 
 Those are not part of the current runtime schema and should not be treated as
 available columns.
+
+Richer multi-timeframe or multi-lookback feature sets belong downstream in
+`market-analyze-python`, not in this app's source-of-truth table design.
 
 ## Trade-side classification
 

@@ -4,6 +4,10 @@ Real-time TBBO trade data from Databento is aggregated into rolling
 1-minute candles at 1-second resolution and written to `candles_1m_1s`.
 Each row represents the trailing 60-second window for a ticker.
 
+This live path is part of the canonical source-of-truth writer pipeline.
+It should remain aligned with historical ingest and should not absorb
+downstream feature-engineering or ML-specific logic.
+
 ## How It Works
 
 - **`tbbo-stream.ts`** connects to Databento's Raw TCP API, authenticates, and subscribes to TBBO (Top of Book on Trade) data for configured symbols
@@ -55,6 +59,12 @@ Stream-specific code should only handle:
 - JSON parsing and symbol mapping
 - market-hours gating
 - retry / timer orchestration
+
+## Roadmap
+
+The current live writer supports `1m` candles at `1s` resolution.
+
+The next planned write layer is `1h` candles at `1m` resolution.
 
 ## CVD Continuity
 

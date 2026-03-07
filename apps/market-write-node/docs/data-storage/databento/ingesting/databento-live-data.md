@@ -5,6 +5,9 @@ encoding for the TBBO schema.
 
 Relevant implementation: `src/stream/tbbo-stream.ts`
 
+The rows written from this live path are canonical source-of-truth timeseries
+rows for downstream consumers.
+
 ## What the live path does
 
 1. connect to `{dataset}.lsg.databento.com:13000`
@@ -41,3 +44,10 @@ and inspectable while the aggregation model is still evolving.
 That trade-off is acceptable for the current scope because correctness and
 maintainability are more important than squeezing every last percent out of the
 ingest path right now.
+
+## Boundary
+
+This live writer should stop at canonical timeseries persistence.
+
+Downstream feature engineering, multi-lookback indicator generation, and ML
+training/inference belong in the future `market-analyze-python` app.
