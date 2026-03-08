@@ -1,9 +1,31 @@
 #!/usr/bin/env npx tsx
 /**
+ * Historical TBBO Data Processor (1-Minute Rolling Candles at 1-Second Resolution)
+ *
+ * Processes historical TBBO trade data from JSONL files and writes
+ * rolling 1-minute candles to the database, one row per second.
  * Historical TBBO ingest for the rolling `candles_1m_1s` table.
+ *
+ * Each output row represents the trailing 60-second window of trade data.
+ * This gives 1-minute candles at 1-second resolution — 60 rows per minute
+ * instead of the traditional 1 row per minute.
  *
  * The batch path shares the same rolling-window engine as live ingest so both
  * modes generate the same stitched front-month candles and CVD values.
+ *
+ * Algorithm:
+ *   1. Trades are aggregated into 1-second buckets
+ *   2. Each completed 1-second bucket is stored as a SecondSummary
+ *   3. A sliding window of the last 60 SecondSummaries is maintained per ticker
+ *   4. Each second, the window is aggregated into a single 1-minute candle
+ *   5. The 1-minute candle is written to the database
+ *
+ * Warmup: No output is written until the sliding window spans a full
+ * 60 seconds. This means the first ~59 seconds produce no database rows.
+ *
+ * Usage:
+ *   npx tsx scripts/tbbo-1m-1s.ts <file1.json> [file2.json] ...
+ *   npx tsx scripts/tbbo-1m-1s.ts ./data/*.json
  */
 
 import "dotenv/config";

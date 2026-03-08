@@ -8,31 +8,18 @@ full downstream feature set that future analysis apps may derive from them.
 
 ## Metrics stored today
 
-| Metric | Meaning |
-| --- | --- |
-| `vd` | volume delta: `ask_volume - bid_volume` |
-| `cvd_open/high/low/close` | cumulative volume delta OHLC across the rolling window |
-| `vd_ratio` | normalized aggressor imbalance |
-| `book_imbalance` | normalized passive depth imbalance |
-| `price_pct` | rolling price change percentage |
-| `divergence` | disagreement flag between price direction and delta direction |
-| `trades` | trade count |
-| `max_trade_size` | largest trade in the window |
-| `big_trades` | count of trades above the configured large-trade threshold |
-| `big_volume` | volume from those large trades |
-
-## Metrics intentionally not stored
-
-Older experiments referenced metrics such as:
-
-- `evr`
-- `smp`
-- `vd_strength`
-- `spread_bps`
-- `avg_trade_size`
-
-Those are not part of the current runtime schema and should not be treated as
-available columns.
+| Metric                    | Meaning                                                       |
+| ------------------------- | ------------------------------------------------------------- |
+| `vd`                      | volume delta: `ask_volume - bid_volume`                       |
+| `cvd_open/high/low/close` | cumulative volume delta OHLC across the rolling window        |
+| `vd_ratio`                | normalized aggressor imbalance                                |
+| `book_imbalance`          | normalized passive depth imbalance                            |
+| `price_pct`               | rolling price change percentage                               |
+| `divergence`              | disagreement flag between price direction and delta direction |
+| `trades`                  | trade count                                                   |
+| `max_trade_size`          | largest trade in the window                                   |
+| `big_trades`              | count of trades above the configured large-trade threshold    |
+| `big_volume`              | volume from those large trades                                |
 
 Richer multi-timeframe or multi-lookback feature sets belong downstream in
 `market-analyze-python`, not in this app's source-of-truth table design.
