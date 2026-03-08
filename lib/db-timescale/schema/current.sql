@@ -101,20 +101,19 @@ CREATE TABLE public.candles_1m_1s (
     cvd_low double precision,
     cvd_close double precision,
     vd double precision,
-    trades integer DEFAULT 0,
-    max_trade_size double precision DEFAULT 0,
-    big_trades integer DEFAULT 0,
-    big_volume double precision DEFAULT 0,
+    trades integer DEFAULT 0 NOT NULL,
+    max_trade_size double precision DEFAULT 0 NOT NULL,
+    big_trades integer DEFAULT 0 NOT NULL,
+    big_volume double precision DEFAULT 0 NOT NULL,
     symbol text,
     vd_ratio double precision,
     book_imbalance double precision,
     price_pct double precision,
     divergence double precision,
-    sum_bid_depth double precision DEFAULT 0,
-    sum_ask_depth double precision DEFAULT 0,
-    sum_price_volume double precision DEFAULT 0,
-    unknown_volume double precision DEFAULT 0,
-    vwap double precision
+    sum_bid_depth double precision DEFAULT 0 NOT NULL,
+    sum_ask_depth double precision DEFAULT 0 NOT NULL,
+    sum_price_volume double precision DEFAULT 0 NOT NULL,
+    unknown_volume double precision DEFAULT 0 NOT NULL
 );
 
 
@@ -142,14 +141,14 @@ CREATE TABLE public.candles_1h_1m (
     book_imbalance double precision,
     price_pct double precision,
     divergence double precision,
-    trades integer DEFAULT 0,
-    max_trade_size double precision DEFAULT 0,
-    big_trades integer DEFAULT 0,
-    big_volume double precision DEFAULT 0,
-    sum_bid_depth double precision DEFAULT 0,
-    sum_ask_depth double precision DEFAULT 0,
-    sum_price_volume double precision DEFAULT 0,
-    unknown_volume double precision DEFAULT 0
+    trades integer DEFAULT 0 NOT NULL,
+    max_trade_size double precision DEFAULT 0 NOT NULL,
+    big_trades integer DEFAULT 0 NOT NULL,
+    big_volume double precision DEFAULT 0 NOT NULL,
+    sum_bid_depth double precision DEFAULT 0 NOT NULL,
+    sum_ask_depth double precision DEFAULT 0 NOT NULL,
+    sum_price_volume double precision DEFAULT 0 NOT NULL,
+    unknown_volume double precision DEFAULT 0 NOT NULL
 );
 
 
@@ -237,10 +236,17 @@ CREATE INDEX "candles-1m_time_idx" ON public."candles-1m" USING btree ("time" DE
 
 
 --
--- Name: candles_1h_1m_time_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_candles_1m_1s_time_desc; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX candles_1h_1m_time_idx ON public.candles_1h_1m USING btree ("time" DESC);
+CREATE INDEX idx_candles_1m_1s_time_desc ON public.candles_1m_1s USING btree ("time" DESC);
+
+
+--
+-- Name: idx_candles_1h_1m_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candles_1h_1m_time_desc ON public.candles_1h_1m USING btree ("time" DESC);
 
 
 --

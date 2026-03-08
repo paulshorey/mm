@@ -9,6 +9,8 @@
  * Each output row represents the trailing 60-second window of trade data.
  * This gives 1-minute candles at 1-second resolution — 60 rows per minute
  * instead of the traditional 1 row per minute.
+ * Short no-trade gaps are forward-filled as zero-volume seconds. Extended gaps
+ * reset warmup so the window never pretends distant activity was contiguous.
  *
  * The batch path shares the same rolling-window engine as live ingest so both
  * modes generate the same stitched front-month candles and CVD values.
@@ -242,6 +244,9 @@ function printSummary(): void {
   console.log(`   1-second buckets:      ${rollingStats.secondsProcessed.toLocaleString()}`);
   console.log(`   1-minute candles:      ${stats.candlesWritten.toLocaleString()}`);
   console.log(`   Skipped (warmup):      ${rollingStats.candlesSkippedWarmup.toLocaleString()}`);
+  console.log(`   Synthetic seconds:     ${rollingStats.syntheticSecondsFilled.toLocaleString()}`);
+  console.log(`   Gap resets:            ${rollingStats.gapResets.toLocaleString()}`);
+  console.log(`   Out-of-order ignored:  ${rollingStats.outOfOrderTradesIgnored.toLocaleString()}`);
   console.log(`   Skipped (non-front):   ${rollingStats.skippedNonFront.toLocaleString()}`);
   console.log(`   Skipped (spreads):     ${stats.skippedSpreads.toLocaleString()}`);
   console.log(`   Skipped (non-trade):   ${stats.skippedNonTrade.toLocaleString()}`);

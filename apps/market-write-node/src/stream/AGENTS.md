@@ -30,6 +30,8 @@ downstream feature-engineering or ML-specific logic.
 - **`src/lib/trade/rolling-window.ts`** owns the shared rolling-window logic used by both live and historical ingest
   - front-month selection
   - per-second aggregation
+  - short-gap forward fill for zero-volume seconds
+  - long-gap reset handling
   - 60-second warmup handling
   - trailing-window candle creation
   - pending candle queue management

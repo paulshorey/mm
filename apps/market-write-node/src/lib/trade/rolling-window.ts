@@ -3,7 +3,7 @@
  *
  * Both live streaming and historical ingest feed normalized trades into this
  * engine so they produce the same stitched front-month series, second-level
- * summaries, warmup behavior, and trailing 60-second candles.
+ * summaries, sparse-gap handling, warmup behavior, and trailing 60-second candles.
  */
 
 import { createCandleFromTrade, updateCandleCvdOHLC, updateCandleWithTrade } from "./candle-aggregation.js";
@@ -45,6 +45,7 @@ interface TickerRollingState {
   secondStartCvd: number;
   warmupDone: boolean;
   warmupSecondsCollected: number;
+  lastSummary: SecondSummary | null;
 }
 
 export interface TimedTradeInput {
@@ -65,26 +66,35 @@ export interface RollingWindowStats {
   pendingCandles: number;
   secondsProcessed: number;
   candlesSkippedWarmup: number;
+  syntheticSecondsFilled: number;
+  gapResets: number;
+  outOfOrderTradesIgnored: number;
   skippedNonFront: number;
   activeContracts: Record<string, string>;
   cvdByTicker: Record<string, number>;
 }
 
 const DEFAULT_WINDOW_SECONDS = 60;
+const DEFAULT_MAX_SYNTHETIC_GAP_SECONDS = 5 * 60;
 
 export class RollingWindow1m {
   private readonly tickerStates = new Map<string, TickerRollingState>();
   private readonly tracker: FrontMonthTracker;
   private readonly windowSeconds: number;
   private readonly windowSpanMs: number;
+  private readonly maxSyntheticGapSeconds: number;
 
   private pendingCandles: CandleForDb[] = [];
   private secondsProcessed = 0;
   private candlesSkippedWarmup = 0;
+  private syntheticSecondsFilled = 0;
+  private gapResets = 0;
+  private outOfOrderTradesIgnored = 0;
 
-  constructor(options?: { windowSeconds?: number; tracker?: FrontMonthTracker }) {
+  constructor(options?: { windowSeconds?: number; maxSyntheticGapSeconds?: number; tracker?: FrontMonthTracker }) {
     this.windowSeconds = options?.windowSeconds ?? DEFAULT_WINDOW_SECONDS;
     this.windowSpanMs = (this.windowSeconds - 1) * 1000;
+    this.maxSyntheticGapSeconds = options?.maxSyntheticGapSeconds ?? DEFAULT_MAX_SYNTHETIC_GAP_SECONDS;
     this.tracker = options?.tracker ?? new FrontMonthTracker();
   }
 
@@ -96,15 +106,32 @@ export class RollingWindow1m {
 
   addTrade({ trade, secondBucket, minuteBucket }: TimedTradeInput): boolean {
     const { ticker, symbol, size } = trade;
+    const state = this.getOrCreateTickerState(ticker);
+    const inputSecondMs = new Date(secondBucket).getTime();
+    const crossedSecondBoundary = state.currentSecondBucket !== null && secondBucket !== state.currentSecondBucket;
+
+    if (crossedSecondBoundary && state.currentSecondBucket) {
+      const currentSecondMs = new Date(state.currentSecondBucket).getTime();
+      if (inputSecondMs < currentSecondMs) {
+        this.outOfOrderTradesIgnored++;
+        return false;
+      }
+    } else if (!state.currentSecondBucket && state.lastSummary) {
+      if (inputSecondMs <= state.lastSummary.timeMs) {
+        this.outOfOrderTradesIgnored++;
+        return false;
+      }
+    }
 
     if (!this.tracker.addTrade(symbol, ticker, minuteBucket, size)) {
       return false;
     }
 
-    const state = this.getOrCreateTickerState(ticker);
-
-    if (state.currentSecondBucket && secondBucket !== state.currentSecondBucket) {
+    if (crossedSecondBoundary) {
       this.onSecondComplete(ticker, state);
+      this.fillSyntheticGap(ticker, state, inputSecondMs);
+    } else if (!state.currentSecondBucket && state.lastSummary) {
+      this.fillSyntheticGap(ticker, state, inputSecondMs);
     }
 
     if (!state.currentSecondBucket) {
@@ -126,10 +153,17 @@ export class RollingWindow1m {
   finalizeStaleSeconds(currentTime: Date = new Date()): void {
     currentTime.setMilliseconds(0);
     const currentSecond = currentTime.toISOString();
+    const currentSecondMs = currentTime.getTime();
 
     for (const [ticker, state] of this.tickerStates) {
       if (state.currentCandle && state.currentSecondBucket && state.currentSecondBucket < currentSecond) {
         this.onSecondComplete(ticker, state);
+        this.fillSyntheticGap(ticker, state, currentSecondMs);
+        continue;
+      }
+
+      if (!state.currentCandle && state.lastSummary && state.lastSummary.timeMs < currentSecondMs) {
+        this.fillSyntheticGap(ticker, state, currentSecondMs);
       }
     }
   }
@@ -180,6 +214,9 @@ export class RollingWindow1m {
       pendingCandles: this.pendingCandles.length,
       secondsProcessed: this.secondsProcessed,
       candlesSkippedWarmup: this.candlesSkippedWarmup,
+      syntheticSecondsFilled: this.syntheticSecondsFilled,
+      gapResets: this.gapResets,
+      outOfOrderTradesIgnored: this.outOfOrderTradesIgnored,
       skippedNonFront: this.tracker.getSkippedCount(),
       activeContracts: Object.fromEntries(this.tracker.getActiveContracts()),
       cvdByTicker,
@@ -201,6 +238,7 @@ export class RollingWindow1m {
         secondStartCvd: 0,
         warmupDone: false,
         warmupSecondsCollected: 0,
+        lastSummary: null,
       };
       this.tickerStates.set(ticker, state);
     }
@@ -317,7 +355,69 @@ export class RollingWindow1m {
     }
 
     const summary = this.createSecondSummary(state.currentSecondBucket, state.currentCandle);
+    this.processCompletedSummary(ticker, state, summary);
+    state.currentCandle = null;
+    state.currentSecondBucket = null;
+  }
+
+  private fillSyntheticGap(ticker: string, state: TickerRollingState, targetSecondMsExclusive: number): void {
+    if (!state.lastSummary) {
+      return;
+    }
+
+    const firstMissingSecondMs = state.lastSummary.timeMs + 1000;
+    if (firstMissingSecondMs >= targetSecondMsExclusive) {
+      return;
+    }
+
+    const missingSeconds = Math.floor((targetSecondMsExclusive - firstMissingSecondMs) / 1000);
+    if (missingSeconds > this.maxSyntheticGapSeconds) {
+      this.resetTickerGapState(ticker, state, missingSeconds);
+      return;
+    }
+
+    for (let timeMs = firstMissingSecondMs; timeMs < targetSecondMsExclusive; timeMs += 1000) {
+      const summary = this.createSyntheticSecondSummary(state.lastSummary, timeMs);
+      this.syntheticSecondsFilled++;
+      this.processCompletedSummary(ticker, state, summary);
+    }
+  }
+
+  private createSyntheticSecondSummary(previous: SecondSummary, timeMs: number): SecondSummary {
+    const carriedPrice = previous.close;
+    const carriedCvd = previous.cvdClose;
+
+    return {
+      time: new Date(timeMs).toISOString(),
+      timeMs,
+      open: carriedPrice,
+      high: carriedPrice,
+      low: carriedPrice,
+      close: carriedPrice,
+      volume: 0,
+      askVolume: 0,
+      bidVolume: 0,
+      unknownSideVolume: 0,
+      sumBidDepth: 0,
+      sumAskDepth: 0,
+      sumSpread: 0,
+      sumMidPrice: 0,
+      sumPriceVolume: 0,
+      maxTradeSize: 0,
+      largeTradeCount: 0,
+      largeTradeVolume: 0,
+      tradeCount: 0,
+      symbol: previous.symbol,
+      cvdOpen: carriedCvd,
+      cvdHigh: carriedCvd,
+      cvdLow: carriedCvd,
+      cvdClose: carriedCvd,
+    };
+  }
+
+  private processCompletedSummary(ticker: string, state: TickerRollingState, summary: SecondSummary): void {
     state.runningCvd = summary.cvdClose;
+    state.lastSummary = summary;
     state.ring.push(summary);
     this.secondsProcessed++;
     state.warmupSecondsCollected++;
@@ -335,16 +435,12 @@ export class RollingWindow1m {
       state.warmupDone = false;
       state.warmupSecondsCollected = 0;
       this.candlesSkippedWarmup++;
-      state.currentCandle = null;
-      state.currentSecondBucket = null;
       return;
     }
 
     if (!state.warmupDone) {
       if (state.warmupSecondsCollected < this.windowSeconds) {
         this.candlesSkippedWarmup++;
-        state.currentCandle = null;
-        state.currentSecondBucket = null;
         return;
       }
 
@@ -359,8 +455,19 @@ export class RollingWindow1m {
       time: summary.time,
       candle,
     });
+  }
 
+  private resetTickerGapState(ticker: string, state: TickerRollingState, missingSeconds: number): void {
+    state.ring = [];
     state.currentCandle = null;
     state.currentSecondBucket = null;
+    state.warmupDone = false;
+    state.warmupSecondsCollected = 0;
+    state.lastSummary = null;
+    this.gapResets++;
+    console.log(
+      `⏭️ Reset rolling 1m state for ${ticker} after ${missingSeconds}s gap ` +
+        `(max synthetic fill ${this.maxSyntheticGapSeconds}s)`,
+    );
   }
 }

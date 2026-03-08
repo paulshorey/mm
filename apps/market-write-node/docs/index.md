@@ -18,7 +18,7 @@ This folder documents the current write pipeline only.
 ## Roadmap the docs should assume
 
 - current: `1m` candles at `1s` resolution
-- future: `1h` candles at `1m` resolution
+- current: `1h` candles at `1m` resolution
 
 ## Kept documents
 

@@ -82,9 +82,9 @@ export interface CandleState {
   // =========================================================================
 
   /**
-   * OHLC tracking for all calculated metrics.
-   * Updated after each trade to capture intra-minute dynamics.
-   * Undefined until first trade is processed and metrics calculated.
+   * OHLC tracking for metrics that evolve trade-by-trade.
+   * Today this is only used for CVD.
+   * Undefined until first trade is processed and the metric is initialized.
    */
   metricsOHLC?: MetricsOHLC;
 
@@ -116,6 +116,9 @@ export interface AggregatorStats {
   candlesWritten: number;
   lateTradesRejected: number;
   unknownSideTrades: number;
+  syntheticSecondsFilled: number;
+  gapResets: number;
+  outOfOrderTradesIgnored: number;
   skippedNonFront: number;
   activeContracts: Record<string, string>;
   cvdByTicker: Record<string, number>;

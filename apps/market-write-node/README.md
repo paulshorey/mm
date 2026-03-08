@@ -8,6 +8,11 @@ This app maintains:
 - `candles_1h_1m`: rolling 1-hour candles written every minute from the
   minute-boundary subset of `candles_1m_1s`
 
+The shared rolling engine forward-fills short no-trade gaps as zero-volume
+seconds so minute-boundary rows stay available for the hourly layer. Extended
+gaps reset warmup instead of combining distant activity into one "continuous"
+window.
+
 ## What this app does
 
 `market-write-node` is the source-of-truth write pipeline for canonical market
@@ -120,6 +125,8 @@ warmup.
 - do not average lower-timeframe ratios when building higher-timeframe rows
 - recompute derived metrics from aggregated raw fields
 - keep historical and live behavior aligned through shared library code
+- `price_pct` is stored in basis points
+- `sum_price_volume / volume` is the query-time VWAP formula
 
 ## Validation
 

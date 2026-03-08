@@ -16,20 +16,19 @@ export interface Candles1m1sRow {
   cvd_low: number | null;
   cvd_close: number | null;
   vd: number | null;
-  trades: number | null;
-  max_trade_size: number | null;
-  big_trades: number | null;
-  big_volume: number | null;
+  trades: number;
+  max_trade_size: number;
+  big_trades: number;
+  big_volume: number;
   symbol: string | null;
   vd_ratio: number | null;
   book_imbalance: number | null;
   price_pct: number | null;
   divergence: number | null;
-  sum_bid_depth: number | null;
-  sum_ask_depth: number | null;
-  sum_price_volume: number | null;
-  unknown_volume: number | null;
-  vwap: number | null;
+  sum_bid_depth: number;
+  sum_ask_depth: number;
+  sum_price_volume: number;
+  unknown_volume: number;
 }
 
 export interface Candles1h1mRow {
@@ -52,14 +51,14 @@ export interface Candles1h1mRow {
   book_imbalance: number | null;
   price_pct: number | null;
   divergence: number | null;
-  trades: number | null;
-  max_trade_size: number | null;
-  big_trades: number | null;
-  big_volume: number | null;
-  sum_bid_depth: number | null;
-  sum_ask_depth: number | null;
-  sum_price_volume: number | null;
-  unknown_volume: number | null;
+  trades: number;
+  max_trade_size: number;
+  big_trades: number;
+  big_volume: number;
+  sum_bid_depth: number;
+  sum_ask_depth: number;
+  sum_price_volume: number;
+  unknown_volume: number;
 }
 
 export interface Candles1sRow {

@@ -1,34 +1,51 @@
 # canonical candles schema
 
-## Current source of truth
+## Contract source of truth
 
-This app currently writes two canonical rolling tables:
+The canonical DB contract lives in `@lib/db-timescale`:
+
+- `lib/db-timescale/migrations/`
+- `lib/db-timescale/schema/current.sql`
+- `lib/db-timescale/generated/typescript/db-types.ts`
+
+This app owns the writer logic, but the DB package owns the schema contract.
+
+## Current tables
+
+This app writes two rolling canonical tables:
 
 - `candles_1m_1s`
 - `candles_1h_1m`
 
-The lower table is canonical trade-derived data.
+`candles_1m_1s` is the canonical trade-derived layer.
 
-The higher table is still canonical app-owned timeseries data, but it is
-derived from the lower canonical table rather than directly from raw trades.
+`candles_1h_1m` is the canonical higher-timeframe layer derived from the
+minute-boundary subset of `candles_1m_1s`.
 
-Each row represents:
+## Sampling model
 
 ### `candles_1m_1s`
 
-- one ticker
-- one second in time
-- the fully aggregated trailing 60-second window ending at that second
+Each row is:
 
-That table stores **1-minute candles sampled every second**.
+- one ticker
+- one second timestamp
+- the trailing 60-second rolling window ending at that second
+
+The shared 1m engine forward-fills short no-trade gaps as zero-volume seconds so
+minute-boundary rows remain available for the hourly layer. Extended inactivity
+resets warmup instead of stitching distant seconds into one continuous window.
 
 ### `candles_1h_1m`
 
-- one ticker
-- one minute in time
-- the fully aggregated trailing 60-minute window ending at that minute
+Each row is:
 
-That table stores **1-hour candles sampled every minute**.
+- one ticker
+- one minute timestamp
+- the trailing 60-minute rolling window ending at that minute
+
+This table is built only from the minute-boundary subset of canonical
+`candles_1m_1s` rows. It is never derived directly from raw trades.
 
 ## Write paths
 
@@ -37,71 +54,71 @@ Both ingest modes build `candles_1m_1s`:
 - `src/stream/tbbo-stream.ts` -> live ingest
 - `scripts/tbbo-1m-1s.ts` -> historical backfill
 
-Both feed the same shared rolling-window engine in `src/lib/trade/rolling-window.ts`.
+Both use the shared rolling 1m engine in `src/lib/trade/rolling-window.ts`.
 
-`candles_1h_1m` is then derived from the minute-boundary subset of
-`candles_1m_1s`:
+`candles_1h_1m` is then derived from minute-boundary `candles_1m_1s` rows:
 
 - `src/stream/candles-1h-1m-aggregator.ts` -> live derivation
 - `scripts/candles-1h-1m.ts` -> historical rebuild
 
-Those paths share `src/lib/trade/rolling-candle-window.ts`.
+Both use `src/lib/trade/rolling-candle-window.ts`.
 
-## Table columns
+## Shared columns
 
-| Column             | Description |
-| ------------------ | ----------- |
-| `time`             | second-level timestamp for the rolling row |
-| `ticker`           | stitched front-month ticker, such as `ES` |
-| `symbol`           | most recent raw contract symbol contributing to the row |
-| `open/high/low/close` | rolling 60-second price OHLC |
-| `volume`           | total rolling volume |
-| `ask_volume`       | rolling aggressive buy volume |
-| `bid_volume`       | rolling aggressive sell volume |
-| `cvd_open/high/low/close` | rolling CVD OHLC for the same 60-second window |
-| `vd`               | `ask_volume - bid_volume` |
-| `vd_ratio`         | normalized aggressor imbalance |
-| `book_imbalance`   | normalized passive depth imbalance |
-| `price_pct`        | percentage price change over the rolling window |
-| `divergence`       | simple price-vs-delta disagreement signal |
-| `trades`           | trade count in the rolling window |
-| `max_trade_size`   | largest trade in the rolling window |
-| `big_trades`       | count of trades above the configured threshold |
-| `big_volume`       | volume from those large trades |
-| `sum_bid_depth`    | additive raw accumulator for later aggregation |
-| `sum_ask_depth`    | additive raw accumulator for later aggregation |
-| `sum_price_volume` | additive raw accumulator for VWAP-style calculations |
-| `unknown_volume`   | volume whose side could not be classified |
+These columns exist on both canonical tables:
 
-## Why raw accumulators are stored
+| Column | Meaning |
+| --- | --- |
+| `ticker` | stitched front-month ticker such as `ES` |
+| `symbol` | latest contributing raw contract symbol |
+| `open/high/low/close` | rolling price OHLC for that table's window |
+| `volume` | total rolling traded volume |
+| `ask_volume` | rolling aggressive buy volume |
+| `bid_volume` | rolling aggressive sell volume |
+| `unknown_volume` | volume whose side could not be classified |
+| `cvd_open/high/low/close` | CVD OHLC across the same rolling window |
+| `vd` | `ask_volume - bid_volume` |
+| `vd_ratio` | normalized aggressor imbalance computed from `ask_volume` and `bid_volume` |
+| `book_imbalance` | normalized passive depth imbalance computed from `sum_bid_depth` and `sum_ask_depth` |
+| `price_pct` | price change in basis points across the rolling window |
+| `divergence` | price-vs-delta disagreement signal |
+| `trades` | trade count in the rolling window |
+| `max_trade_size` | largest trade in the rolling window |
+| `big_trades` | count of trades above the configured threshold |
+| `big_volume` | volume from those large trades |
+| `sum_bid_depth` | additive top-of-book bid-size accumulator |
+| `sum_ask_depth` | additive top-of-book ask-size accumulator |
+| `sum_price_volume` | additive accumulator used for query-time VWAP: `sum_price_volume / volume` |
 
-The table stores both derived values and additive building blocks.
+There is no canonical per-row `vwap` column. The writer stores the additive
+inputs needed to derive VWAP when reading.
 
-That keeps the current 1-minute-at-1-second pipeline simple while preserving
-the inputs needed for future higher-timeframe writers, where a larger timeframe
-will still be recalculated on a finer saved resolution.
+## Table-specific time semantics
 
-## Future higher-timeframe model
+| Table | `time` meaning | Window meaning |
+| --- | --- | --- |
+| `candles_1m_1s` | second timestamp | trailing 60 seconds |
+| `candles_1h_1m` | minute timestamp | trailing 60 minutes |
 
-This app is **not** moving toward traditional closed-bar aggregates only.
+## Why additive accumulators are stored
 
-`candles_1h_1m` follows the same rolling-window pattern as `candles_1m_1s`:
+The writer stores both derived metrics and additive raw inputs so the higher
+timeframe layer can be recomputed correctly from lower canonical rows.
 
-- candle timeframe and saved resolution are distinct
-- each row is a trailing rolling window
-- both historical and live maintenance share the same aggregation logic
-- the higher layer is derived from canonical lower-layer rows, not raw trade replay
+That is why the hourly layer recomputes fields like `vd_ratio`,
+`book_imbalance`, `price_pct`, and `divergence` from aggregated raw values
+instead of averaging lower-timeframe ratios.
 
 ## Downstream usage
 
-These tables are meant to be canonical source-of-truth timeseries data for
-downstream consumers.
+These tables are the canonical source-of-truth timeseries for downstream
+consumers.
 
-A future `market-analyze-python` app is expected to read from these canonical
-timeseries tables and write separate derived-feature tables for ML training and
-inference workloads.
+Future analysis/ML apps should read from these tables and write their own
+derived feature tables instead of expanding the writer schema for every new
+feature.
 
-## SQL
+## SQL examples
 
 See:
 
