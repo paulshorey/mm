@@ -124,22 +124,22 @@
     },
     {
       "column": "trades",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "max_trade_size",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "big_trades",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "big_volume",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
@@ -266,27 +266,22 @@
     },
     {
       "column": "sum_bid_depth",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "sum_ask_depth",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "sum_price_volume",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "unknown_volume",
-      "nullable": true,
-      "type": "number"
-    },
-    {
-      "column": "vwap",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     }
   ],
@@ -388,42 +383,42 @@
     },
     {
       "column": "trades",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "max_trade_size",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "big_trades",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "big_volume",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "sum_bid_depth",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "sum_ask_depth",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "sum_price_volume",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     },
     {
       "column": "unknown_volume",
-      "nullable": true,
+      "nullable": false,
       "type": "number"
     }
   ],

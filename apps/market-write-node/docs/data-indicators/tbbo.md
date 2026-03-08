@@ -14,7 +14,7 @@ full downstream feature set that future analysis apps may derive from them.
 | `cvd_open/high/low/close` | cumulative volume delta OHLC across the rolling window        |
 | `vd_ratio`                | normalized aggressor imbalance                                |
 | `book_imbalance`          | normalized passive depth imbalance                            |
-| `price_pct`               | rolling price change percentage                               |
+| `price_pct`               | rolling price change in basis points                          |
 | `divergence`              | disagreement flag between price direction and delta direction |
 | `trades`                  | trade count                                                   |
 | `max_trade_size`          | largest trade in the window                                   |
@@ -23,6 +23,10 @@ full downstream feature set that future analysis apps may derive from them.
 
 Richer multi-timeframe or multi-lookback feature sets belong downstream in
 `market-analyze-python`, not in this app's source-of-truth table design.
+
+`sum_price_volume` is stored as the additive accumulator needed for query-time
+VWAP calculation: `sum_price_volume / volume`. There is no stored `vwap`
+column in the canonical candle tables.
 
 ## Trade-side classification
 

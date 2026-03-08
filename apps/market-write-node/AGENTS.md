@@ -21,6 +21,8 @@ second:
 - input resolution: individual TBBO trades
 - output timeframe: 1 minute
 - output write cadence: 1 second
+- short no-trade gaps are forward-filled as zero-volume seconds
+- extended inactivity resets the rolling warmup instead of stitching distant seconds together
 
 Each `candles_1h_1m` row is the trailing 60-minute window for a ticker at that
 minute:
@@ -28,6 +30,7 @@ minute:
 - input resolution: canonical 1-minute rows
 - output timeframe: 1 hour
 - output write cadence: 1 minute
+- the source rows are the minute-boundary subset produced by the shared 1m engine
 
 The app has two ingest modes:
 
@@ -83,6 +86,9 @@ Key rules:
 - `1h@1m` must be derived from minute-boundary `1m@1s` rows
 - do not derive `1h@1m` directly from raw trades
 - do not compute `1h` every second unless the product intentionally changes to `1h@1s`
+- keep column contracts aligned with `@lib/db-timescale` migrations, schema snapshot, and generated types
+- `price_pct` is stored in basis points, not percent
+- `sum_price_volume` is the stored VWAP accumulator; there is no canonical per-row `vwap` column
 
 ## Source layout
 
