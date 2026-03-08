@@ -33,8 +33,10 @@ Each row is:
 - the trailing 60-second rolling window ending at that second
 
 The shared 1m engine forward-fills short no-trade gaps as zero-volume seconds so
-minute-boundary rows remain available for the hourly layer. Extended inactivity
-resets warmup instead of stitching distant seconds into one continuous window.
+minute-boundary rows remain available for the hourly layer. Extended
+open-market inactivity resets warmup instead of stitching distant seconds into
+one continuous window, but scheduled market closures are skipped so rolling
+windows remain continuous across the close and reopen.
 
 ### `candles_1h_1m`
 

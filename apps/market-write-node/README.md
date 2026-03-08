@@ -10,8 +10,9 @@ This app maintains:
 
 The shared rolling engine forward-fills short no-trade gaps as zero-volume
 seconds so minute-boundary rows stay available for the hourly layer. Extended
-gaps reset warmup instead of combining distant activity into one "continuous"
-window.
+open-market gaps reset warmup instead of combining distant activity into one
+"continuous" window, but scheduled daily/weekend closures are treated as
+paused time so rolling VWAP/CVD continuity carries across the close and reopen.
 
 ## What this app does
 

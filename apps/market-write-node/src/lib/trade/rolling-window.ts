@@ -8,6 +8,7 @@
 
 import { createCandleFromTrade, updateCandleCvdOHLC, updateCandleWithTrade } from "./candle-aggregation.js";
 import { FrontMonthTracker } from "./front-month.js";
+import { collectOpenBucketTimesBetween } from "./market-hours.js";
 import type { CandleForDb, CandleState, MetricCalculationContext, NormalizedTrade } from "./types.js";
 
 interface SecondSummary {
@@ -81,7 +82,6 @@ export class RollingWindow1m {
   private readonly tickerStates = new Map<string, TickerRollingState>();
   private readonly tracker: FrontMonthTracker;
   private readonly windowSeconds: number;
-  private readonly windowSpanMs: number;
   private readonly maxSyntheticGapSeconds: number;
 
   private pendingCandles: CandleForDb[] = [];
@@ -93,7 +93,6 @@ export class RollingWindow1m {
 
   constructor(options?: { windowSeconds?: number; maxSyntheticGapSeconds?: number; tracker?: FrontMonthTracker }) {
     this.windowSeconds = options?.windowSeconds ?? DEFAULT_WINDOW_SECONDS;
-    this.windowSpanMs = (this.windowSeconds - 1) * 1000;
     this.maxSyntheticGapSeconds = options?.maxSyntheticGapSeconds ?? DEFAULT_MAX_SYNTHETIC_GAP_SECONDS;
     this.tracker = options?.tracker ?? new FrontMonthTracker();
   }
@@ -370,13 +369,18 @@ export class RollingWindow1m {
       return;
     }
 
-    const missingSeconds = Math.floor((targetSecondMsExclusive - firstMissingSecondMs) / 1000);
-    if (missingSeconds > this.maxSyntheticGapSeconds) {
-      this.resetTickerGapState(ticker, state, missingSeconds);
+    const openGap = collectOpenBucketTimesBetween(
+      firstMissingSecondMs,
+      targetSecondMsExclusive,
+      1000,
+      this.maxSyntheticGapSeconds,
+    );
+    if (openGap.exceeded) {
+      this.resetTickerGapState(ticker, state, openGap.openBucketCount);
       return;
     }
 
-    for (let timeMs = firstMissingSecondMs; timeMs < targetSecondMsExclusive; timeMs += 1000) {
+    for (const timeMs of openGap.bucketTimes) {
       const summary = this.createSyntheticSecondSummary(state.lastSummary, timeMs);
       this.syntheticSecondsFilled++;
       this.processCompletedSummary(ticker, state, summary);
@@ -422,13 +426,8 @@ export class RollingWindow1m {
     this.secondsProcessed++;
     state.warmupSecondsCollected++;
 
-    const cutoffMs = summary.timeMs - this.windowSpanMs;
-    let pruneIdx = 0;
-    while (pruneIdx < state.ring.length && state.ring[pruneIdx].timeMs < cutoffMs) {
-      pruneIdx++;
-    }
-    if (pruneIdx > 0) {
-      state.ring = state.ring.slice(pruneIdx);
+    while (state.ring.length > this.windowSeconds) {
+      state.ring.shift();
     }
 
     if (state.ring.length === 0) {
@@ -457,7 +456,7 @@ export class RollingWindow1m {
     });
   }
 
-  private resetTickerGapState(ticker: string, state: TickerRollingState, missingSeconds: number): void {
+  private resetTickerGapState(ticker: string, state: TickerRollingState, missingOpenSeconds: number): void {
     state.ring = [];
     state.currentCandle = null;
     state.currentSecondBucket = null;
@@ -466,7 +465,7 @@ export class RollingWindow1m {
     state.lastSummary = null;
     this.gapResets++;
     console.log(
-      `⏭️ Reset rolling 1m state for ${ticker} after ${missingSeconds}s gap ` +
+      `⏭️ Reset rolling 1m state for ${ticker} after ${missingOpenSeconds}s open-market gap ` +
         `(max synthetic fill ${this.maxSyntheticGapSeconds}s)`,
     );
   }

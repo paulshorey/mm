@@ -22,7 +22,8 @@ second:
 - output timeframe: 1 minute
 - output write cadence: 1 second
 - short no-trade gaps are forward-filled as zero-volume seconds
-- extended inactivity resets the rolling warmup instead of stitching distant seconds together
+- extended open-market inactivity resets the rolling warmup instead of stitching distant seconds together
+- scheduled daily/weekend market closures should be treated as paused time so rolling VWAP/CVD continuity carries across the close and reopen
 
 Each `candles_1h_1m` row is the trailing 60-minute window for a ticker at that
 minute:

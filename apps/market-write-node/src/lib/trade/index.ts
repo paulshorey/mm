@@ -33,6 +33,9 @@ export {
   checkTradeAge,
 } from "./timestamp.js";
 
+// Market-hours utilities
+export { collectOpenBucketTimesBetween, isFuturesMarketOpenAt } from "./market-hours.js";
+
 // Symbol utilities
 export { extractTicker } from "./symbol.js";
 
