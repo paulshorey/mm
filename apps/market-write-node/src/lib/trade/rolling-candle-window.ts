@@ -3,7 +3,12 @@
  * already-finalized lower-timeframe candle rows.
  */
 
-import { collectOpenBucketTimesBetween, getConfiguredMarketSession, type WeeklyMarketSession } from "./market-session.js";
+import {
+  collectOpenBucketTimesBetween,
+  getConfiguredMarketSessionResolver,
+  type MarketSessionResolver,
+  type WeeklyMarketSession,
+} from "./market-session.js";
 import type { CandleForDb, CandleState } from "./types.js";
 
 interface TickerWindowState {
@@ -33,6 +38,7 @@ interface RollingCandleWindowOptions {
   expectedIntervalMs: number;
   label: string;
   sessionCalendar?: WeeklyMarketSession;
+  sessionCalendarResolver?: MarketSessionResolver;
 }
 
 export class RollingCandleWindow {
@@ -40,7 +46,7 @@ export class RollingCandleWindow {
   private readonly windowSize: number;
   private readonly expectedIntervalMs: number;
   private readonly label: string;
-  private readonly sessionCalendar: WeeklyMarketSession;
+  private readonly sessionCalendarResolver: MarketSessionResolver;
 
   private pendingCandles: CandleForDb[] = [];
   private stats = {
@@ -54,7 +60,9 @@ export class RollingCandleWindow {
     this.windowSize = options.windowSize;
     this.expectedIntervalMs = options.expectedIntervalMs;
     this.label = options.label;
-    this.sessionCalendar = options.sessionCalendar ?? getConfiguredMarketSession();
+    this.sessionCalendarResolver =
+      options.sessionCalendarResolver ??
+      (options.sessionCalendar ? () => options.sessionCalendar! : getConfiguredMarketSessionResolver());
   }
 
   seedCandles(candles: CandleForDb[]): void {
@@ -147,7 +155,7 @@ export class RollingCandleWindow {
           inputTimeMs,
           this.expectedIntervalMs,
           0,
-          this.sessionCalendar,
+          this.sessionCalendarResolver(input.ticker),
         );
         if (openGap.exceeded) {
           state.ring = [];

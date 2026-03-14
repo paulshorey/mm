@@ -10,7 +10,13 @@
 
 import { createConnection, Socket } from "net";
 import { createHash } from "crypto";
-import { getConfiguredMarketSession, isMarketOpenAt, toSecondBucket } from "../lib/trade/index.js";
+import {
+  extractTicker,
+  getConfiguredMarketSessionForTicker,
+  getConfiguredMarketSessionResolver,
+  isMarketOpenAt,
+  toSecondBucket,
+} from "../lib/trade/index.js";
 import { Tbbo1mAggregator, TbboRecord } from "./tbbo-1m-aggregator.js";
 
 // Configuration from environment (all required - no defaults)
@@ -25,14 +31,27 @@ const DATABENTO_STYPE = process.env.DATABENTO_STYPE;
 // Reconnection settings
 const MAX_RECONNECT_DELAY = 30000;
 const INITIAL_RECONNECT_DELAY = 1000;
-const marketSession = getConfiguredMarketSession();
+const marketSessionResolver = getConfiguredMarketSessionResolver();
+
+function getConfiguredSymbolTicker(symbol: string): string {
+  if (symbol.includes(".")) {
+    return symbol.split(".")[0];
+  }
+  return extractTicker(symbol);
+}
 
 function isFuturesMarketOpen(): boolean {
-  return isMarketOpenAt(new Date(), marketSession);
+  const configuredTickers = DATABENTO_SYMBOLS?.map(getConfiguredSymbolTicker) ?? [];
+  if (configuredTickers.length === 0) {
+    return isMarketOpenAt(new Date(), getConfiguredMarketSessionForTicker("__default__"));
+  }
+
+  return configuredTickers.some((ticker) => isMarketOpenAt(new Date(), marketSessionResolver(ticker)));
 }
 
 function isRecordDuringOpenSession(record: TbboRecord): boolean {
-  return isMarketOpenAt(new Date(toSecondBucket(record.timestamp)), marketSession);
+  const ticker = extractTicker(record.symbol);
+  return isMarketOpenAt(new Date(toSecondBucket(record.timestamp)), marketSessionResolver(ticker));
 }
 
 // Track skipped records due to market closed
@@ -318,7 +337,13 @@ export function getStreamStats(): {
   parseErrors: number;
   symbolMappings: Record<string, number>;
   marketOpen: boolean;
+  marketOpenByTicker: Record<string, boolean>;
 } {
+  const configuredTickers = [...new Set((DATABENTO_SYMBOLS?.map(getConfiguredSymbolTicker) ?? []).filter(Boolean))];
+  const marketOpenByTicker = Object.fromEntries(
+    configuredTickers.map((ticker) => [ticker, isMarketOpenAt(new Date(), marketSessionResolver(ticker))]),
+  );
+
   return {
     messagesReceived: messageCount,
     skippedControlMessages,
@@ -329,6 +354,7 @@ export function getStreamStats(): {
     parseErrors,
     symbolMappings: Object.fromEntries(symbolToInstrumentId),
     marketOpen: isFuturesMarketOpen(),
+    marketOpenByTicker,
   };
 }
 
@@ -539,7 +565,10 @@ export async function startDatabentoStream(): Promise<void> {
   console.log(`   Symbols: ${DATABENTO_SYMBOLS!.join(", ")}`);
   console.log(`   Symbol Type: ${DATABENTO_STYPE}`);
   console.log(`   Schema: TBBO (Top of Book on Trade)`);
-  console.log(`   Session: ${marketSession.describe()}`);
+  const configuredSessions = [...new Set(DATABENTO_SYMBOLS!.map(getConfiguredSymbolTicker))]
+    .map((ticker) => `${ticker} -> ${marketSessionResolver(ticker).describe()}`)
+    .join(" | ");
+  console.log(`   Sessions: ${configuredSessions}`);
   console.log(`   API Key: ${apiKeyPreview}`);
   console.log("═".repeat(50));
 

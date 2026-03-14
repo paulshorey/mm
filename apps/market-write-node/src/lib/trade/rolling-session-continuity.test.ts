@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG, SESSION_PROFILES } from "./market-session-config.js";
-import { WeeklyMarketSession } from "./market-session.js";
+import { getConfiguredMarketSessionForTicker, WeeklyMarketSession } from "./market-session.js";
 import { RollingCandleWindow } from "./rolling-candle-window.js";
 import { RollingWindow1m } from "./rolling-window.js";
+import { extractTicker } from "./symbol.js";
 import type { CandleForDb, CandleState, NormalizedTrade } from "./types.js";
 
 const globexSession = new WeeklyMarketSession(DEFAULT_GLOBEX_MARKET_SESSION_CONFIG);
@@ -12,7 +13,7 @@ const tokyoSession = new WeeklyMarketSession(SESSION_PROFILES.tokyo_daytime);
 
 function makeTrade(symbol: string, price: number): NormalizedTrade {
   return {
-    ticker: "ES",
+    ticker: extractTicker(symbol),
     symbol,
     price,
     size: 1,
@@ -138,5 +139,41 @@ test("rolling continuity works with a non-US session calendar", () => {
   assert.equal(reopenCandle.time, "2026-01-05T03:30:00.000Z");
   assert.equal(reopenCandle.candle.volume, 3);
   assert.equal(reopenCandle.candle.sumPriceVolume, 306);
+  assert.equal(window.getStats().gapResets, 0);
+});
+
+test("rolling window can resolve different session calendars per ticker", () => {
+  const window = new RollingWindow1m({
+    windowSeconds: 3,
+    maxSyntheticGapSeconds: 5,
+    sessionCalendarResolver: (ticker) => getConfiguredMarketSessionForTicker(ticker),
+  });
+
+  addTrade(window, "ESH6", "2026-03-09T20:59:57.000Z", 100);
+  addTrade(window, "ESH6", "2026-03-09T20:59:58.000Z", 101);
+  addTrade(window, "ESH6", "2026-03-09T20:59:59.000Z", 102);
+  addTrade(window, "ESH6", "2026-03-09T22:00:00.000Z", 103);
+
+  addTrade(window, "NKH6", "2026-01-05T02:29:57.000Z", 200);
+  addTrade(window, "NKH6", "2026-01-05T02:29:58.000Z", 201);
+  addTrade(window, "NKH6", "2026-01-05T02:29:59.000Z", 202);
+  addTrade(window, "NKH6", "2026-01-05T03:30:00.000Z", 203);
+  window.finalizeAll();
+
+  const candlesByTicker = window.drainPendingCandles().reduce<Record<string, CandleForDb[]>>((grouped, candle) => {
+    grouped[candle.ticker] ??= [];
+    grouped[candle.ticker].push(candle);
+    return grouped;
+  }, {});
+  const esReopen = candlesByTicker.ES?.at(-1);
+  const nkReopen = candlesByTicker.NK?.at(-1);
+
+  assert.ok(esReopen);
+  assert.equal(esReopen.time, "2026-03-09T22:00:00.000Z");
+  assert.equal(esReopen.candle.sumPriceVolume, 306);
+
+  assert.ok(nkReopen);
+  assert.equal(nkReopen.time, "2026-01-05T03:30:00.000Z");
+  assert.equal(nkReopen.candle.sumPriceVolume, 606);
   assert.equal(window.getStats().gapResets, 0);
 });

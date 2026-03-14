@@ -9,6 +9,7 @@
 import {
   DEFAULT_MARKET_SESSION_PROFILE,
   DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  getSessionProfileForTicker,
   MARKET_SESSION_PROFILE_ENV_VAR,
   MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
   MARKET_SESSION_TIME_ZONE_ENV_VAR,
@@ -80,6 +81,7 @@ export interface MarketSessionConfig {
 }
 
 export { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
+export type MarketSessionResolver = (ticker: string) => WeeklyMarketSession;
 
 const zonedDateTimeFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
@@ -449,40 +451,94 @@ export function parseWeeklySessionWindows(value: string): WeeklySessionWindowInp
     });
 }
 
-let cachedConfiguredSession: WeeklyMarketSession | null = null;
-let cachedConfiguredSessionKey: string | null = null;
+const configuredSessionCache = new Map<string, WeeklyMarketSession>();
+
+function serializeSessionConfig(config: MarketSessionConfig): string {
+  return JSON.stringify({
+    label: config.label ?? "",
+    timeZone: config.timeZone,
+    weeklyLocalWindows: config.weeklyLocalWindows,
+  });
+}
+
+function getConfiguredSessionSelection(
+  ticker: string | null,
+  env: NodeJS.ProcessEnv,
+  fallback: MarketSessionConfig,
+): {
+  profileName: string | null;
+  baseConfig: MarketSessionConfig;
+} {
+  const explicitProfileName = env[MARKET_SESSION_PROFILE_ENV_VAR]?.trim() || null;
+  if (explicitProfileName) {
+    const explicitProfile = SESSION_PROFILES[explicitProfileName as keyof typeof SESSION_PROFILES];
+    if (!explicitProfile) {
+      throw new Error(
+        `Unknown ${MARKET_SESSION_PROFILE_ENV_VAR} "${explicitProfileName}". ` +
+          `Expected one of: ${Object.keys(SESSION_PROFILES).join(", ")}.`,
+      );
+    }
+
+    return {
+      profileName: explicitProfileName,
+      baseConfig: explicitProfile,
+    };
+  }
+
+  const tickerProfileName = ticker ? getSessionProfileForTicker(ticker) : null;
+  if (tickerProfileName) {
+    return {
+      profileName: tickerProfileName,
+      baseConfig: SESSION_PROFILES[tickerProfileName],
+    };
+  }
+
+  return {
+    profileName: null,
+    baseConfig: fallback,
+  };
+}
+
+export function getConfiguredMarketSessionForTicker(
+  ticker: string,
+  env: NodeJS.ProcessEnv = process.env,
+  fallback: MarketSessionConfig = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+): WeeklyMarketSession {
+  const normalizedTicker = ticker.trim().toUpperCase();
+  const { profileName, baseConfig } = getConfiguredSessionSelection(normalizedTicker, env, fallback);
+  const timeZone = env[MARKET_SESSION_TIME_ZONE_ENV_VAR]?.trim() || baseConfig.timeZone;
+  const openWindows = env[MARKET_SESSION_OPEN_WINDOWS_ENV_VAR]?.trim();
+  const cacheKey =
+    `${profileName ?? DEFAULT_MARKET_SESSION_PROFILE}||${normalizedTicker}||${timeZone}||${openWindows ?? ""}||` +
+    `${serializeSessionConfig(baseConfig)}`;
+
+  const cachedSession = configuredSessionCache.get(cacheKey);
+  if (cachedSession) {
+    return cachedSession;
+  }
+
+  const weeklyLocalWindows = openWindows ? parseWeeklySessionWindows(openWindows) : baseConfig.weeklyLocalWindows;
+  const session = new WeeklyMarketSession({
+    timeZone,
+    weeklyLocalWindows,
+    label: baseConfig.label,
+  });
+  configuredSessionCache.set(cacheKey, session);
+  return session;
+}
 
 export function getConfiguredMarketSession(
   env: NodeJS.ProcessEnv = process.env,
   fallback: MarketSessionConfig = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
 ): WeeklyMarketSession {
-  const profileName = env[MARKET_SESSION_PROFILE_ENV_VAR]?.trim() || null;
-  const profileConfig = profileName ? SESSION_PROFILES[profileName as keyof typeof SESSION_PROFILES] : null;
-  if (profileName && !profileConfig) {
-    throw new Error(
-      `Unknown ${MARKET_SESSION_PROFILE_ENV_VAR} "${profileName}". ` +
-        `Expected one of: ${Object.keys(SESSION_PROFILES).join(", ")}.`,
-    );
-  }
+  return getConfiguredMarketSessionForTicker("__default__", env, fallback);
+}
 
-  const baseConfig = profileConfig ?? fallback;
-  const timeZone = env[MARKET_SESSION_TIME_ZONE_ENV_VAR]?.trim() || baseConfig.timeZone;
-  const openWindows = env[MARKET_SESSION_OPEN_WINDOWS_ENV_VAR]?.trim();
-  const cacheKey = `${profileName ?? DEFAULT_MARKET_SESSION_PROFILE}||${timeZone}||${openWindows ?? ""}`;
-
-  if (cachedConfiguredSession && cachedConfiguredSessionKey === cacheKey) {
-    return cachedConfiguredSession;
-  }
-
-  const weeklyLocalWindows = openWindows ? parseWeeklySessionWindows(openWindows) : baseConfig.weeklyLocalWindows;
-
-  cachedConfiguredSession = new WeeklyMarketSession({
-    timeZone,
-    weeklyLocalWindows,
-    label: baseConfig.label,
-  });
-  cachedConfiguredSessionKey = cacheKey;
-  return cachedConfiguredSession;
+export function getConfiguredMarketSessionResolver(
+  env: NodeJS.ProcessEnv = process.env,
+  fallback: MarketSessionConfig = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+): MarketSessionResolver {
+  return (ticker: string) => getConfiguredMarketSessionForTicker(ticker, env, fallback);
 }
 
 export function isMarketOpenAt(date: Date, session: WeeklyMarketSession = getConfiguredMarketSession()): boolean {

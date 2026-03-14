@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  getSessionProfileForTicker,
   MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
   MARKET_SESSION_PROFILE_ENV_VAR,
   MARKET_SESSION_TIME_ZONE_ENV_VAR,
@@ -10,6 +11,7 @@ import {
 } from "./market-session-config.js";
 import {
   getConfiguredMarketSession,
+  getConfiguredMarketSessionForTicker,
   WeeklyMarketSession,
   collectOpenBucketTimesBetween,
 } from "./market-session.js";
@@ -74,6 +76,17 @@ test("configured session can select a named profile and still allow env override
   });
   assert.equal(overriddenSession.isOpenAt(new Date("2026-01-05T00:30:00.000Z")), true);
   assert.equal(overriddenSession.isOpenAt(new Date("2026-01-05T02:00:00.000Z")), false);
+});
+
+test("configured session resolves named profiles from ticker mappings", () => {
+  assert.equal(getSessionProfileForTicker("ES"), "globex");
+  assert.equal(getSessionProfileForTicker("NK"), "tokyo_daytime");
+  assert.equal(getSessionProfileForTicker("UNKNOWN"), null);
+
+  const esSession = getConfiguredMarketSessionForTicker("ES");
+  const nkSession = getConfiguredMarketSessionForTicker("NK");
+  assert.equal(esSession.describe(), new WeeklyMarketSession(SESSION_PROFILES.globex).describe());
+  assert.equal(nkSession.describe(), new WeeklyMarketSession(SESSION_PROFILES.tokyo_daytime).describe());
 });
 
 test("configured session still honors an explicit fallback when no profile env var is set", () => {

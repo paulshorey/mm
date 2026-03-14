@@ -8,7 +8,12 @@
 
 import { createCandleFromTrade, updateCandleCvdOHLC, updateCandleWithTrade } from "./candle-aggregation.js";
 import { FrontMonthTracker } from "./front-month.js";
-import { collectOpenBucketTimesBetween, getConfiguredMarketSession, type WeeklyMarketSession } from "./market-session.js";
+import {
+  collectOpenBucketTimesBetween,
+  getConfiguredMarketSessionResolver,
+  type MarketSessionResolver,
+  type WeeklyMarketSession,
+} from "./market-session.js";
 import type { CandleForDb, CandleState, MetricCalculationContext, NormalizedTrade } from "./types.js";
 
 interface SecondSummary {
@@ -83,6 +88,7 @@ interface RollingWindow1mOptions {
   maxSyntheticGapSeconds?: number;
   tracker?: FrontMonthTracker;
   sessionCalendar?: WeeklyMarketSession;
+  sessionCalendarResolver?: MarketSessionResolver;
 }
 
 export class RollingWindow1m {
@@ -90,7 +96,7 @@ export class RollingWindow1m {
   private readonly tracker: FrontMonthTracker;
   private readonly windowSeconds: number;
   private readonly maxSyntheticGapSeconds: number;
-  private readonly sessionCalendar: WeeklyMarketSession;
+  private readonly sessionCalendarResolver: MarketSessionResolver;
 
   private pendingCandles: CandleForDb[] = [];
   private secondsProcessed = 0;
@@ -103,7 +109,9 @@ export class RollingWindow1m {
     this.windowSeconds = options?.windowSeconds ?? DEFAULT_WINDOW_SECONDS;
     this.maxSyntheticGapSeconds = options?.maxSyntheticGapSeconds ?? DEFAULT_MAX_SYNTHETIC_GAP_SECONDS;
     this.tracker = options?.tracker ?? new FrontMonthTracker();
-    this.sessionCalendar = options?.sessionCalendar ?? getConfiguredMarketSession();
+    this.sessionCalendarResolver =
+      options?.sessionCalendarResolver ??
+      (options?.sessionCalendar ? () => options.sessionCalendar! : getConfiguredMarketSessionResolver());
   }
 
   seedTickerCvd(ticker: string, cvd: number): void {
@@ -383,7 +391,7 @@ export class RollingWindow1m {
       targetSecondMsExclusive,
       1000,
       this.maxSyntheticGapSeconds,
-      this.sessionCalendar,
+      this.sessionCalendarResolver(ticker),
     );
     if (openGap.exceeded) {
       this.resetTickerGapState(ticker, state, openGap.openBucketCount);

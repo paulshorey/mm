@@ -51,3 +51,31 @@ export const SESSION_PROFILES = {
 export type MarketSessionProfileName = keyof typeof SESSION_PROFILES;
 export const DEFAULT_MARKET_SESSION_PROFILE: MarketSessionProfileName = "globex";
 export const DEFAULT_MARKET_SESSION_CONFIG = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG;
+
+/**
+ * Per-ticker profile assignments for the canonical writer.
+ *
+ * Unlisted tickers fall back to the process-level default profile (or env
+ * override). Keep this map small and explicit; extend it only as new markets
+ * are added to the write pipeline.
+ */
+export const SESSION_PROFILE_BY_TICKER: Partial<Record<string, MarketSessionProfileName>> = {
+  ES: "globex",
+  NQ: "globex",
+  RTY: "globex",
+  YM: "globex",
+  CL: "globex",
+  GC: "globex",
+  SI: "globex",
+  HG: "globex",
+  NK: "tokyo_daytime",
+};
+
+export function getSessionProfileForTicker(ticker: string): MarketSessionProfileName | null {
+  const normalizedTicker = ticker.trim().toUpperCase();
+  if (!normalizedTicker) {
+    return null;
+  }
+
+  return SESSION_PROFILE_BY_TICKER[normalizedTicker] ?? null;
+}
