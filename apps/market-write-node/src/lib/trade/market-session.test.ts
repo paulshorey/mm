@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
 import {
+  DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
+  MARKET_SESSION_PROFILE_ENV_VAR,
+  MARKET_SESSION_TIME_ZONE_ENV_VAR,
+  SESSION_PROFILES,
+} from "./market-session-config.js";
+import {
+  getConfiguredMarketSession,
   WeeklyMarketSession,
   collectOpenBucketTimesBetween,
 } from "./market-session.js";
@@ -32,14 +39,7 @@ test("next open calculation skips closed periods using local session time", () =
 });
 
 test("session helpers support non-US time zones and multiple daily windows", () => {
-  const session = new WeeklyMarketSession({
-    timeZone: "Asia/Tokyo",
-    weeklyLocalWindows: [
-      { startDay: "Mon", startTime: "09:00", endDay: "Mon", endTime: "11:30" },
-      { startDay: "Mon", startTime: "12:30", endDay: "Mon", endTime: "15:00" },
-    ],
-    label: "Tokyo daytime",
-  });
+  const session = new WeeklyMarketSession(SESSION_PROFILES.tokyo_daytime);
 
   assert.equal(session.isOpenAt(new Date("2026-01-05T00:30:00.000Z")), true);
   assert.equal(session.isOpenAt(new Date("2026-01-05T03:00:00.000Z")), false);
@@ -58,5 +58,44 @@ test("session helpers support non-US time zones and multiple daily windows", () 
   assert.deepEqual(
     openBuckets.bucketTimes.map((timeMs) => new Date(timeMs).toISOString()),
     ["2026-01-05T03:30:00.000Z", "2026-01-05T04:00:00.000Z"],
+  );
+});
+
+test("configured session can select a named profile and still allow env overrides", () => {
+  const tokyoSession = getConfiguredMarketSession({
+    [MARKET_SESSION_PROFILE_ENV_VAR]: "tokyo_daytime",
+  });
+  assert.equal(tokyoSession.describe(), new WeeklyMarketSession(SESSION_PROFILES.tokyo_daytime).describe());
+
+  const overriddenSession = getConfiguredMarketSession({
+    [MARKET_SESSION_PROFILE_ENV_VAR]: "tokyo_daytime",
+    [MARKET_SESSION_TIME_ZONE_ENV_VAR]: "UTC",
+    [MARKET_SESSION_OPEN_WINDOWS_ENV_VAR]: "Mon 00:00-Mon 01:00",
+  });
+  assert.equal(overriddenSession.isOpenAt(new Date("2026-01-05T00:30:00.000Z")), true);
+  assert.equal(overriddenSession.isOpenAt(new Date("2026-01-05T02:00:00.000Z")), false);
+});
+
+test("configured session still honors an explicit fallback when no profile env var is set", () => {
+  const fallbackSession = getConfiguredMarketSession(
+    {},
+    {
+      timeZone: "UTC",
+      weeklyLocalWindows: [{ startDay: "Mon", startTime: "00:00", endDay: "Mon", endTime: "01:00" }],
+      label: "Fallback only",
+    },
+  );
+
+  assert.equal(fallbackSession.isOpenAt(new Date("2026-01-05T00:30:00.000Z")), true);
+  assert.equal(fallbackSession.isOpenAt(new Date("2026-01-05T02:00:00.000Z")), false);
+});
+
+test("configured session rejects unknown named profiles", () => {
+  assert.throws(
+    () =>
+      getConfiguredMarketSession({
+        [MARKET_SESSION_PROFILE_ENV_VAR]: "does_not_exist",
+      }),
+    /Unknown MARKET_SESSION_PROFILE/,
   );
 });

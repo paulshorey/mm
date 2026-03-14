@@ -1,21 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
+import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG, SESSION_PROFILES } from "./market-session-config.js";
 import { WeeklyMarketSession } from "./market-session.js";
 import { RollingCandleWindow } from "./rolling-candle-window.js";
 import { RollingWindow1m } from "./rolling-window.js";
 import type { CandleForDb, CandleState, NormalizedTrade } from "./types.js";
 
 const globexSession = new WeeklyMarketSession(DEFAULT_GLOBEX_MARKET_SESSION_CONFIG);
-const tokyoSession = new WeeklyMarketSession({
-  timeZone: "Asia/Tokyo",
-  weeklyLocalWindows: [
-    { startDay: "Mon", startTime: "09:00", endDay: "Mon", endTime: "11:30" },
-    { startDay: "Mon", startTime: "12:30", endDay: "Mon", endTime: "15:00" },
-  ],
-  label: "Tokyo daytime",
-});
+const tokyoSession = new WeeklyMarketSession(SESSION_PROFILES.tokyo_daytime);
 
 function makeTrade(symbol: string, price: number): NormalizedTrade {
   return {

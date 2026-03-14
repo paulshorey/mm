@@ -43,10 +43,13 @@ export {
   parseWeeklySessionWindows,
 } from "./market-session.js";
 export {
+  DEFAULT_MARKET_SESSION_PROFILE,
   DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
   DEFAULT_MARKET_SESSION_CONFIG,
+  MARKET_SESSION_PROFILE_ENV_VAR,
   MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
   MARKET_SESSION_TIME_ZONE_ENV_VAR,
+  SESSION_PROFILES,
 } from "./market-session-config.js";
 
 // Symbol utilities

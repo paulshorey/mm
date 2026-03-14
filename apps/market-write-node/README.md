@@ -185,14 +185,17 @@ Required env vars:
 
 Optional session-calendar env vars:
 
+- `MARKET_SESSION_PROFILE` - named session profile from
+  `src/lib/trade/market-session-config.ts` (default: `globex`)
 - `MARKET_SESSION_TIME_ZONE` - IANA time zone for the trading session
-  (default: `America/Chicago`)
+  (overrides the selected profile's time zone)
 - `MARKET_SESSION_OPEN_WINDOWS` - comma-separated weekly open windows in local
-  session time, for example:
+  session time (overrides the selected profile's windows), for example:
   `Sun 17:00-Mon 16:00, Mon 17:00-Tue 16:00, Tue 17:00-Wed 16:00, Wed 17:00-Thu 16:00, Thu 17:00-Fri 16:00`
 
-The default session profile is defined in
-`src/lib/trade/market-session-config.ts`.
+Session profiles live in `src/lib/trade/market-session-config.ts`. Start by
+selecting a profile, then use the time zone / open-windows env vars only when
+you need local overrides.
 
 Live behavior:
 

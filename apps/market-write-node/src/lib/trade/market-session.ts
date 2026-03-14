@@ -7,9 +7,12 @@
  */
 
 import {
+  DEFAULT_MARKET_SESSION_PROFILE,
   DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  MARKET_SESSION_PROFILE_ENV_VAR,
   MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
   MARKET_SESSION_TIME_ZONE_ENV_VAR,
+  SESSION_PROFILES,
 } from "./market-session-config.js";
 
 const MINUTES_PER_DAY = 24 * 60;
@@ -453,20 +456,30 @@ export function getConfiguredMarketSession(
   env: NodeJS.ProcessEnv = process.env,
   fallback: MarketSessionConfig = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
 ): WeeklyMarketSession {
-  const timeZone = env[MARKET_SESSION_TIME_ZONE_ENV_VAR]?.trim() || fallback.timeZone;
+  const profileName = env[MARKET_SESSION_PROFILE_ENV_VAR]?.trim() || null;
+  const profileConfig = profileName ? SESSION_PROFILES[profileName as keyof typeof SESSION_PROFILES] : null;
+  if (profileName && !profileConfig) {
+    throw new Error(
+      `Unknown ${MARKET_SESSION_PROFILE_ENV_VAR} "${profileName}". ` +
+        `Expected one of: ${Object.keys(SESSION_PROFILES).join(", ")}.`,
+    );
+  }
+
+  const baseConfig = profileConfig ?? fallback;
+  const timeZone = env[MARKET_SESSION_TIME_ZONE_ENV_VAR]?.trim() || baseConfig.timeZone;
   const openWindows = env[MARKET_SESSION_OPEN_WINDOWS_ENV_VAR]?.trim();
-  const cacheKey = `${timeZone}||${openWindows ?? ""}`;
+  const cacheKey = `${profileName ?? DEFAULT_MARKET_SESSION_PROFILE}||${timeZone}||${openWindows ?? ""}`;
 
   if (cachedConfiguredSession && cachedConfiguredSessionKey === cacheKey) {
     return cachedConfiguredSession;
   }
 
-  const weeklyLocalWindows = openWindows ? parseWeeklySessionWindows(openWindows) : fallback.weeklyLocalWindows;
+  const weeklyLocalWindows = openWindows ? parseWeeklySessionWindows(openWindows) : baseConfig.weeklyLocalWindows;
 
   cachedConfiguredSession = new WeeklyMarketSession({
     timeZone,
     weeklyLocalWindows,
-    label: fallback.label,
+    label: baseConfig.label,
   });
   cachedConfiguredSessionKey = cacheKey;
   return cachedConfiguredSession;
