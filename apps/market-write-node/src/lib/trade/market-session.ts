@@ -6,6 +6,12 @@
  * hardcoding UTC close/reopen hours that break during daylight saving changes.
  */
 
+import {
+  DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
+  MARKET_SESSION_TIME_ZONE_ENV_VAR,
+} from "./market-session-config.js";
+
 const MINUTES_PER_DAY = 24 * 60;
 const MINUTES_PER_WEEK = 7 * MINUTES_PER_DAY;
 const SEARCH_WINDOW_MS = 36 * 60 * 60 * 1000;
@@ -70,17 +76,7 @@ export interface MarketSessionConfig {
   label?: string;
 }
 
-export const DEFAULT_GLOBEX_MARKET_SESSION_CONFIG: MarketSessionConfig = {
-  timeZone: "America/Chicago",
-  weeklyLocalWindows: [
-    { startDay: "Sun", startTime: "17:00", endDay: "Mon", endTime: "16:00" },
-    { startDay: "Mon", startTime: "17:00", endDay: "Tue", endTime: "16:00" },
-    { startDay: "Tue", startTime: "17:00", endDay: "Wed", endTime: "16:00" },
-    { startDay: "Wed", startTime: "17:00", endDay: "Thu", endTime: "16:00" },
-    { startDay: "Thu", startTime: "17:00", endDay: "Fri", endTime: "16:00" },
-  ],
-  label: "CME Globex",
-};
+export { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
 
 const zonedDateTimeFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
@@ -436,7 +432,7 @@ export function parseWeeklySessionWindows(value: string): WeeklySessionWindowInp
       const match = /^([A-Za-z]{3})\s+(\d{2}:\d{2})\s*-\s*([A-Za-z]{3})\s+(\d{2}:\d{2})$/.exec(segment);
       if (!match) {
         throw new Error(
-          `Invalid MARKET_SESSION_OPEN_WINDOWS segment "${segment}". ` +
+          `Invalid ${MARKET_SESSION_OPEN_WINDOWS_ENV_VAR} segment "${segment}". ` +
             `Expected format like "Sun 17:00-Mon 16:00".`,
         );
       }
@@ -457,8 +453,8 @@ export function getConfiguredMarketSession(
   env: NodeJS.ProcessEnv = process.env,
   fallback: MarketSessionConfig = DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
 ): WeeklyMarketSession {
-  const timeZone = env.MARKET_SESSION_TIME_ZONE?.trim() || fallback.timeZone;
-  const openWindows = env.MARKET_SESSION_OPEN_WINDOWS?.trim();
+  const timeZone = env[MARKET_SESSION_TIME_ZONE_ENV_VAR]?.trim() || fallback.timeZone;
+  const openWindows = env[MARKET_SESSION_OPEN_WINDOWS_ENV_VAR]?.trim();
   const cacheKey = `${timeZone}||${openWindows ?? ""}`;
 
   if (cachedConfiguredSession && cachedConfiguredSessionKey === cacheKey) {

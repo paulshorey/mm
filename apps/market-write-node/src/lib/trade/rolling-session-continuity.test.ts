@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG, WeeklyMarketSession } from "./market-session.js";
+import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
+import { WeeklyMarketSession } from "./market-session.js";
 import { RollingCandleWindow } from "./rolling-candle-window.js";
 import { RollingWindow1m } from "./rolling-window.js";
 import type { CandleForDb, CandleState, NormalizedTrade } from "./types.js";

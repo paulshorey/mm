@@ -191,6 +191,9 @@ Optional session-calendar env vars:
   session time, for example:
   `Sun 17:00-Mon 16:00, Mon 17:00-Tue 16:00, Tue 17:00-Wed 16:00, Wed 17:00-Thu 16:00, Thu 17:00-Fri 16:00`
 
+The default session profile is defined in
+`src/lib/trade/market-session-config.ts`.
+
 Live behavior:
 
 1. raw TBBO trades -> `candles_1m_1s`

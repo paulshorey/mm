@@ -36,13 +36,18 @@ export {
 // Market-session utilities
 export type { MarketSessionConfig, OpenBucketCollection, WeeklySessionWindowInput } from "./market-session.js";
 export {
-  DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
   WeeklyMarketSession,
   collectOpenBucketTimesBetween,
   getConfiguredMarketSession,
   isMarketOpenAt,
   parseWeeklySessionWindows,
 } from "./market-session.js";
+export {
+  DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
+  DEFAULT_MARKET_SESSION_CONFIG,
+  MARKET_SESSION_OPEN_WINDOWS_ENV_VAR,
+  MARKET_SESSION_TIME_ZONE_ENV_VAR,
+} from "./market-session-config.js";
 
 // Symbol utilities
 export { extractTicker } from "./symbol.js";

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { DEFAULT_GLOBEX_MARKET_SESSION_CONFIG } from "./market-session-config.js";
 import {
-  DEFAULT_GLOBEX_MARKET_SESSION_CONFIG,
   WeeklyMarketSession,
   collectOpenBucketTimesBetween,
 } from "./market-session.js";
