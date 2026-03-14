@@ -35,7 +35,15 @@ import { createReadStream } from "fs";
 import { createInterface } from "readline";
 import { pool } from "../src/lib/db.js";
 import type { NormalizedTrade, TimedTradeInput } from "../src/lib/trade/index.js";
-import { RollingWindow1m, determineTradeSide, extractTicker, toMinuteBucket, toSecondBucket, writeCandles } from "../src/lib/trade/index.js";
+import {
+  RollingWindow1m,
+  determineTradeSide,
+  extractTicker,
+  getConfiguredMarketSessionForTicker,
+  toMinuteBucket,
+  toSecondBucket,
+  writeCandles,
+} from "../src/lib/trade/index.js";
 
 interface HistoricalTbboLevel {
   bid_px?: string | number;
@@ -196,6 +204,7 @@ async function processFile(filePath: string): Promise<void> {
   });
 
   let lineCount = 0;
+  let fileTicker: string | null = null;
 
   for await (const line of rl) {
     if (!line.trim()) {
@@ -203,6 +212,10 @@ async function processFile(filePath: string): Promise<void> {
     }
 
     const parsed = parseHistoricalTbbo(line);
+    if (parsed && !fileTicker) {
+      fileTicker = parsed.trade.ticker;
+      console.log(`   🕒 Session: ${getConfiguredMarketSessionForTicker(fileTicker).describe()}`);
+    }
     if (parsed && rollingWindow.addTrade(parsed)) {
       stats.tradesProcessed++;
     }
