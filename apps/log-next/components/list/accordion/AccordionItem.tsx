@@ -23,7 +23,7 @@ export const AccordionItem = ({
         className="flex justify-between items-center cursor-pointer"
         onClick={onToggle}
       >
-        <div className="flex-grow mr-4 truncate">{title}</div>
+        <div className="flex-grow mr-4 truncate min-w-[200px]">{title}</div>
         <div
           className="flex items-center space-x-2 flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
