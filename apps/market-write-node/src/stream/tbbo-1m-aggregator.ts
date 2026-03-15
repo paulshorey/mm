@@ -27,9 +27,32 @@ const WRITE_BATCH_SIZE = 500;
 const STATUS_LOG_INTERVAL_MS = 30_000;
 const WINDOW_SECONDS = 60;
 
+interface QueryResultLike<Row> {
+  rows: Row[];
+}
+
+interface Queryable {
+  query: <Row = unknown>(text: string, values?: unknown[]) => Promise<QueryResultLike<Row>>;
+}
+
+interface HourlyAggregatorLike {
+  initialize(): Promise<void>;
+  addBaseCandles(candles: CandleForDb[]): number;
+  flushCompleted(): Promise<void>;
+  flushAll(): Promise<void>;
+}
+
+interface Tbbo1mAggregatorOptions {
+  queryable?: Queryable;
+  writeCandlesFn?: typeof writeCandles;
+  hourlyAggregator?: HourlyAggregatorLike;
+}
+
 export class Tbbo1mAggregator {
+  private readonly queryable: Queryable;
+  private readonly writeCandlesFn: typeof writeCandles;
   private readonly rollingWindow = new RollingWindow1m();
-  private readonly hourlyAggregator = new Candles1h1mAggregator();
+  private readonly hourlyAggregator: HourlyAggregatorLike;
   private initialized = false;
   private recordsProcessed = 0;
   private candlesWritten = 0;
@@ -39,7 +62,10 @@ export class Tbbo1mAggregator {
     unknownSideTrades: 0,
   };
 
-  constructor() {
+  constructor(options: Tbbo1mAggregatorOptions = {}) {
+    this.queryable = options.queryable ?? pool;
+    this.writeCandlesFn = options.writeCandlesFn ?? writeCandles;
+    this.hourlyAggregator = options.hourlyAggregator ?? new Candles1h1mAggregator();
     console.log("📊 TBBO 1m aggregator created");
   }
 
@@ -50,7 +76,10 @@ export class Tbbo1mAggregator {
     }
 
     try {
-      const result = await pool.query(`
+      const result = await this.queryable.query<{
+        ticker: string;
+        cvd: number | string | null;
+      }>(`
         SELECT DISTINCT ON (ticker) ticker, cvd_close AS cvd
         FROM ${TARGET_TABLE}
         WHERE cvd_close IS NOT NULL
@@ -139,6 +168,7 @@ export class Tbbo1mAggregator {
   async flushCompleted(): Promise<void> {
     this.rollingWindow.finalizeStaleSeconds();
     await this.flushPendingCandles("✅ Flushed", "⚠️ Dropped");
+    await this.hourlyAggregator.flushCompleted();
   }
 
   async flushAll(): Promise<void> {
@@ -221,7 +251,7 @@ export class Tbbo1mAggregator {
     }
 
     try {
-      await writeCandles(pool, TARGET_TABLE, batch);
+      await this.writeCandlesFn(this.queryable, TARGET_TABLE, batch);
       this.candlesWritten += batch.length;
       this.hourlyAggregator.addBaseCandles(batch);
       await this.hourlyAggregator.flushCompleted();

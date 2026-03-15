@@ -8,72 +8,90 @@ const HYDRATION_WINDOW_ROWS = 60;
 const WINDOW_MINUTES = 60;
 const WRITE_BATCH_SIZE = 500;
 const HYDRATION_RETRY_LOG_INTERVAL_MS = 30_000;
+const RECONCILIATION_PAGE_SIZE = 5_000;
+const RECONCILIATION_FLUSH_THRESHOLD = 10_000;
+
+const SOURCE_COLUMNS = `
+  time,
+  ticker,
+  symbol,
+  open,
+  high,
+  low,
+  close,
+  volume,
+  ask_volume,
+  bid_volume,
+  cvd_open,
+  cvd_high,
+  cvd_low,
+  cvd_close,
+  trades,
+  max_trade_size,
+  big_trades,
+  big_volume,
+  vd,
+  vd_ratio,
+  book_imbalance,
+  price_pct,
+  divergence,
+  sum_bid_depth,
+  sum_ask_depth,
+  sum_price_volume,
+  unknown_volume
+`;
+
+const SOURCE_COLUMNS_FROM_SOURCE_TABLE = `
+  ${SOURCE_TABLE}.time,
+  ${SOURCE_TABLE}.ticker,
+  ${SOURCE_TABLE}.symbol,
+  ${SOURCE_TABLE}.open,
+  ${SOURCE_TABLE}.high,
+  ${SOURCE_TABLE}.low,
+  ${SOURCE_TABLE}.close,
+  ${SOURCE_TABLE}.volume,
+  ${SOURCE_TABLE}.ask_volume,
+  ${SOURCE_TABLE}.bid_volume,
+  ${SOURCE_TABLE}.cvd_open,
+  ${SOURCE_TABLE}.cvd_high,
+  ${SOURCE_TABLE}.cvd_low,
+  ${SOURCE_TABLE}.cvd_close,
+  ${SOURCE_TABLE}.trades,
+  ${SOURCE_TABLE}.max_trade_size,
+  ${SOURCE_TABLE}.big_trades,
+  ${SOURCE_TABLE}.big_volume,
+  ${SOURCE_TABLE}.vd,
+  ${SOURCE_TABLE}.vd_ratio,
+  ${SOURCE_TABLE}.book_imbalance,
+  ${SOURCE_TABLE}.price_pct,
+  ${SOURCE_TABLE}.divergence,
+  ${SOURCE_TABLE}.sum_bid_depth,
+  ${SOURCE_TABLE}.sum_ask_depth,
+  ${SOURCE_TABLE}.sum_price_volume,
+  ${SOURCE_TABLE}.unknown_volume
+`;
 
 const HYDRATION_QUERY = `
   WITH ranked AS (
     SELECT
-      time,
-      ticker,
-      symbol,
-      open,
-      high,
-      low,
-      close,
-      volume,
-      ask_volume,
-      bid_volume,
-      cvd_open,
-      cvd_high,
-      cvd_low,
-      cvd_close,
-      trades,
-      max_trade_size,
-      big_trades,
-      big_volume,
-      vd,
-      vd_ratio,
-      book_imbalance,
-      price_pct,
-      divergence,
-      sum_bid_depth,
-      sum_ask_depth,
-      sum_price_volume,
-      unknown_volume,
+      ${SOURCE_COLUMNS},
       ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY time DESC) AS rn
     FROM ${SOURCE_TABLE}
     WHERE time = date_trunc('minute', time)
   )
   SELECT
-    time,
-    ticker,
-    symbol,
-    open,
-    high,
-    low,
-    close,
-    volume,
-    ask_volume,
-    bid_volume,
-    cvd_open,
-    cvd_high,
-    cvd_low,
-    cvd_close,
-    trades,
-    max_trade_size,
-    big_trades,
-    big_volume,
-    vd,
-    vd_ratio,
-    book_imbalance,
-    price_pct,
-    divergence,
-    sum_bid_depth,
-    sum_ask_depth,
-    sum_price_volume,
-    unknown_volume
+    ${SOURCE_COLUMNS}
   FROM ranked
   WHERE rn <= $1
   ORDER BY ticker ASC, time ASC
+`;
+
+const LATEST_TARGET_TIMES_QUERY = `
+  SELECT DISTINCT ON (ticker)
+    ticker,
+    time AS latest_target_time
+  FROM ${TARGET_TABLE}
+  ORDER BY ticker ASC, time DESC
 `;
 
 interface QueryResultLike<Row> {
@@ -82,6 +100,25 @@ interface QueryResultLike<Row> {
 
 interface Queryable {
   query: <Row = unknown>(text: string, values?: unknown[]) => Promise<QueryResultLike<Row>>;
+}
+
+interface LatestTargetRow {
+  ticker: string;
+  latest_target_time: Date | string;
+}
+
+interface ReconciliationSourceRow extends StoredCandleRow {
+  latest_target_time: Date | string;
+}
+
+interface ReconciliationCursor {
+  ticker: string;
+  time: string;
+}
+
+interface ReconciliationResult {
+  seeded: number;
+  replayed: number;
 }
 
 interface Candles1h1mAggregatorOptions {
@@ -134,6 +171,18 @@ export class Candles1h1mAggregator {
       return;
     }
 
+    await this.flushPendingCandles();
+  }
+
+  async flushAll(): Promise<void> {
+    await this.flushCompleted();
+  }
+
+  getCandlesWritten(): number {
+    return this.candlesWritten;
+  }
+
+  private async flushPendingCandles(): Promise<void> {
     const pendingCandles = this.rollingWindow.drainPendingCandles();
     if (pendingCandles.length === 0) {
       return;
@@ -169,14 +218,6 @@ export class Candles1h1mAggregator {
     }
   }
 
-  async flushAll(): Promise<void> {
-    await this.flushCompleted();
-  }
-
-  getCandlesWritten(): number {
-    return this.candlesWritten;
-  }
-
   private async ensureInitialized(): Promise<boolean> {
     if (this.initialized) {
       return true;
@@ -194,21 +235,34 @@ export class Candles1h1mAggregator {
 
   private async hydrateFromDatabase(): Promise<boolean> {
     try {
-      const result = await this.queryable.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
-      const seedCandles = result.rows.map(candleForDbFromStoredRow);
-      this.rollingWindow.seedCandles(seedCandles);
-      this.initialized = true;
+      const latestTargetTimes = await this.loadLatestTargetTimes();
+      const recentSourceRows = await this.queryable.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
 
-      if (seedCandles.length > 0) {
-        console.log(`📚 Hydrated ${seedCandles.length} canonical 1m row(s) into ${TARGET_TABLE}`);
+      const latestTargetTimeByTicker = new Map(latestTargetTimes.map((row) => [row.ticker, new Date(row.latest_target_time).getTime()]));
+      const recentSeedCandles = recentSourceRows.rows
+        .filter((row) => !latestTargetTimeByTicker.has(row.ticker))
+        .map((row) => candleForDbFromStoredRow(row, { requireCompleteCvd: true }));
+      const reconciliation = await this.reconcileFromSource(latestTargetTimes);
+      const seedCandles = [...recentSeedCandles];
+      this.rollingWindow.seedCandles(seedCandles);
+
+      const totalSeeded = seedCandles.length + reconciliation.seeded;
+      if (totalSeeded > 0) {
+        console.log(`📚 Hydrated ${totalSeeded} canonical 1m row(s) into ${TARGET_TABLE}`);
       } else {
         console.log(`📚 No canonical 1m rows available yet to hydrate ${TARGET_TABLE}`);
+      }
+      if (reconciliation.replayed > 0) {
+        console.log(`🔁 Replayed ${reconciliation.replayed} canonical 1m row(s) newer than ${TARGET_TABLE}`);
       }
 
       const replayed = this.replayBufferedBaseCandles();
       if (replayed > 0) {
         console.log(`📥 Replayed ${replayed} buffered canonical 1m row(s) into ${TARGET_TABLE}`);
       }
+
+      this.initialized = true;
+      await this.flushPendingCandles();
 
       return true;
     } catch (error) {
@@ -225,6 +279,99 @@ export class Candles1h1mAggregator {
     const buffered = this.bufferedBaseCandles;
     this.bufferedBaseCandles = [];
     return this.rollingWindow.addCandles(buffered);
+  }
+
+  private async loadLatestTargetTimes(): Promise<LatestTargetRow[]> {
+    const result = await this.queryable.query<LatestTargetRow>(LATEST_TARGET_TIMES_QUERY);
+    return result.rows;
+  }
+
+  private async reconcileFromSource(latestTargetTimes: LatestTargetRow[]): Promise<ReconciliationResult> {
+    if (latestTargetTimes.length === 0) {
+      return { seeded: 0, replayed: 0 };
+    }
+
+    let cursor: ReconciliationCursor | null = null;
+    let seeded = 0;
+    let replayed = 0;
+
+    while (true) {
+      const rows = await this.loadReconciliationRows(latestTargetTimes, cursor);
+      if (rows.length === 0) {
+        break;
+      }
+
+      const reconciliationSeedCandles: CandleForDb[] = [];
+      const reconciliationReplayCandles: CandleForDb[] = [];
+      for (const row of rows) {
+        const candle = candleForDbFromStoredRow(row, { requireCompleteCvd: true });
+        const latestTargetTimeMs = new Date(row.latest_target_time).getTime();
+
+        if (new Date(candle.time).getTime() <= latestTargetTimeMs) {
+          reconciliationSeedCandles.push(candle);
+        } else {
+          reconciliationReplayCandles.push(candle);
+        }
+      }
+
+      if (reconciliationSeedCandles.length > 0) {
+        seeded += reconciliationSeedCandles.length;
+        this.rollingWindow.seedCandles(reconciliationSeedCandles);
+      }
+      if (reconciliationReplayCandles.length > 0) {
+        replayed += this.rollingWindow.addCandles(reconciliationReplayCandles);
+      }
+      if (this.rollingWindow.getStats().pendingCandles >= RECONCILIATION_FLUSH_THRESHOLD) {
+        await this.flushPendingCandles();
+      }
+
+      const lastRow = rows[rows.length - 1];
+      cursor = {
+        ticker: lastRow.ticker,
+        time: lastRow.time instanceof Date ? lastRow.time.toISOString() : new Date(lastRow.time).toISOString(),
+      };
+    }
+
+    return { seeded, replayed };
+  }
+
+  private async loadReconciliationRows(
+    latestTargetTimes: LatestTargetRow[],
+    cursor: ReconciliationCursor | null,
+  ): Promise<ReconciliationSourceRow[]> {
+    const values: unknown[] = [];
+    const placeholders = latestTargetTimes.map((row, index) => {
+      const offset = index * 2;
+      values.push(row.ticker, row.latest_target_time instanceof Date ? row.latest_target_time.toISOString() : row.latest_target_time);
+      return `($${offset + 1}, $${offset + 2}::timestamptz)`;
+    });
+    const cursorTickerIndex = values.length + 1;
+    const cursorTimeIndex = values.length + 2;
+    const limitIndex = values.length + 3;
+    values.push(cursor?.ticker ?? "", cursor?.time ?? "1970-01-01T00:00:00.000Z", String(RECONCILIATION_PAGE_SIZE));
+
+    const query = `
+      WITH latest_target(ticker, latest_target_time) AS (
+        VALUES ${placeholders.join(", ")}
+      )
+      SELECT
+        ${SOURCE_COLUMNS_FROM_SOURCE_TABLE},
+        latest_target.latest_target_time
+      FROM ${SOURCE_TABLE}
+      JOIN latest_target
+        ON latest_target.ticker = ${SOURCE_TABLE}.ticker
+      WHERE time = date_trunc('minute', time)
+        AND time >= latest_target.latest_target_time - INTERVAL '${WINDOW_MINUTES - 1} minutes'
+        AND (
+          $${cursorTickerIndex} = ''
+          OR (${SOURCE_TABLE}.ticker, ${SOURCE_TABLE}.time) > ($${cursorTickerIndex}, $${cursorTimeIndex}::timestamptz)
+        )
+      ORDER BY ${SOURCE_TABLE}.ticker ASC, ${SOURCE_TABLE}.time ASC
+      LIMIT $${limitIndex}::int
+    `;
+
+    const result = await this.queryable.query<ReconciliationSourceRow>(query, values);
+    return result.rows;
   }
 
   private maybeLogHydrationBlocked(): void {
