@@ -106,6 +106,21 @@ export class RollingCandleWindow {
     return drained;
   }
 
+  requeuePendingCandles(candles: CandleForDb[]): void {
+    if (candles.length === 0) {
+      return;
+    }
+
+    const sorted = [...candles].sort((a, b) => {
+      if (a.ticker !== b.ticker) {
+        return a.ticker.localeCompare(b.ticker);
+      }
+      return a.time.localeCompare(b.time);
+    });
+
+    this.pendingCandles = [...sorted, ...this.pendingCandles];
+  }
+
   getStats(): RollingCandleWindowStats {
     return {
       pendingCandles: this.pendingCandles.length,

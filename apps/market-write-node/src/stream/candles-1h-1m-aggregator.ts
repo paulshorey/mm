@@ -7,6 +7,7 @@ const TARGET_TABLE = "candles_1h_1m";
 const HYDRATION_WINDOW_ROWS = 60;
 const WINDOW_MINUTES = 60;
 const WRITE_BATCH_SIZE = 500;
+const HYDRATION_RETRY_LOG_INTERVAL_MS = 30_000;
 
 const HYDRATION_QUERY = `
   WITH ranked AS (
@@ -75,7 +76,22 @@ const HYDRATION_QUERY = `
   ORDER BY ticker ASC, time ASC
 `;
 
+interface QueryResultLike<Row> {
+  rows: Row[];
+}
+
+interface Queryable {
+  query: <Row = unknown>(text: string, values?: unknown[]) => Promise<QueryResultLike<Row>>;
+}
+
+interface Candles1h1mAggregatorOptions {
+  queryable?: Queryable;
+  writeCandlesFn?: typeof writeCandles;
+}
+
 export class Candles1h1mAggregator {
+  private readonly queryable: Queryable;
+  private readonly writeCandlesFn: typeof writeCandles;
   private readonly rollingWindow = new RollingCandleWindow({
     windowSize: WINDOW_MINUTES,
     expectedIntervalMs: 60_000,
@@ -84,27 +100,17 @@ export class Candles1h1mAggregator {
 
   private initialized = false;
   private candlesWritten = 0;
+  private bufferedBaseCandles: CandleForDb[] = [];
+  private hydrationPromise: Promise<boolean> | null = null;
+  private lastHydrationBlockedLogTime = 0;
+
+  constructor(options: Candles1h1mAggregatorOptions = {}) {
+    this.queryable = options.queryable ?? pool;
+    this.writeCandlesFn = options.writeCandlesFn ?? writeCandles;
+  }
 
   async initialize(): Promise<void> {
-    if (this.initialized) {
-      return;
-    }
-
-    try {
-      const result = await pool.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
-      const seedCandles = result.rows.map(candleForDbFromStoredRow);
-      this.rollingWindow.seedCandles(seedCandles);
-
-      if (seedCandles.length > 0) {
-        console.log(`📚 Hydrated ${seedCandles.length} canonical 1m row(s) into ${TARGET_TABLE}`);
-      } else {
-        console.log(`📚 No canonical 1m rows available yet to hydrate ${TARGET_TABLE}`);
-      }
-    } catch (error) {
-      console.warn(`⚠️ Could not hydrate ${TARGET_TABLE} from ${SOURCE_TABLE}:`, error);
-    }
-
-    this.initialized = true;
+    await this.ensureInitialized();
   }
 
   addBaseCandles(candles: CandleForDb[]): number {
@@ -113,10 +119,21 @@ export class Candles1h1mAggregator {
       return 0;
     }
 
+    if (!this.initialized) {
+      this.bufferedBaseCandles.push(...minuteBoundaryCandles);
+      return minuteBoundaryCandles.length;
+    }
+
     return this.rollingWindow.addCandles(minuteBoundaryCandles);
   }
 
   async flushCompleted(): Promise<void> {
+    const ready = await this.ensureInitialized();
+    if (!ready) {
+      this.maybeLogHydrationBlocked();
+      return;
+    }
+
     const pendingCandles = this.rollingWindow.drainPendingCandles();
     if (pendingCandles.length === 0) {
       return;
@@ -124,25 +141,31 @@ export class Candles1h1mAggregator {
 
     let written = 0;
     let dropped = 0;
+    const retryCandles: CandleForDb[] = [];
 
     for (let i = 0; i < pendingCandles.length; i += WRITE_BATCH_SIZE) {
       const batch = pendingCandles.slice(i, i + WRITE_BATCH_SIZE);
 
       try {
-        await writeCandles(pool, TARGET_TABLE, batch);
+        await this.writeCandlesFn(this.queryable, TARGET_TABLE, batch);
         written += batch.length;
         this.candlesWritten += batch.length;
       } catch (error) {
         dropped += batch.length;
+        retryCandles.push(...batch);
         console.error(`❌ Failed to write ${TARGET_TABLE} candles:`, error);
       }
+    }
+
+    if (retryCandles.length > 0) {
+      this.rollingWindow.requeuePendingCandles(retryCandles);
     }
 
     if (written > 0) {
       console.log(`✅ Flushed ${written} rolling 1h candle(s) to ${TARGET_TABLE}`);
     }
     if (dropped > 0) {
-      console.warn(`⚠️ Dropped ${dropped} rolling 1h candle(s) due to DB write failures`);
+      console.warn(`⚠️ Requeued ${dropped} rolling 1h candle(s) after DB write failures`);
     }
   }
 
@@ -152,5 +175,68 @@ export class Candles1h1mAggregator {
 
   getCandlesWritten(): number {
     return this.candlesWritten;
+  }
+
+  private async ensureInitialized(): Promise<boolean> {
+    if (this.initialized) {
+      return true;
+    }
+
+    if (this.hydrationPromise) {
+      return this.hydrationPromise;
+    }
+
+    this.hydrationPromise = this.hydrateFromDatabase().finally(() => {
+      this.hydrationPromise = null;
+    });
+    return this.hydrationPromise;
+  }
+
+  private async hydrateFromDatabase(): Promise<boolean> {
+    try {
+      const result = await this.queryable.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
+      const seedCandles = result.rows.map(candleForDbFromStoredRow);
+      this.rollingWindow.seedCandles(seedCandles);
+      this.initialized = true;
+
+      if (seedCandles.length > 0) {
+        console.log(`📚 Hydrated ${seedCandles.length} canonical 1m row(s) into ${TARGET_TABLE}`);
+      } else {
+        console.log(`📚 No canonical 1m rows available yet to hydrate ${TARGET_TABLE}`);
+      }
+
+      const replayed = this.replayBufferedBaseCandles();
+      if (replayed > 0) {
+        console.log(`📥 Replayed ${replayed} buffered canonical 1m row(s) into ${TARGET_TABLE}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.warn(`⚠️ Could not hydrate ${TARGET_TABLE} from ${SOURCE_TABLE}; will retry:`, error);
+      return false;
+    }
+  }
+
+  private replayBufferedBaseCandles(): number {
+    if (this.bufferedBaseCandles.length === 0) {
+      return 0;
+    }
+
+    const buffered = this.bufferedBaseCandles;
+    this.bufferedBaseCandles = [];
+    return this.rollingWindow.addCandles(buffered);
+  }
+
+  private maybeLogHydrationBlocked(): void {
+    const now = Date.now();
+    if (now - this.lastHydrationBlockedLogTime < HYDRATION_RETRY_LOG_INTERVAL_MS) {
+      return;
+    }
+
+    console.warn(
+      `⚠️ ${TARGET_TABLE} is still waiting on startup hydration; ` +
+        `buffered ${this.bufferedBaseCandles.length} minute-boundary base candle(s) for retry`,
+    );
+    this.lastHydrationBlockedLogTime = now;
   }
 }
