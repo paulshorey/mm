@@ -48,11 +48,10 @@ pnpm --filter @lib/db-timescale db:verify
 
 What this does:
 
-- applies baseline schema history
+- applies baseline schema history for canonical candle writes
 - applies forward migrations such as:
   - `candles_1h_1m`
   - `candles_1m_1s` contract cleanup
-  - legacy table removal (`bbo-1s`, `candles-1m`, `candles_1s`)
   - Timescale hypertable/compression setup
 - verifies expected tables, indexes, hypertables, and generated artifacts
 

@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS public."bbo-1s" CASCADE;
-DROP TABLE IF EXISTS public."candles-1m" CASCADE;
-DROP TABLE IF EXISTS public.candles_1s CASCADE;
