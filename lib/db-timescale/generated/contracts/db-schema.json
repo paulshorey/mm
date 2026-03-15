@@ -169,17 +169,17 @@
     },
     {
       "column": "volume",
-      "nullable": false,
+      "nullable": true,
       "type": "number"
     },
     {
       "column": "ask_volume",
-      "nullable": false,
+      "nullable": true,
       "type": "number"
     },
     {
       "column": "bid_volume",
-      "nullable": false,
+      "nullable": true,
       "type": "number"
     },
     {

@@ -38,9 +38,9 @@ export interface Candles1m1sRow {
   "high": number;
   "low": number;
   "close": number;
-  "volume": number;
-  "ask_volume": number;
-  "bid_volume": number;
+  "volume": number | null;
+  "ask_volume": number | null;
+  "bid_volume": number | null;
   "cvd_open": number | null;
   "cvd_high": number | null;
   "cvd_low": number | null;
