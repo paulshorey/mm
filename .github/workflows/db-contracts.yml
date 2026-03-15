@@ -6,9 +6,12 @@ on:
       - ".github/workflows/db-contracts.yml"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps/view-next/**"
+      - "apps/write-node/**"
+      - "apps/log-next/**"
       - "apps/tradingview-node/**"
   push:
     branches:
@@ -17,9 +20,12 @@ on:
       - ".github/workflows/db-contracts.yml"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps/view-next/**"
+      - "apps/write-node/**"
+      - "apps/log-next/**"
       - "apps/tradingview-node/**"
   workflow_dispatch:
 
@@ -27,6 +33,7 @@ jobs:
   verify-postgres:
     name: Verify Postgres contract
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17
@@ -56,7 +63,7 @@ jobs:
           cache: pnpm
 
       - name: Install PostgreSQL client tools
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-17
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -67,9 +74,10 @@ jobs:
   verify-timescale:
     name: Verify Timescale contract
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       timescale:
-        image: timescale/timescaledb:latest-pg17
+        image: timescale/timescaledb:2.25.2-pg17
         env:
           POSTGRES_DB: app_contracts
           POSTGRES_USER: postgres
@@ -96,10 +104,137 @@ jobs:
           cache: pnpm
 
       - name: Install PostgreSQL client tools
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-17
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Verify @lib/db-timescale
         run: pnpm --filter @lib/db-timescale db:verify
+
+  verify-timescale-upgrade:
+    name: Verify Timescale upgrade path
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      timescale:
+        image: timescale/timescaledb:2.25.2-pg17
+        env:
+          POSTGRES_DB: app_contracts
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app_contracts"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TIMESCALE_DB_URL: postgres://postgres:postgres@localhost:5432/app_contracts
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install PostgreSQL client tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Seed Timescale baseline schema
+        run: psql "$TIMESCALE_DB_URL" -v ON_ERROR_STOP=1 -f lib/db-timescale/migrations/202602180131__baseline.sql
+
+      - name: Seed baseline data
+        run: |
+          psql "$TIMESCALE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO public.candles_1m_1s (
+            "time",
+            ticker,
+            open,
+            high,
+            low,
+            close
+          ) VALUES (
+            '2026-01-01T00:00:00Z',
+            'ES',
+            1,
+            1,
+            1,
+            1
+          );
+          SQL
+
+      - name: Mark baseline migrations as applied
+        run: pnpm --filter @lib/db-timescale db:migrate:baseline
+
+      - name: Verify @lib/db-timescale upgrade path
+        run: pnpm --filter @lib/db-timescale db:verify
+
+      - name: Verify backfilled defaults
+        run: |
+          psql "$TIMESCALE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT 1
+              FROM public.candles_1m_1s
+              WHERE ticker = 'ES'
+                AND "time" = '2026-01-01T00:00:00Z'
+                AND (
+                  trades IS NULL
+                  OR max_trade_size IS NULL
+                  OR big_trades IS NULL
+                  OR big_volume IS NULL
+                  OR sum_bid_depth IS NULL
+                  OR sum_ask_depth IS NULL
+                  OR sum_price_volume IS NULL
+                  OR unknown_volume IS NULL
+                )
+            ) THEN
+              RAISE EXCEPTION 'Expected seeded baseline row to be backfilled during migration';
+            END IF;
+          END
+          $$;
+          SQL
+
+  verify-consumers:
+    name: Verify DB consumers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - verify-postgres
+      - verify-timescale
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck Next.js DB consumers
+        run: |
+          pnpm --filter view-next typecheck
+          pnpm --filter log-next typecheck
+
+      - name: Build Node.js DB consumers
+        run: |
+          pnpm --filter write-node build
+          pnpm --filter tradingview-node build
