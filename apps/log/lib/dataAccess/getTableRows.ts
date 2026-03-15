@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getDb } from '@lib/db-postgres/lib/db/postgres'
+import { getDb } from '@lib/db-trading/lib/db/postgres'
 import type { TableSchema } from '@/config/schemaRegistry'
 import type { WhereFilters } from '@/lib/searchParams'
 

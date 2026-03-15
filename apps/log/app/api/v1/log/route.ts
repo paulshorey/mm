@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { formatResponse } from '@lib/common/nextjs/formatResponse'
 import { getCurrentIpAddress } from '@lib/common/nextjs/getCurrentIpAddress'
 import { sendToMyselfSMS } from '@lib/common/twillio/sendToMyselfSMS'
-import { sqlLogAdd } from '@lib/db-postgres/sql/log/add'
+import { sqlLogAdd } from '@lib/db-trading/sql/log/add'
 import { buildRequestLogData } from '@/app/api/v1/lib/requestLog'
 
 export const maxDuration = 60

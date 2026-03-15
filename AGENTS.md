@@ -13,7 +13,7 @@
 
 - `lib/common` is shared utility code and is not DB schema source of truth.
 - `lib/config` contains shared tooling config.
-- `lib/db-postgres` owns `TRADING_DB_URL` database contracts.
+- `lib/db-trading` owns `TRADING_DB_URL` database contracts.
 - `lib/db-timescale` owns `TIMESCALE_DB_URL` database contracts.
 
 ## DB package contract model
@@ -32,7 +32,7 @@ In apps:
 
 - Use `@/` for same-app imports.
 - Use `@lib/common/...` for shared non-DB utilities.
-- Use `@lib/db-postgres/...` and `@lib/db-timescale/...` for DB contracts/helpers.
+- Use `@lib/db-trading/...` and `@lib/db-timescale/...` for DB contracts/helpers.
 
 In `lib/*` packages:
 
@@ -48,7 +48,7 @@ In `lib/*` packages:
 
 If DB contracts change:
 
-- Update migration(s), regenerate snapshot/types/contracts, and ensure adapters stay in sync. See scripts in `lib/db-postgres/package.json` and `lib/db-timescale/package.json`.
+- Update migration(s), regenerate snapshot/types/contracts, and ensure adapters stay in sync. See scripts in `lib/db-trading/package.json` and `lib/db-timescale/package.json`.
 
 ## Setup workspace:
 

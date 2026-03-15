@@ -1,4 +1,4 @@
-import { sqlLogAdd } from "@lib/db-postgres/sql/log/add";
+import { sqlLogAdd } from "@lib/db-trading/sql/log/add";
 import { getCurrentIpAddress } from "../nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "../twillio/sendToMyselfSMS";
 import { consoleAction } from "./lib/consoleAction";
@@ -8,12 +8,7 @@ const addAddressToStack = async (stack: Record<string, any>) => {
   return { ...stack, ...addr };
 };
 
-const persistLog = async (
-  name: "log" | "info" | "warn" | "error",
-  message: string,
-  stack: Record<string, any>,
-  sendSms = false,
-) => {
+const persistLog = async (name: "log" | "info" | "warn" | "error", message: string, stack: Record<string, any>, sendSms = false) => {
   await sqlLogAdd({ name, message, stack: await addAddressToStack(stack) });
   if (sendSms) {
     await sendToMyselfSMS(message);

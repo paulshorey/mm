@@ -1,4 +1,4 @@
-# @lib/db-postgres
+# @lib/db-trading
 
 Database-first package for the `TRADING_DB_URL` database.
 
@@ -18,7 +18,7 @@ Database-first package for the `TRADING_DB_URL` database.
 - Keep SQL and migration contracts database-first; generated language bindings are derived artifacts.
 - Keep `sql/*` helpers focused on database access only (query shape, serialization, SQL defaults).
 - Do not import `@lib/common` from this package. Runtime concerns like request IP lookup, response formatting, and SMS alerts belong in apps or `@lib/common`.
-- Fresh empty DB: run `pnpm --filter @lib/db-postgres db:migrate`, then `db:verify`.
+- Fresh empty DB: run `pnpm --filter @lib/db-trading db:migrate`, then `db:verify`.
 - Existing pre-migration DB with baseline schema already present: run `db:migrate:baseline` once, then `db:migrate`, then `db:verify`.
 - Never manually create or alter tables outside migrations.
 - Migration files are forward-only SQL; do not add `BEGIN` / `COMMIT`.

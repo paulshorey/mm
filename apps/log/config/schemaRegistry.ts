@@ -1,4 +1,4 @@
-import dbSchema from '@lib/db-postgres/generated/contracts/db-schema.json'
+import dbSchema from '@lib/db-trading/generated/contracts/db-schema.json'
 
 type DbColumnType = 'string' | 'number' | 'Date' | 'boolean' | 'unknown'
 

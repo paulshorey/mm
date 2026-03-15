@@ -6,7 +6,7 @@ This directory is the canonical schema history for `TRADING_DB_URL`.
 
 - `202602180130__baseline.sql` is generated from the live database snapshot.
 - For existing databases that already contain this schema, mark it applied with:
-  - `pnpm --filter @lib/db-postgres db:migrate:baseline`
+  - `pnpm --filter @lib/db-trading db:migrate:baseline`
 - The baseline marker only records `__baseline` files, so later forward migrations
   will still apply normally.
 
@@ -40,12 +40,12 @@ Example:
 ## Typical flow
 
 1. Create migration:
-   - `pnpm --filter @lib/db-postgres db:migration:new -- add_order_status`
+   - `pnpm --filter @lib/db-trading db:migration:new -- add_order_status`
 2. Edit the new SQL file in this folder.
 3. Apply to target DB:
-   - `pnpm --filter @lib/db-postgres db:migrate`
+   - `pnpm --filter @lib/db-trading db:migrate`
 4. Verify migrated DB contract:
-   - `pnpm --filter @lib/db-postgres db:verify`
+   - `pnpm --filter @lib/db-trading db:verify`
 5. Refresh schema snapshot + generated types:
-   - `pnpm --filter @lib/db-postgres db:schema:snapshot`
-   - `pnpm --filter @lib/db-postgres db:types:generate`
+   - `pnpm --filter @lib/db-trading db:schema:snapshot`
+   - `pnpm --filter @lib/db-trading db:types:generate`

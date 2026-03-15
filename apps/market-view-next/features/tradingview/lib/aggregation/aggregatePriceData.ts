@@ -1,4 +1,4 @@
-import { StrengthRowGet } from '@lib/db-postgres/sql/strength'
+import { StrengthRowGet } from '@lib/db-trading/sql/strength'
 import { LineData, Time } from 'lightweight-charts'
 import {
   extractGlobalTimestamps,
@@ -289,4 +289,3 @@ export const aggregatePriceByTicker = (
 
   return result
 }
-

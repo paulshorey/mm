@@ -19,4 +19,4 @@ Do not treat generated code as the source of truth.
 
 ## Regenerate
 
-- `pnpm --filter @lib/db-postgres db:types:generate`
+- `pnpm --filter @lib/db-trading db:types:generate`

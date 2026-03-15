@@ -5,7 +5,7 @@ same schema truth.
 
 ## Packages
 
-- `@lib/db-postgres` for `TRADING_DB_URL`
+- `@lib/db-trading` for `TRADING_DB_URL`
 - `@lib/db-timescale` for `TIMESCALE_DB_URL`
 
 Each package contains:
@@ -18,7 +18,7 @@ Each package contains:
 ## Current app usage
 
 - `apps/log`, `apps/market-view-next`, `apps/tradingview-node` import SQL helpers
-  from `@lib/db-postgres/sql/*`.
+  from `@lib/db-trading/sql/*`.
 - `apps/market-write-node` uses pooled Timescale access from
   `@lib/db-timescale/lib/db/timescale`.
 

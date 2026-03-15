@@ -28,7 +28,7 @@ charts/
 
 ## Database
 
-See `@lib/db-postgres/sql/strength/` for data types and queries.
+See `@lib/db-trading/sql/strength/` for data types and queries.
 
 ## Data Flow
 
@@ -97,10 +97,12 @@ When user scrolls to the beginning of chart data, more historical data loads aut
 **Fetch:** Loads `LAZY_LOAD_FETCH_MINUTES` (120 minutes / 2 hours) of additional history
 
 **Scroll Preservation:** When historical data is prepended, the view position is preserved:
+
 1. Save `visibleLogicalRange` before `setData()`
 2. After update, restore range with offset: `from + prependedBarsCount`, `to + prependedBarsCount`
 
 **Data Flow:**
+
 ```
 User scrolls near beginning
       ↓

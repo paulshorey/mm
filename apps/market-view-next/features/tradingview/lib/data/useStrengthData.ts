@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { StrengthRowGet } from '@lib/db-postgres/sql/strength'
+import { StrengthRowGet } from '@lib/db-trading/sql/strength'
 import { FetchStrengthData } from './FetchStrengthData'
 import { FETCH_DATA_HOURS_BACK } from '../../constants'
 import { strengthIntervalsAll } from '../../state/useChartControlsStore'
@@ -51,7 +51,10 @@ export interface UseStrengthDataResult {
   /** Timestamp of the latest data point (for detecting if latest is visible) */
   latestDataTime: Date | null
   /** Fetch historical data going further back in time (for lazy loading) */
-  fetchHistoricalDataBefore: (beforeDate: Date, minutes: number) => Promise<void>
+  fetchHistoricalDataBefore: (
+    beforeDate: Date,
+    minutes: number
+  ) => Promise<void>
   /** Whether historical data is currently being loaded */
   isLoadingHistorical: boolean
 }
@@ -246,7 +249,10 @@ export function useStrengthData({
         }
 
         // Check if we actually got any data
-        const totalRows = historicalTickerData.reduce((sum, data) => sum + (data?.length || 0), 0)
+        const totalRows = historicalTickerData.reduce(
+          (sum, data) => sum + (data?.length || 0),
+          0
+        )
         if (totalRows === 0) {
           return
         }
@@ -257,7 +263,7 @@ export function useStrengthData({
 
           const mergedData = prevData.map((existingData, idx) => {
             const historicalData = historicalTickerData[idx]
-            
+
             if (!historicalData || historicalData.length === 0) {
               return existingData
             }
@@ -528,7 +534,10 @@ export function useStrengthData({
           if (tickerData && tickerData.length > 0) {
             const first = tickerData[0]
             const last = tickerData[tickerData.length - 1]
-            if (first && (!earliestTimestamp || first.timenow < earliestTimestamp)) {
+            if (
+              first &&
+              (!earliestTimestamp || first.timenow < earliestTimestamp)
+            ) {
               earliestTimestamp = first.timenow
             }
             if (last && (!latestTimestamp || last.timenow > latestTimestamp)) {

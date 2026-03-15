@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { formatResponse } from '@lib/common/nextjs/formatResponse'
 import { getCurrentIpAddress } from '@lib/common/nextjs/getCurrentIpAddress'
-import { sqlLogAdd } from '@lib/db-postgres/sql/log/add'
+import { sqlLogAdd } from '@lib/db-trading/sql/log/add'
 import { sendToMyselfSMS } from '@lib/common/twillio/sendToMyselfSMS'
 import { buildRequestLogData } from '@/app/api/v1/lib/requestLog'
 

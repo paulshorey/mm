@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { sqlLogAdd as sqlLogAddReal } from "@lib/db-postgres/sql/log/add";
+import { sqlLogAdd as sqlLogAddReal } from "@lib/db-trading/sql/log/add";
 import { formatResponse } from "@/src/lib/http.js";
 import { logRequestEvent } from "@/src/lib/logging.js";
 import { parseStrengthText } from "@/src/lib/strength.js";

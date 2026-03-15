@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { LogRowAdd } from "@lib/db-postgres/sql/log/types";
+import type { LogRowAdd } from "@lib/db-trading/sql/log/types";
 import { getCurrentIpAddress } from "@lib/common/nextjs/getCurrentIpAddress";
 import { sendToMyselfSMS } from "@lib/common/twillio/sendToMyselfSMS";
 

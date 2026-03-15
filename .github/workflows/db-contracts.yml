@@ -6,7 +6,7 @@ on:
       - ".github/workflows/db-contracts.yml"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "lib/db-postgres/**"
+      - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps/market-view-next/**"
       - "apps/tradingview-node/**"
@@ -17,7 +17,7 @@ on:
       - ".github/workflows/db-contracts.yml"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "lib/db-postgres/**"
+      - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps/market-view-next/**"
       - "apps/tradingview-node/**"
@@ -61,8 +61,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Verify @lib/db-postgres
-        run: pnpm --filter @lib/db-postgres db:verify
+      - name: Verify @lib/db-trading
+        run: pnpm --filter @lib/db-trading db:verify
 
   verify-timescale:
     name: Verify Timescale contract

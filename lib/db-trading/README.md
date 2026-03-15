@@ -1,4 +1,4 @@
-# @lib/db-postgres
+# @lib/db-trading
 
 Database-first package for the `TRADING_DB_URL` database.
 
@@ -25,8 +25,8 @@ export TRADING_DB_URL="postgres://..."
 Use this flow for a brand-new empty Postgres database:
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate
-pnpm --filter @lib/db-postgres db:verify
+pnpm --filter @lib/db-trading db:migrate
+pnpm --filter @lib/db-trading db:verify
 ```
 
 What this does:
@@ -42,9 +42,9 @@ Use this only if the database already contains the baseline tables from an
 older/manual setup and has not yet been put under migration tracking:
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate:baseline
-pnpm --filter @lib/db-postgres db:migrate
-pnpm --filter @lib/db-postgres db:verify
+pnpm --filter @lib/db-trading db:migrate:baseline
+pnpm --filter @lib/db-trading db:migrate
+pnpm --filter @lib/db-trading db:verify
 ```
 
 `db:migrate:baseline` records only baseline migrations. It does **not** mark
@@ -91,19 +91,19 @@ then drop the old column in a later migration.
 ### Apply migrations
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate
+pnpm --filter @lib/db-trading db:migrate
 ```
 
 ### Verify DB contract
 
 ```bash
-pnpm --filter @lib/db-postgres db:verify
+pnpm --filter @lib/db-trading db:verify
 ```
 
 ### Create a new migration
 
 ```bash
-pnpm --filter @lib/db-postgres db:migration:new -- add_order_status
+pnpm --filter @lib/db-trading db:migration:new -- add_order_status
 ```
 
 Migration files are forward-only SQL. Do not add `BEGIN` / `COMMIT`; the runner
@@ -123,14 +123,14 @@ Example use case: `CREATE INDEX CONCURRENTLY`.
 Use these when maintaining the package itself:
 
 ```bash
-pnpm --filter @lib/db-postgres db:schema:snapshot
-pnpm --filter @lib/db-postgres db:types:generate
+pnpm --filter @lib/db-trading db:schema:snapshot
+pnpm --filter @lib/db-trading db:types:generate
 ```
 
 Or:
 
 ```bash
-pnpm --filter @lib/db-postgres db:sync
+pnpm --filter @lib/db-trading db:sync
 ```
 
 For most engineering work, `db:verify` is the safer command because it checks

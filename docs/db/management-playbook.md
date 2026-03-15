@@ -5,7 +5,7 @@ monorepo.
 
 ## Packages and source of truth
 
-- `@lib/db-postgres` owns `TRADING_DB_URL`
+- `@lib/db-trading` owns `TRADING_DB_URL`
 - `@lib/db-timescale` owns `TIMESCALE_DB_URL`
 - Source of truth is:
   - `migrations/*.sql` (history)
@@ -40,7 +40,7 @@ The app `.env` files already contain these values.
 For a brand-new empty database, use the normal migration flow:
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate
+pnpm --filter @lib/db-trading db:migrate
 pnpm --filter @lib/db-timescale db:migrate
 ```
 
@@ -53,21 +53,21 @@ Timescale note:
 
 Both DB packages include a baseline migration generated from the live DB:
 
-- `lib/db-postgres/migrations/202602180130__baseline.sql`
+- `lib/db-trading/migrations/202602180130__baseline.sql`
 - `lib/db-timescale/migrations/202602180131__baseline.sql`
 
 For a database that already has the baseline schema, mark only the baseline as
 applied:
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate:baseline
+pnpm --filter @lib/db-trading db:migrate:baseline
 pnpm --filter @lib/db-timescale db:migrate:baseline
 ```
 
 After baselining, run the normal migration flow so later migrations still apply:
 
 ```bash
-pnpm --filter @lib/db-postgres db:migrate
+pnpm --filter @lib/db-trading db:migrate
 pnpm --filter @lib/db-timescale db:migrate
 ```
 
@@ -76,7 +76,7 @@ pnpm --filter @lib/db-timescale db:migrate
 Each DB package now has a contract verification command:
 
 ```bash
-pnpm --filter @lib/db-postgres db:verify
+pnpm --filter @lib/db-trading db:verify
 pnpm --filter @lib/db-timescale db:verify
 ```
 
@@ -94,7 +94,7 @@ containers.
 ## Creating a new migration
 
 ```bash
-pnpm --filter @lib/db-postgres db:migration:new -- add_order_status
+pnpm --filter @lib/db-trading db:migration:new -- add_order_status
 pnpm --filter @lib/db-timescale db:migration:new -- add_candles_4h_1m
 ```
 
@@ -155,7 +155,7 @@ Example: add column `status` to `order_v1`.
 
 1. Create migration:
    ```bash
-   pnpm --filter @lib/db-postgres db:migration:new -- add_order_status
+   pnpm --filter @lib/db-trading db:migration:new -- add_order_status
    ```
 2. Edit the new migration file:
 
@@ -172,20 +172,20 @@ Example: add column `status` to `order_v1`.
 
 3. Apply migration:
    ```bash
-   pnpm --filter @lib/db-postgres db:migrate
+   pnpm --filter @lib/db-trading db:migrate
    ```
 4. Verify and refresh contracts:
    ```bash
-   pnpm --filter @lib/db-postgres db:verify
+   pnpm --filter @lib/db-trading db:verify
    ```
-5. Update query contracts in `lib/db-postgres/queries/*` if needed.
-6. Update adapters (`lib/db-postgres/sql/*`) to read/write the new column.
+5. Update query contracts in `lib/db-trading/queries/*` if needed.
+6. Update adapters (`lib/db-trading/sql/*`) to read/write the new column.
 
 ## Add a new table
 
 1. Create migration:
    ```bash
-   pnpm --filter @lib/db-postgres db:migration:new -- create_positions_v1
+   pnpm --filter @lib/db-trading db:migration:new -- create_positions_v1
    ```
 2. Write forward-only SQL:
 
@@ -207,7 +207,7 @@ Example: add column `status` to `order_v1`.
 
 Generated files:
 
-- `lib/db-postgres/generated/typescript/db-types.ts`
+- `lib/db-trading/generated/typescript/db-types.ts`
 - `lib/db-timescale/generated/typescript/db-types.ts`
 
 How to enforce:
@@ -239,12 +239,12 @@ How to enforce:
 
 Postgres package:
 
-- `pnpm --filter @lib/db-postgres db:migration:new -- <name>`
-- `pnpm --filter @lib/db-postgres db:migrate`
-- `pnpm --filter @lib/db-postgres db:verify`
-- `pnpm --filter @lib/db-postgres db:migrate:baseline`
-- `pnpm --filter @lib/db-postgres db:schema:snapshot`
-- `pnpm --filter @lib/db-postgres db:types:generate`
+- `pnpm --filter @lib/db-trading db:migration:new -- <name>`
+- `pnpm --filter @lib/db-trading db:migrate`
+- `pnpm --filter @lib/db-trading db:verify`
+- `pnpm --filter @lib/db-trading db:migrate:baseline`
+- `pnpm --filter @lib/db-trading db:schema:snapshot`
+- `pnpm --filter @lib/db-trading db:types:generate`
 
 Timescale package:
 
