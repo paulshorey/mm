@@ -1,8 +1,8 @@
 database: postgres
 env_var: TRADING_DB_URL
 owners:
-  - apps/log
-  - apps/market-view-next
+  - apps/log-next
+  - apps/view-next
   - apps/tradingview-node
 source_of_truth:
   migrations: ./migrations

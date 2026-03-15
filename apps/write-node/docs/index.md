@@ -1,4 +1,4 @@
-# market-write-node docs
+# write-node docs
 
 This folder documents the current write pipeline only.
 

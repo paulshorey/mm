@@ -1,8 +1,8 @@
 # Project context
 
-## Purpose of `market-write-node`
+## Purpose of `write-node`
 
-`market-write-node` is the canonical write pipeline for detailed market
+`write-node` is the canonical write pipeline for detailed market
 timeseries data.
 
 Its job is to ingest historical and live market data, aggregate it, calculate
@@ -66,5 +66,5 @@ That app will consume the canonical historical and live timeseries to:
 - calculate indicators and features such as RSI, CVD, volume, and volatility
 - store model-ready parameters in separate tables for ML training and inference
 
-`market-write-node` should remain focused on canonical timeseries writing, not
+`write-node` should remain focused on canonical timeseries writing, not
 full feature engineering or ML workflows.

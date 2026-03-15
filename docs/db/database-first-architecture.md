@@ -17,9 +17,9 @@ Each package contains:
 
 ## Current app usage
 
-- `apps/log`, `apps/market-view-next`, `apps/tradingview-node` import SQL helpers
+- `apps/log-next`, `apps/view-next`, `apps/tradingview-node` import SQL helpers
   from `@lib/db-trading/sql/*`.
-- `apps/market-write-node` uses pooled Timescale access from
+- `apps/write-node` uses pooled Timescale access from
   `@lib/db-timescale/lib/db/timescale`.
 
 ## Migration policy

@@ -1,7 +1,7 @@
 database: timescale
 env_var: TIMESCALE_DB_URL
 owners:
-  - apps/market-write-node
+  - apps/write-node
 source_of_truth:
   migrations: ./migrations
   schema_snapshot: ./schema/current.sql

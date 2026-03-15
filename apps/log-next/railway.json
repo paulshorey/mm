@@ -3,7 +3,7 @@
   "build": {
     "builder": "RAILPACK",
     "buildCommand": "pnpm --filter log build",
-    "watchPatterns": ["apps/log/**"]
+    "watchPatterns": ["apps/log-next/**"]
   },
   "deploy": {
     "startCommand": "pnpm --filter log start",

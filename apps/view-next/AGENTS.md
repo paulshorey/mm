@@ -1,4 +1,4 @@
-# Market View Next app (apps/market-view-next/)
+# Market View Next app (apps/view-next/)
 
 Financial charting app displaying price and relative strength, with real-time updates.
 
@@ -10,12 +10,12 @@ Financial charting app displaying price and relative strength, with real-time up
 
 ## Folders
 
-Current working directory is `apps/market-view-next`
+Current working directory is `apps/view-next`
 
 Main code is inside:
 
-- apps/market-view-next/features/stream
-- apps/market-view-next/features/tradingview
+- apps/view-next/features/stream
+- apps/view-next/features/tradingview
 
 Inside:
 

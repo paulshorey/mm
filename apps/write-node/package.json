@@ -1,5 +1,5 @@
 {
-  "name": "market-write-node",
+  "name": "write-node",
   "version": "1.0.1",
   "description": "Ingest futures and crypto market data, calculate indicators, aggregate candles and higher timeframes",
   "type": "module",
@@ -10,7 +10,7 @@
     "build": "tsc --noEmit",
     "historical:tbbo": "tsx scripts/tbbo-1m-1s.ts",
     "historical:1h1m": "tsx scripts/candles-1h-1m.ts",
-    "env:pull": "node ../../scripts/fetch-infisical.mjs --app market-write-node"
+    "env:pull": "node ../../scripts/fetch-infisical.mjs --app write-node"
   },
   "author": "",
   "license": "MIT",

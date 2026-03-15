@@ -8,7 +8,7 @@ on:
       - "pnpm-lock.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
-      - "apps/market-view-next/**"
+      - "apps/view-next/**"
       - "apps/tradingview-node/**"
   push:
     branches:
@@ -19,7 +19,7 @@ on:
       - "pnpm-lock.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
-      - "apps/market-view-next/**"
+      - "apps/view-next/**"
       - "apps/tradingview-node/**"
   workflow_dispatch:
 

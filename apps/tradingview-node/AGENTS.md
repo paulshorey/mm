@@ -1,6 +1,6 @@
 # TradingView Node Service
 
-Express service that owns the TradingView strength API previously hosted in `market-view-next`.
+Express service that owns the TradingView strength API previously hosted in `view-next`.
 
 ## Endpoints
 

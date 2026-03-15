@@ -13,7 +13,7 @@ If application code and the Timescale schema disagree, fix the contract here.
 
 ## Current canonical scope
 
-`market-write-node` currently writes and reads only:
+`write-node` currently writes and reads only:
 
 - `public.candles_1m_1s`
 - `public.candles_1h_1m`
@@ -185,4 +185,4 @@ This package is verified in GitHub Actions against a fresh Timescale container:
 - `AGENTS.md` - concise rules for engineers and AI agents
 - `migrations/README.md` - migration authoring details
 - `docs/db/management-playbook.md` - repo-wide DB workflow
-- `apps/market-write-node/README.md` - writer app workflow using this package
+- `apps/write-node/README.md` - writer app workflow using this package

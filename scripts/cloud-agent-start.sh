@@ -5,9 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 expected_env_files=(
-  "apps/log/.env"
-  "apps/market-view-next/.env"
-  "apps/market-write-node/.env"
+  "apps/log-next/.env"
+  "apps/view-next/.env"
+  "apps/write-node/.env"
   "apps/tradingview-node/.env"
 )
 
@@ -30,5 +30,5 @@ fi
 
 echo "Workspace ready."
 echo "Recommended commands:"
-echo "  pnpm dev:market-write-node"
-echo "  pnpm build:market-write-node"
+echo "  pnpm dev:write-node"
+echo "  pnpm build:write-node"

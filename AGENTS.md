@@ -4,10 +4,10 @@
 
 ### Apps:
 
-- `market-view-next` - ./apps/market-view-next - TypeScript app to display financial charts and data analysis visualizations
-- `market-write-node` - ./apps/market-write-node - TypeScript server that connects to data providers, ingests price and volume data per trade, calculates indicators, aggregates candles and higher timeframes for backtestsing
+- `view-next` - ./apps/view-next - TypeScript app to display financial charts and data analysis visualizations
+- `write-node` - ./apps/write-node - TypeScript server that connects to data providers, ingests price and volume data per trade, calculates indicators, aggregates candles and higher timeframes for backtestsing
 - `tradingview-node` - ./apps/tradingview-node - Node.js/Express API for TradingView webhook ingest and strength reads
-- `log` - ./apps/log - logging and observability dashboard
+- `log` - ./apps/log-next - logging and observability dashboard
 
 ### Shared Libraries:
 
@@ -57,7 +57,7 @@ Install any dependencies you need (like tsc).
 - `pnpm install`
 - `pnpm run init` if envs are missing (first-session setup)
 - Cloud agents should use `.cursor/environment.json`, which runs `pnpm run cloud:install` at install time and `pnpm run cloud:start` on boot.
-- Prefer `pnpm dev:market-write-node` for focused service work instead of the root `pnpm dev` fanout.
+- Prefer `pnpm dev:write-node` for focused service work instead of the root `pnpm dev` fanout.
 
 ## Finish task:
 

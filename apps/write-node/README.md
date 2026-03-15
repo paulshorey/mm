@@ -1,4 +1,4 @@
-# market-write-node
+# write-node
 
 Canonical futures timeseries writer.
 
@@ -17,7 +17,7 @@ and reopens without hardcoding UTC hours.
 
 ## What this app does
 
-`market-write-node` is the source-of-truth write pipeline for canonical market
+`write-node` is the source-of-truth write pipeline for canonical market
 timeseries data.
 
 It should:
@@ -35,7 +35,7 @@ It should not own downstream feature engineering or ML workflows.
 This app does not own database migrations directly.
 
 - `@lib/db-timescale` owns the `TIMESCALE_DB_URL` schema contract
-- `market-write-node` depends on that package for canonical candle tables
+- `write-node` depends on that package for canonical candle tables
 
 ### Fresh empty Timescale database
 
@@ -150,13 +150,13 @@ pnpm --filter @lib/db-timescale db:verify
 ### TBBO -> canonical 1m@1s
 
 ```bash
-pnpm --filter market-write-node historical:tbbo "/path/to/file1.json" "/path/to/file2.json"
+pnpm --filter write-node historical:tbbo "/path/to/file1.json" "/path/to/file2.json"
 ```
 
 ### Canonical 1m@1s -> canonical 1h@1m
 
 ```bash
-pnpm --filter market-write-node historical:1h1m --truncate
+pnpm --filter write-node historical:1h1m --truncate
 ```
 
 Notes:
@@ -172,7 +172,7 @@ Notes:
 Start the live writer:
 
 ```bash
-pnpm --filter market-write-node start
+pnpm --filter write-node start
 ```
 
 Required env vars:
@@ -234,6 +234,6 @@ warmup.
 ## Validation
 
 ```bash
-pnpm --filter market-write-node build
+pnpm --filter write-node build
 pnpm build
 ```

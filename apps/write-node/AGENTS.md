@@ -1,4 +1,4 @@
-# market-write-node
+# write-node
 
 Canonical futures timeseries write pipeline.
 
@@ -44,7 +44,7 @@ possible.
 
 ## Project goal
 
-`market-write-node` is responsible for producing and maintaining **canonical
+`write-node` is responsible for producing and maintaining **canonical
 financial timeseries data** from historical and live market data.
 
 This data is intended to be a durable source of truth for downstream apps.
@@ -119,7 +119,7 @@ docs/
 
 ## Relationship to future apps
 
-`market-write-node` should stop at **canonical timeseries writing**.
+`write-node` should stop at **canonical timeseries writing**.
 
 A future app, `market-analyze-python`, will consume this historical and live
 timeseries data to:
@@ -130,7 +130,7 @@ timeseries data to:
 - support both model training on historical data and inference on live data
 
 That downstream feature-engineering and ML workflow should not be folded back
-into `market-write-node`.
+into `write-node`.
 
 ## Documentation
 
