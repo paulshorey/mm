@@ -58,9 +58,9 @@ const TICKERS = [
 ]
 
 async function backfillNulls() {
-  const connectionString = process.env.POSTGRES_URL
+  const connectionString = process.env.TRADING_DB_URL
   if (!connectionString) {
-    console.error('Error: POSTGRES_URL environment variable not set')
+    console.error('Error: TRADING_DB_URL environment variable not set')
     process.exit(1)
   }
 

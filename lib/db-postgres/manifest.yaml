@@ -1,5 +1,5 @@
 database: postgres
-env_var: POSTGRES_URL
+env_var: TRADING_DB_URL
 owners:
   - apps/log
   - apps/market-view-next

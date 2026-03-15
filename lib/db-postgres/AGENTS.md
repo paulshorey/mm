@@ -1,6 +1,6 @@
 # @lib/db-postgres
 
-Database-first package for the `POSTGRES_URL` database.
+Database-first package for the `TRADING_DB_URL` database.
 
 ## Source of truth
 

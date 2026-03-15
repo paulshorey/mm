@@ -5,8 +5,8 @@ same schema truth.
 
 ## Packages
 
-- `@lib/db-postgres` for `POSTGRES_URL`
-- `@lib/db-timescale` for `TIMESCALE_URL`
+- `@lib/db-postgres` for `TRADING_DB_URL`
+- `@lib/db-timescale` for `TIMESCALE_DB_URL`
 
 Each package contains:
 

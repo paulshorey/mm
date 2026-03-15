@@ -1,5 +1,5 @@
 database: timescale
-env_var: TIMESCALE_URL
+env_var: TIMESCALE_DB_URL
 owners:
   - apps/market-write-node
 source_of_truth:

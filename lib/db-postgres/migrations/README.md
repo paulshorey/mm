@@ -1,6 +1,6 @@
 # Postgres Migrations
 
-This directory is the canonical schema history for `POSTGRES_URL`.
+This directory is the canonical schema history for `TRADING_DB_URL`.
 
 ## Baseline
 

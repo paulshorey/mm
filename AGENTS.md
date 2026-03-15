@@ -13,8 +13,8 @@
 
 - `lib/common` is shared utility code and is not DB schema source of truth.
 - `lib/config` contains shared tooling config.
-- `lib/db-postgres` owns `POSTGRES_URL` database contracts.
-- `lib/db-timescale` owns `TIMESCALE_URL` database contracts.
+- `lib/db-postgres` owns `TRADING_DB_URL` database contracts.
+- `lib/db-timescale` owns `TIMESCALE_DB_URL` database contracts.
 
 ## DB package contract model
 

@@ -4,9 +4,9 @@ let pool: Pool | undefined;
 
 export const getTimescaleDb = (): Pool => {
   if (!pool) {
-    const connectionString = process.env.TIMESCALE_URL;
+    const connectionString = process.env.TIMESCALE_DB_URL;
     if (!connectionString) {
-      throw new Error("TIMESCALE_URL environment variable not set");
+      throw new Error("TIMESCALE_DB_URL environment variable not set");
     }
 
     pool = new Pool({

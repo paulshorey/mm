@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -z "${TIMESCALE_URL:-}" ]]; then
-  echo "TIMESCALE_URL is required"
+if [[ -z "${TIMESCALE_DB_URL:-}" ]]; then
+  echo "TIMESCALE_DB_URL is required"
   exit 1
 fi
 
-pg_dump "$TIMESCALE_URL" \
+pg_dump "$TIMESCALE_DB_URL" \
   --schema-only \
   --schema=public \
   --no-owner \

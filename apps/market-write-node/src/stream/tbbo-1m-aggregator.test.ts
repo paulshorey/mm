@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-process.env.TIMESCALE_URL ??= "postgres://test:test@localhost:5432/test";
+process.env.TIMESCALE_DB_URL ??= "postgres://test:test@localhost:5432/test";
 
 const { Tbbo1mAggregator } = await import("./tbbo-1m-aggregator.js");
 

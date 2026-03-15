@@ -1,6 +1,6 @@
 # @lib/db-postgres
 
-Database-first package for the `POSTGRES_URL` database.
+Database-first package for the `TRADING_DB_URL` database.
 
 This package owns:
 
@@ -17,7 +17,7 @@ place where the contract is fixed.
 Set:
 
 ```bash
-export POSTGRES_URL="postgres://..."
+export TRADING_DB_URL="postgres://..."
 ```
 
 ## Fresh empty database

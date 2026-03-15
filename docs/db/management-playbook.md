@@ -5,8 +5,8 @@ monorepo.
 
 ## Packages and source of truth
 
-- `@lib/db-postgres` owns `POSTGRES_URL`
-- `@lib/db-timescale` owns `TIMESCALE_URL`
+- `@lib/db-postgres` owns `TRADING_DB_URL`
+- `@lib/db-timescale` owns `TIMESCALE_DB_URL`
 - Source of truth is:
   - `migrations/*.sql` (history)
   - `schema/current.sql` (current snapshot)
@@ -30,8 +30,8 @@ Always:
 
 Before running package scripts, export the correct DB URL:
 
-- Postgres: `POSTGRES_URL`
-- Timescale: `TIMESCALE_URL`
+- Postgres: `TRADING_DB_URL`
+- Timescale: `TIMESCALE_DB_URL`
 
 The app `.env` files already contain these values.
 
@@ -158,6 +158,7 @@ Example: add column `status` to `order_v1`.
    pnpm --filter @lib/db-postgres db:migration:new -- add_order_status
    ```
 2. Edit the new migration file:
+
    ```sql
    ALTER TABLE public.order_v1 ADD COLUMN status text;
 
@@ -168,6 +169,7 @@ Example: add column `status` to `order_v1`.
    ALTER TABLE public.order_v1
      ALTER COLUMN status SET NOT NULL;
    ```
+
 3. Apply migration:
    ```bash
    pnpm --filter @lib/db-postgres db:migrate
@@ -186,6 +188,7 @@ Example: add column `status` to `order_v1`.
    pnpm --filter @lib/db-postgres db:migration:new -- create_positions_v1
    ```
 2. Write forward-only SQL:
+
    ```sql
    CREATE TABLE public.positions_v1 (
      id bigserial PRIMARY KEY,
@@ -197,6 +200,7 @@ Example: add column `status` to `order_v1`.
    CREATE INDEX IF NOT EXISTS positions_v1_ticker_created_at_idx
      ON public.positions_v1 (ticker, created_at DESC);
    ```
+
 3. Apply migration, verify, then add query contracts and adapters.
 
 ## TypeScript enforcement strategy
@@ -217,7 +221,7 @@ How to enforce:
    - `schema/current.sql`
    - `generated/typescript/db-types.ts`
    - `generated/contracts/db-schema.json`
-   for schema-related PRs.
+     for schema-related PRs.
 
 ## Recommended PR checklist for schema changes
 

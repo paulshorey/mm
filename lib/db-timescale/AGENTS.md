@@ -1,6 +1,6 @@
 # @lib/db-timescale
 
-Database-first package for the `TIMESCALE_URL` database.
+Database-first package for the `TIMESCALE_DB_URL` database.
 
 ## Source of truth
 

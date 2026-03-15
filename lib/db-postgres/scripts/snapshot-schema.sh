@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -z "${POSTGRES_URL:-}" ]]; then
-  echo "POSTGRES_URL is required"
+if [[ -z "${TRADING_DB_URL:-}" ]]; then
+  echo "TRADING_DB_URL is required"
   exit 1
 fi
 
-pg_dump "$POSTGRES_URL" \
+pg_dump "$TRADING_DB_URL" \
   --schema-only \
   --schema=public \
   --no-owner \

@@ -42,7 +42,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      POSTGRES_URL: postgres://postgres:postgres@localhost:5432/app_contracts
+      TRADING_DB_URL: postgres://postgres:postgres@localhost:5432/app_contracts
     steps:
       - uses: actions/checkout@v4
 
@@ -82,7 +82,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      TIMESCALE_URL: postgres://postgres:postgres@localhost:5432/app_contracts
+      TIMESCALE_DB_URL: postgres://postgres:postgres@localhost:5432/app_contracts
     steps:
       - uses: actions/checkout@v4
 

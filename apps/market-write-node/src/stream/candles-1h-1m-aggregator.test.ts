@@ -4,7 +4,7 @@ import test from "node:test";
 import type { CandleForDb, StoredCandleRow } from "../lib/trade/index.js";
 import { candleForDbFromStoredRow } from "../lib/trade/index.js";
 
-process.env.TIMESCALE_URL ??= "postgres://test:test@localhost:5432/test";
+process.env.TIMESCALE_DB_URL ??= "postgres://test:test@localhost:5432/test";
 
 const { Candles1h1mAggregator } = await import("./candles-1h-1m-aggregator.js");
 

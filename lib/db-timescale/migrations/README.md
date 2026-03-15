@@ -1,6 +1,6 @@
 # Timescale Migrations
 
-This directory is the canonical schema history for `TIMESCALE_URL`.
+This directory is the canonical schema history for `TIMESCALE_DB_URL`.
 
 ## Baseline
 

@@ -34,7 +34,7 @@ It should not own downstream feature engineering or ML workflows.
 
 This app does not own database migrations directly.
 
-- `@lib/db-timescale` owns the `TIMESCALE_URL` schema contract
+- `@lib/db-timescale` owns the `TIMESCALE_DB_URL` schema contract
 - `market-write-node` depends on that package for canonical candle tables
 
 ### Fresh empty Timescale database
@@ -42,7 +42,7 @@ This app does not own database migrations directly.
 Use this path for a new environment with no existing tables:
 
 ```bash
-export TIMESCALE_URL="postgres://..."
+export TIMESCALE_DB_URL="postgres://..."
 pnpm --filter @lib/db-timescale db:migrate
 pnpm --filter @lib/db-timescale db:verify
 ```
@@ -63,7 +63,7 @@ Use this path only if the database already contains the baseline tables from a
 manual or legacy setup:
 
 ```bash
-export TIMESCALE_URL="postgres://..."
+export TIMESCALE_DB_URL="postgres://..."
 pnpm --filter @lib/db-timescale db:migrate:baseline
 pnpm --filter @lib/db-timescale db:migrate
 pnpm --filter @lib/db-timescale db:verify
@@ -91,14 +91,14 @@ the exception, not the default.
 
 ## Database setup
 
-This app uses the `TIMESCALE_URL` database owned by `@lib/db-timescale`.
+This app uses the `TIMESCALE_DB_URL` database owned by `@lib/db-timescale`.
 
 ### 1. Ensure Timescale/Postgres is available
 
 Set:
 
 ```bash
-export TIMESCALE_URL="postgres://..."
+export TIMESCALE_DB_URL="postgres://..."
 ```
 
 The target database must support the TimescaleDB APIs used by the migrations,
@@ -177,7 +177,7 @@ pnpm --filter market-write-node start
 
 Required env vars:
 
-- `TIMESCALE_URL`
+- `TIMESCALE_DB_URL`
 - `DATABENTO_API_KEY`
 - `DATABENTO_DATASET`
 - `DATABENTO_SYMBOLS`

@@ -27,7 +27,7 @@ Required environment variables:
 - `DATABENTO_DATASET`
 - `DATABENTO_SYMBOLS`
 - `DATABENTO_STYPE`
-- `TIMESCALE_URL`
+- `TIMESCALE_DB_URL`
 
 ## Important behavior
 

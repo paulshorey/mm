@@ -1,9 +1,9 @@
 import { Pool } from "pg";
 
-const connectionString = process.env.POSTGRES_URL;
+const connectionString = process.env.TRADING_DB_URL;
 
 if (!connectionString) {
-  throw new Error("POSTGRES_URL environment variable not set");
+  throw new Error("TRADING_DB_URL environment variable not set");
 }
 
 export const pool = new Pool({

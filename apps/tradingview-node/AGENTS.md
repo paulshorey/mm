@@ -12,7 +12,7 @@ Express service that owns the TradingView strength API previously hosted in `mar
 
 - **Framework**: Node.js built-in test runner (`node:test`) + supertest for HTTP assertions. No additional test framework.
 - **Run**: `pnpm test` (or `pnpm --filter tradingview-node test` from repo root).
-- **Setup**: `src/test/setup.ts` runs via `--import` before tests; sets `POSTGRES_URL` placeholder so db module does not throw. `NODE_ENV=test` prevents the server from starting when importing `createApp` for tests.
+- **Setup**: `src/test/setup.ts` runs via `--import` before tests; sets `TRADING_DB_URL` placeholder so db module does not throw. `NODE_ENV=test` prevents the server from starting when importing `createApp` for tests.
 - **Mock data**: `src/test/mockData.ts` exports `mockStrengthRows` (GET), `mockInvalidPostBody`, `mockValidPostBody`, `mockValidStrengthData`, `mockStrengthAddResult` (POST). Uses types from `src/types/strength.ts`.
 - **Testability**: `createApp(options?)` accepts `getStrengthRows`, `strengthAdd`, `sqlLogAdd` overrides. `createGetTradingView(deps)` and `createPostTradingView(deps)` receive injected deps. POST tests use `noOpSqlLogAdd` to avoid DB/SMS during validation-error paths.
 

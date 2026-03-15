@@ -80,7 +80,7 @@ Key rules:
 
 - keep the runtime focused on writing data, not serving an API
 - only `/health` exists; there is no `src/api/`
-- use `TIMESCALE_URL` through `@lib/db-timescale`
+- use `TIMESCALE_DB_URL` through `@lib/db-timescale`
 - keep front-month stitching and rolling-window aggregation deterministic
 - prefer shared library code over duplicated live/batch logic
 - treat written tables as source-of-truth data, not disposable intermediate output

@@ -1,6 +1,6 @@
 # @lib/db-timescale
 
-Database-first package for the `TIMESCALE_URL` database.
+Database-first package for the `TIMESCALE_DB_URL` database.
 
 This package owns:
 
@@ -26,7 +26,7 @@ the migration bookkeeping table `schema_migrations_cursor`).
 Set:
 
 ```bash
-export TIMESCALE_URL="postgres://..."
+export TIMESCALE_DB_URL="postgres://..."
 ```
 
 The target DB must support TimescaleDB. The migration runner executes:
