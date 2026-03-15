@@ -42,7 +42,26 @@ function toIsoString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
-export function candleStateFromStoredRow(row: StoredCandleRow): CandleState {
+interface StoredRowConversionOptions {
+  requireCompleteCvd?: boolean;
+}
+
+function assertCompleteCvd(row: StoredCandleRow): void {
+  if (row.cvd_open !== null && row.cvd_high !== null && row.cvd_low !== null && row.cvd_close !== null) {
+    return;
+  }
+
+  throw new Error(
+    `Stored candle row for ${row.ticker} at ${toIsoString(row.time)} is missing complete CVD OHLC ` +
+      `and cannot be used as canonical hourly source data`,
+  );
+}
+
+export function candleStateFromStoredRow(row: StoredCandleRow, options: StoredRowConversionOptions = {}): CandleState {
+  if (options.requireCompleteCvd) {
+    assertCompleteCvd(row);
+  }
+
   const cvdOpen = row.cvd_open === null ? null : toNumber(row.cvd_open);
   const cvdHigh = row.cvd_high === null ? null : toNumber(row.cvd_high);
   const cvdLow = row.cvd_low === null ? null : toNumber(row.cvd_low);
@@ -82,13 +101,13 @@ export function candleStateFromStoredRow(row: StoredCandleRow): CandleState {
   };
 }
 
-export function candleForDbFromStoredRow(row: StoredCandleRow): CandleForDb {
+export function candleForDbFromStoredRow(row: StoredCandleRow, options: StoredRowConversionOptions = {}): CandleForDb {
   const time = toIsoString(row.time);
 
   return {
     key: `${row.ticker}|${time}`,
     ticker: row.ticker,
     time,
-    candle: candleStateFromStoredRow(row),
+    candle: candleStateFromStoredRow(row, options),
   };
 }

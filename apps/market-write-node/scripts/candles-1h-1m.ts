@@ -121,7 +121,7 @@ async function processHistoricalBaseRows(): Promise<void> {
     stats.pagesRead++;
     stats.sourceRowsRead += rows.length;
 
-    const candles = rows.map(candleForDbFromStoredRow);
+    const candles = rows.map((row) => candleForDbFromStoredRow(row, { requireCompleteCvd: true }));
     rollingWindow.addCandles(candles);
 
     if (rollingWindow.getStats().pendingCandles >= FLUSH_THRESHOLD) {

@@ -10,6 +10,18 @@ const { Candles1h1mAggregator } = await import("./candles-1h-1m-aggregator.js");
 
 const BASE_TIME_MS = Date.parse("2026-03-10T14:00:00.000Z");
 
+function isLatestTargetQuery(text: string): boolean {
+  return text.includes("MAX(time) AS latest_target_time") && text.includes("FROM candles_1h_1m");
+}
+
+function isHydrationQuery(text: string): boolean {
+  return text.includes("ROW_NUMBER() OVER") && text.includes("FROM candles_1m_1s");
+}
+
+function isReconciliationQuery(text: string): boolean {
+  return text.includes("WITH latest_target(ticker, latest_target_time)");
+}
+
 function minuteIso(offset: number): string {
   return new Date(BASE_TIME_MS + offset * 60_000).toISOString();
 }
@@ -62,9 +74,21 @@ test("requeues hourly candles after transient write failure", async () => {
 
   const aggregator = new Candles1h1mAggregator({
     queryable: {
-      query: async <Row = unknown>(_text: string, _values?: unknown[]) => {
-        hydrationQueries++;
-        return { rows: seedRows as Row[] };
+      query: async <Row = unknown>(text: string, _values?: unknown[]) => {
+        if (isLatestTargetQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        if (isHydrationQuery(text)) {
+          hydrationQueries++;
+          return { rows: seedRows as Row[] };
+        }
+
+        if (isReconciliationQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        throw new Error(`Unexpected query: ${text}`);
       },
     },
     writeCandlesFn: async (_queryable, _tableName, candles) => {
@@ -96,13 +120,25 @@ test("retries startup hydration and replays buffered base candles", async () => 
 
   const aggregator = new Candles1h1mAggregator({
     queryable: {
-      query: async <Row = unknown>(_text: string, _values?: unknown[]) => {
-        hydrationQueries++;
-        if (hydrationQueries === 1) {
-          throw new Error("temporary startup hydration failure");
+      query: async <Row = unknown>(text: string, _values?: unknown[]) => {
+        if (isLatestTargetQuery(text)) {
+          return { rows: [] as Row[] };
         }
 
-        return { rows: seedRows as Row[] };
+        if (isHydrationQuery(text)) {
+          hydrationQueries++;
+          if (hydrationQueries === 1) {
+            throw new Error("temporary startup hydration failure");
+          }
+
+          return { rows: seedRows as Row[] };
+        }
+
+        if (isReconciliationQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        throw new Error(`Unexpected query: ${text}`);
       },
     },
     writeCandlesFn: async (_queryable, _tableName, candles) => {
@@ -115,6 +151,45 @@ test("retries startup hydration and replays buffered base candles", async () => 
 
   await aggregator.flushCompleted();
   assert.equal(hydrationQueries, 2);
+  assert.deepEqual(writtenTimes, [minuteIso(60)]);
+  assert.equal(aggregator.getCandlesWritten(), 1);
+});
+
+test("reconciles missing hourly rows from canonical 1m source on startup", async () => {
+  const hydrationRows = Array.from({ length: 60 }, (_, i) => makeStoredRow(i + 1));
+  const reconciliationRows = Array.from({ length: 61 }, (_, i) => ({
+    ...makeStoredRow(i),
+    latest_target_time: minuteIso(59),
+  }));
+  const writtenTimes: string[] = [];
+
+  const aggregator = new Candles1h1mAggregator({
+    queryable: {
+      query: async <Row = unknown>(text: string, _values?: unknown[]) => {
+        if (isLatestTargetQuery(text)) {
+          return {
+            rows: [{ ticker: "ES", latest_target_time: minuteIso(59) }] as Row[],
+          };
+        }
+
+        if (isHydrationQuery(text)) {
+          return { rows: hydrationRows as Row[] };
+        }
+
+        if (isReconciliationQuery(text)) {
+          return { rows: reconciliationRows as Row[] };
+        }
+
+        throw new Error(`Unexpected query: ${text}`);
+      },
+    },
+    writeCandlesFn: async (_queryable, _tableName, candles) => {
+      writtenTimes.push(...candles.map((candle) => candle.time));
+    },
+  });
+
+  await aggregator.initialize();
+
   assert.deepEqual(writtenTimes, [minuteIso(60)]);
   assert.equal(aggregator.getCandlesWritten(), 1);
 });
