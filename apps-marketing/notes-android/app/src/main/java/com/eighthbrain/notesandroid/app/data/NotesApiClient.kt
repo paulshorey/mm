@@ -208,7 +208,7 @@ class NotesApiClient(
         }
 
         httpClient.newCall(requestBuilder.build()).execute().use { response ->
-            val bodyText = response.body?.string().orEmpty()
+            val bodyText = response.body.string()
             val payload = bodyText.takeIf { it.isNotBlank() }?.let(::JSONObject) ?: JSONObject()
 
             if (!response.isSuccessful) {

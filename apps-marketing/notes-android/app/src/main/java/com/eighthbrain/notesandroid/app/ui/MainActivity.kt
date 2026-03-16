@@ -25,10 +25,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -372,7 +372,7 @@ private fun NotesAppScreen(
             if (uiState.snapshot.user == null) {
                 LoginScreen(uiState = uiState, viewModel = viewModel)
             } else {
-                TabRow(selectedTabIndex = if (uiState.currentTab == MainTab.NOTES) 0 else 1) {
+                PrimaryTabRow(selectedTabIndex = if (uiState.currentTab == MainTab.NOTES) 0 else 1) {
                     Tab(
                         selected = uiState.currentTab == MainTab.NOTES,
                         onClick = { viewModel.selectTab(MainTab.NOTES) },
