@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ROOT_DIR/.android-sdk}"
 export ANDROID_HOME="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
 export ANDROID_USER_HOME="${ANDROID_USER_HOME:-$ROOT_DIR/.android-user-home}"
+export CI="${CI:-true}"
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 export GRADLE_USER_HOME="${GRADLE_USER_HOME:-$ROOT_DIR/.gradle}"
 export HUSKY="${HUSKY:-0}"

@@ -14,6 +14,7 @@
     "ANDROID_HOME": "/workspace/.android-sdk",
     "ANDROID_SDK_ROOT": "/workspace/.android-sdk",
     "ANDROID_USER_HOME": "/workspace/.android-user-home",
+    "CI": "true",
     "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
     "GRADLE_USER_HOME": "/workspace/.gradle",
     "HUSKY": "0",
