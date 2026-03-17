@@ -2,6 +2,8 @@
 -- PostgreSQL database dump
 --
 
+
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -13,6 +15,18 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+
 
 SET default_tablespace = '';
 
@@ -185,4 +199,10 @@ ALTER TABLE ONLY public.order_v1
 
 ALTER TABLE ONLY public.strength_v1
     ADD CONSTRAINT strength_v1_ticker_timenow_unique UNIQUE (ticker, timenow);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
 
