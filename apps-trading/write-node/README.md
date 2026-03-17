@@ -163,6 +163,8 @@ pnpm --filter write-node historical:1h1m --truncate
 
 Notes:
 
+- `historical:tbbo` writes canonical `candles_1m_1s` rows and advances
+  `candles_1h_1m` from the committed minute-boundary subset during the same run
 - `historical:1h1m` reads only minute-boundary rows from `candles_1m_1s`
 - `--truncate` is recommended for a full deterministic rebuild
 - without `--truncate`, the script upserts into `candles_1h_1m`
@@ -207,6 +209,10 @@ Live behavior:
 1. raw TBBO trades -> `candles_1m_1s`
 2. successful 1m writes at minute boundaries feed the hourly aggregator
 3. minute-boundary rows -> `candles_1h_1m`
+
+The hourly writer also performs continuous runtime reconciliation from canonical
+minute-boundary `candles_1m_1s` rows so missed handoffs can be replayed without
+waiting for a process restart.
 
 The live stream gates trades by the trade event timestamp in the configured
 session calendar, not by fixed UTC close/reopen assumptions.

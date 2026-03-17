@@ -22,6 +22,14 @@ function isReconciliationQuery(text: string): boolean {
   return text.includes("WITH latest_target(ticker, latest_target_time)");
 }
 
+function isLatestSourceQuery(text: string): boolean {
+  return text.includes("latest_source_time") && text.includes("FROM candles_1m_1s");
+}
+
+function isSourceRangeQuery(text: string): boolean {
+  return text.includes("WITH source_range(ticker, start_exclusive_time, end_inclusive_time)");
+}
+
 function minuteIso(offset: number): string {
   return new Date(BASE_TIME_MS + offset * 60_000).toISOString();
 }
@@ -88,6 +96,16 @@ test("requeues hourly candles after transient write failure", async () => {
           return { rows: [] as Row[] };
         }
 
+        if (isLatestSourceQuery(text)) {
+          return {
+            rows: [{ ticker: "ES", latest_source_time: minuteIso(60) }] as Row[],
+          };
+        }
+
+        if (isSourceRangeQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
         throw new Error(`Unexpected query: ${text}`);
       },
     },
@@ -102,7 +120,7 @@ test("requeues hourly candles after transient write failure", async () => {
   });
 
   await aggregator.initialize();
-  assert.equal(aggregator.addBaseCandles([makeBaseCandle(60)]), 1);
+  assert.equal(await aggregator.addBaseCandles([makeBaseCandle(60)]), 1);
 
   await aggregator.flushCompleted();
   assert.deepEqual(writtenTimes, []);
@@ -138,6 +156,16 @@ test("retries startup hydration and replays buffered base candles", async () => 
           return { rows: [] as Row[] };
         }
 
+        if (isLatestSourceQuery(text)) {
+          return {
+            rows: [{ ticker: "ES", latest_source_time: minuteIso(60) }] as Row[],
+          };
+        }
+
+        if (isSourceRangeQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
         throw new Error(`Unexpected query: ${text}`);
       },
     },
@@ -147,7 +175,7 @@ test("retries startup hydration and replays buffered base candles", async () => 
   });
 
   await aggregator.initialize();
-  assert.equal(aggregator.addBaseCandles([makeBaseCandle(60)]), 1);
+  assert.equal(await aggregator.addBaseCandles([makeBaseCandle(60)]), 1);
 
   await aggregator.flushCompleted();
   assert.equal(hydrationQueries, 2);
@@ -196,4 +224,96 @@ test("reconciles missing hourly rows from canonical 1m source on startup", async
 
   assert.deepEqual(writtenTimes, [minuteIso(60)]);
   assert.equal(aggregator.getCandlesWritten(), 1);
+});
+
+test("replays missing source rows before ingesting newer live handoff rows", async () => {
+  const seedRows = Array.from({ length: 60 }, (_, i) => makeStoredRow(i));
+  const catchupRows = [makeStoredRow(60), makeStoredRow(61)];
+  const writtenTimes: string[] = [];
+  let sourceRangeQueries = 0;
+
+  const aggregator = new Candles1h1mAggregator({
+    queryable: {
+      query: async <Row = unknown>(text: string, _values?: unknown[]) => {
+        if (isLatestTargetQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        if (isHydrationQuery(text)) {
+          return { rows: seedRows as Row[] };
+        }
+
+        if (isReconciliationQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        if (isSourceRangeQuery(text)) {
+          sourceRangeQueries++;
+          return { rows: catchupRows as Row[] };
+        }
+
+        if (isLatestSourceQuery(text)) {
+          return {
+            rows: [{ ticker: "ES", latest_source_time: minuteIso(62) }] as Row[],
+          };
+        }
+
+        throw new Error(`Unexpected query: ${text}`);
+      },
+    },
+    writeCandlesFn: async (_queryable, _tableName, candles) => {
+      writtenTimes.push(...candles.map((candle) => candle.time));
+    },
+  });
+
+  await aggregator.initialize();
+  assert.equal(await aggregator.addBaseCandles([makeBaseCandle(62)]), 1);
+  await aggregator.flushCompleted();
+
+  assert.equal(sourceRangeQueries, 1);
+  assert.deepEqual(writtenTimes, [minuteIso(60), minuteIso(61), minuteIso(62)]);
+});
+
+test("runtime reconciliation catches up missed source rows without a fresh handoff", async () => {
+  const seedRows = Array.from({ length: 60 }, (_, i) => makeStoredRow(i));
+  const catchupRows = [makeStoredRow(60), makeStoredRow(61), makeStoredRow(62)];
+  const writtenTimes: string[] = [];
+
+  const aggregator = new Candles1h1mAggregator({
+    queryable: {
+      query: async <Row = unknown>(text: string, _values?: unknown[]) => {
+        if (isLatestTargetQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        if (isHydrationQuery(text)) {
+          return { rows: seedRows as Row[] };
+        }
+
+        if (isReconciliationQuery(text)) {
+          return { rows: [] as Row[] };
+        }
+
+        if (isLatestSourceQuery(text)) {
+          return {
+            rows: [{ ticker: "ES", latest_source_time: minuteIso(62) }] as Row[],
+          };
+        }
+
+        if (isSourceRangeQuery(text)) {
+          return { rows: catchupRows as Row[] };
+        }
+
+        throw new Error(`Unexpected query: ${text}`);
+      },
+    },
+    writeCandlesFn: async (_queryable, _tableName, candles) => {
+      writtenTimes.push(...candles.map((candle) => candle.time));
+    },
+  });
+
+  await aggregator.initialize();
+  await aggregator.flushCompleted();
+
+  assert.deepEqual(writtenTimes, [minuteIso(60), minuteIso(61), minuteIso(62)]);
 });

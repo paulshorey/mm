@@ -8,6 +8,7 @@ const HYDRATION_WINDOW_ROWS = 60;
 const WINDOW_MINUTES = 60;
 const WRITE_BATCH_SIZE = 500;
 const HYDRATION_RETRY_LOG_INTERVAL_MS = 30_000;
+const RUNTIME_RECONCILIATION_INTERVAL_MS = 10_000;
 const RECONCILIATION_PAGE_SIZE = 5_000;
 const RECONCILIATION_FLUSH_THRESHOLD = 10_000;
 
@@ -94,6 +95,15 @@ const LATEST_TARGET_TIMES_QUERY = `
   ORDER BY ticker ASC, time DESC
 `;
 
+const LATEST_SOURCE_TIMES_QUERY = `
+  SELECT DISTINCT ON (ticker)
+    ticker,
+    time AS latest_source_time
+  FROM ${SOURCE_TABLE}
+  WHERE time = date_trunc('minute', time)
+  ORDER BY ticker ASC, time DESC
+`;
+
 interface QueryResultLike<Row> {
   rows: Row[];
 }
@@ -107,9 +117,20 @@ interface LatestTargetRow {
   latest_target_time: Date | string;
 }
 
+interface LatestSourceRow {
+  ticker: string;
+  latest_source_time: Date | string;
+}
+
 type ReconciliationSourceRow = StoredCandleRow & {
   latest_target_time: Date | string;
 };
+
+interface SourceCatchupRange {
+  ticker: string;
+  start_exclusive_time: string;
+  end_inclusive_time: string;
+}
 
 interface ReconciliationCursor {
   ticker: string;
@@ -129,17 +150,16 @@ interface Candles1h1mAggregatorOptions {
 export class Candles1h1mAggregator {
   private readonly queryable: Queryable;
   private readonly writeCandlesFn: typeof writeCandles;
-  private readonly rollingWindow = new RollingCandleWindow({
-    windowSize: WINDOW_MINUTES,
-    expectedIntervalMs: 60_000,
-    label: "1h@1m",
-  });
+  private rollingWindow = this.createRollingWindow();
 
   private initialized = false;
   private candlesWritten = 0;
   private bufferedBaseCandles: CandleForDb[] = [];
   private hydrationPromise: Promise<boolean> | null = null;
+  private runtimeReconciliationPromise: Promise<number> | null = null;
   private lastHydrationBlockedLogTime = 0;
+  private lastRuntimeReconciliationTime = 0;
+  private readonly lastSourceTimeByTicker = new Map<string, string>();
 
   constructor(options: Candles1h1mAggregatorOptions = {}) {
     this.queryable = options.queryable ?? pool;
@@ -150,7 +170,7 @@ export class Candles1h1mAggregator {
     await this.ensureInitialized();
   }
 
-  addBaseCandles(candles: CandleForDb[]): number {
+  async addBaseCandles(candles: CandleForDb[]): Promise<number> {
     const minuteBoundaryCandles = candles.filter((candle) => isMinuteBoundary(candle.time));
     if (minuteBoundaryCandles.length === 0) {
       return 0;
@@ -161,7 +181,10 @@ export class Candles1h1mAggregator {
       return minuteBoundaryCandles.length;
     }
 
-    return this.rollingWindow.addCandles(minuteBoundaryCandles);
+    await this.catchUpBeforeIncomingCandles(minuteBoundaryCandles);
+    const accepted = this.rollingWindow.addCandles(minuteBoundaryCandles);
+    this.recordSourceCandles(minuteBoundaryCandles);
+    return accepted;
   }
 
   async flushCompleted(): Promise<void> {
@@ -171,6 +194,7 @@ export class Candles1h1mAggregator {
       return;
     }
 
+    await this.maybeReconcileRuntimeLag();
     await this.flushPendingCandles();
   }
 
@@ -180,6 +204,14 @@ export class Candles1h1mAggregator {
 
   getCandlesWritten(): number {
     return this.candlesWritten;
+  }
+
+  private createRollingWindow(): RollingCandleWindow {
+    return new RollingCandleWindow({
+      windowSize: WINDOW_MINUTES,
+      expectedIntervalMs: 60_000,
+      label: "1h@1m",
+    });
   }
 
   private async flushPendingCandles(): Promise<void> {
@@ -218,6 +250,129 @@ export class Candles1h1mAggregator {
     }
   }
 
+  private recordSourceCandles(candles: CandleForDb[]): void {
+    for (const candle of candles) {
+      this.recordSourceTime(candle.ticker, candle.time);
+    }
+  }
+
+  private recordSourceRows(rows: StoredCandleRow[]): void {
+    for (const row of rows) {
+      const time = row.time instanceof Date ? row.time.toISOString() : new Date(row.time).toISOString();
+      this.recordSourceTime(row.ticker, time);
+    }
+  }
+
+  private recordSourceTime(ticker: string, time: string): void {
+    const current = this.lastSourceTimeByTicker.get(ticker);
+    if (!current || time > current) {
+      this.lastSourceTimeByTicker.set(ticker, time);
+    }
+  }
+
+  private async catchUpBeforeIncomingCandles(candles: CandleForDb[]): Promise<void> {
+    const ranges = this.buildCatchupRangesBeforeIncomingCandles(candles);
+    if (ranges.length === 0) {
+      return;
+    }
+
+    const rows = await this.loadSourceRowsInRanges(ranges);
+    if (rows.length === 0) {
+      return;
+    }
+
+    const sourceCandles = rows.map((row) => candleForDbFromStoredRow(row, { requireCompleteCvd: true }));
+    this.rollingWindow.addCandles(sourceCandles);
+    this.recordSourceRows(rows);
+    console.log(`🔁 Replayed ${sourceCandles.length} canonical 1m row(s) ahead of live handoff into ${TARGET_TABLE}`);
+  }
+
+  private buildCatchupRangesBeforeIncomingCandles(candles: CandleForDb[]): SourceCatchupRange[] {
+    const earliestTimeByTicker = new Map<string, string>();
+    for (const candle of candles) {
+      const current = earliestTimeByTicker.get(candle.ticker);
+      if (!current || candle.time < current) {
+        earliestTimeByTicker.set(candle.ticker, candle.time);
+      }
+    }
+
+    const ranges: SourceCatchupRange[] = [];
+    for (const [ticker, earliestIncomingTime] of earliestTimeByTicker) {
+      const lastSourceTime = this.lastSourceTimeByTicker.get(ticker);
+      if (!lastSourceTime) {
+        continue;
+      }
+
+      const earliestIncomingMs = new Date(earliestIncomingTime).getTime();
+      const endInclusiveMs = earliestIncomingMs - 60_000;
+      if (endInclusiveMs <= new Date(lastSourceTime).getTime()) {
+        continue;
+      }
+
+      ranges.push({
+        ticker,
+        start_exclusive_time: lastSourceTime,
+        end_inclusive_time: new Date(endInclusiveMs).toISOString(),
+      });
+    }
+
+    return ranges;
+  }
+
+  private async maybeReconcileRuntimeLag(): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastRuntimeReconciliationTime < RUNTIME_RECONCILIATION_INTERVAL_MS) {
+      return;
+    }
+
+    if (this.runtimeReconciliationPromise) {
+      await this.runtimeReconciliationPromise;
+      return;
+    }
+
+    this.lastRuntimeReconciliationTime = now;
+    this.runtimeReconciliationPromise = this.reconcileRuntimeLag().finally(() => {
+      this.runtimeReconciliationPromise = null;
+    });
+    await this.runtimeReconciliationPromise;
+  }
+
+  private async reconcileRuntimeLag(): Promise<number> {
+    const latestSourceTimes = await this.loadLatestSourceTimes();
+    const ranges: SourceCatchupRange[] = [];
+
+    for (const row of latestSourceTimes) {
+      const latestSourceTime = row.latest_source_time instanceof Date ? row.latest_source_time.toISOString() : new Date(row.latest_source_time).toISOString();
+      const lastSourceTime = this.lastSourceTimeByTicker.get(row.ticker);
+      if (!lastSourceTime || latestSourceTime <= lastSourceTime) {
+        continue;
+      }
+
+      ranges.push({
+        ticker: row.ticker,
+        start_exclusive_time: lastSourceTime,
+        end_inclusive_time: latestSourceTime,
+      });
+    }
+
+    if (ranges.length === 0) {
+      return 0;
+    }
+
+    const rows = await this.loadSourceRowsInRanges(ranges);
+    if (rows.length === 0) {
+      return 0;
+    }
+
+    const sourceCandles = rows.map((row) => candleForDbFromStoredRow(row, { requireCompleteCvd: true }));
+    const accepted = this.rollingWindow.addCandles(sourceCandles);
+    this.recordSourceRows(rows);
+    if (accepted > 0) {
+      console.log(`🔁 Reconciled ${accepted} canonical 1m row(s) from ${SOURCE_TABLE} into ${TARGET_TABLE}`);
+    }
+    return accepted;
+  }
+
   private async ensureInitialized(): Promise<boolean> {
     if (this.initialized) {
       return true;
@@ -235,6 +390,9 @@ export class Candles1h1mAggregator {
 
   private async hydrateFromDatabase(): Promise<boolean> {
     try {
+      this.rollingWindow = this.createRollingWindow();
+      this.lastSourceTimeByTicker.clear();
+
       const latestTargetTimes = await this.loadLatestTargetTimes();
       const recentSourceRows = await this.queryable.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
 
@@ -245,6 +403,7 @@ export class Candles1h1mAggregator {
       const reconciliation = await this.reconcileFromSource(latestTargetTimes);
       const seedCandles = [...recentSeedCandles];
       this.rollingWindow.seedCandles(seedCandles);
+      this.recordSourceCandles(seedCandles);
 
       const totalSeeded = seedCandles.length + reconciliation.seeded;
       if (totalSeeded > 0) {
@@ -278,11 +437,18 @@ export class Candles1h1mAggregator {
 
     const buffered = this.bufferedBaseCandles;
     this.bufferedBaseCandles = [];
-    return this.rollingWindow.addCandles(buffered);
+    const accepted = this.rollingWindow.addCandles(buffered);
+    this.recordSourceCandles(buffered);
+    return accepted;
   }
 
   private async loadLatestTargetTimes(): Promise<LatestTargetRow[]> {
     const result = await this.queryable.query<LatestTargetRow>(LATEST_TARGET_TIMES_QUERY);
+    return result.rows;
+  }
+
+  private async loadLatestSourceTimes(): Promise<LatestSourceRow[]> {
+    const result = await this.queryable.query<LatestSourceRow>(LATEST_SOURCE_TIMES_QUERY);
     return result.rows;
   }
 
@@ -317,9 +483,11 @@ export class Candles1h1mAggregator {
       if (reconciliationSeedCandles.length > 0) {
         seeded += reconciliationSeedCandles.length;
         this.rollingWindow.seedCandles(reconciliationSeedCandles);
+        this.recordSourceCandles(reconciliationSeedCandles);
       }
       if (reconciliationReplayCandles.length > 0) {
         replayed += this.rollingWindow.addCandles(reconciliationReplayCandles);
+        this.recordSourceCandles(reconciliationReplayCandles);
       }
       if (this.rollingWindow.getStats().pendingCandles >= RECONCILIATION_FLUSH_THRESHOLD) {
         await this.flushPendingCandles();
@@ -371,6 +539,37 @@ export class Candles1h1mAggregator {
     `;
 
     const result = await this.queryable.query<ReconciliationSourceRow>(query, values);
+    return result.rows;
+  }
+
+  private async loadSourceRowsInRanges(ranges: SourceCatchupRange[]): Promise<StoredCandleRow[]> {
+    if (ranges.length === 0) {
+      return [];
+    }
+
+    const values: unknown[] = [];
+    const placeholders = ranges.map((range, index) => {
+      const offset = index * 3;
+      values.push(range.ticker, range.start_exclusive_time, range.end_inclusive_time);
+      return `($${offset + 1}, $${offset + 2}::timestamptz, $${offset + 3}::timestamptz)`;
+    });
+
+    const query = `
+      WITH source_range(ticker, start_exclusive_time, end_inclusive_time) AS (
+        VALUES ${placeholders.join(", ")}
+      )
+      SELECT
+        ${SOURCE_COLUMNS_FROM_SOURCE_TABLE}
+      FROM ${SOURCE_TABLE}
+      JOIN source_range
+        ON source_range.ticker = ${SOURCE_TABLE}.ticker
+      WHERE time = date_trunc('minute', time)
+        AND ${SOURCE_TABLE}.time > source_range.start_exclusive_time
+        AND ${SOURCE_TABLE}.time <= source_range.end_inclusive_time
+      ORDER BY ${SOURCE_TABLE}.ticker ASC, ${SOURCE_TABLE}.time ASC
+    `;
+
+    const result = await this.queryable.query<StoredCandleRow>(query, values);
     return result.rows;
   }
 

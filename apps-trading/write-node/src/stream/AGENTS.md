@@ -39,6 +39,7 @@ downstream feature-engineering or ML-specific logic.
 - **`candles-1h-1m-aggregator.ts`** derives rolling hourly rows from canonical
   minute-boundary rows
   - hydrates from recent `candles_1m_1s` minute-boundary rows on startup
+  - reconciles missed minute-boundary source rows from `candles_1m_1s` during runtime
   - accepts only canonical lower-timeframe rows, never raw trades
   - writes `candles_1h_1m`
 
