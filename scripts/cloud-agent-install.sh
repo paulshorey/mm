@@ -48,4 +48,3 @@ fi
 
 pnpm fetch --store-dir "$STORE_DIR"
 pnpm install --frozen-lockfile --prefer-offline --store-dir "$STORE_DIR"
->>>>>>> main
