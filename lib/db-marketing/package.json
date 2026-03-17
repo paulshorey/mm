@@ -10,6 +10,7 @@
     "./generated/*": "./generated/*",
     "./generated/typescript/db-types": "./generated/typescript/db-types.ts",
     "./lib/*": "./lib/*.ts",
+    "./services/notes-app": "./services/notes-app.ts",
     "./sql/note": "./sql/note/index.ts",
     "./sql/user": "./sql/user/index.ts",
     "./sql/*": "./sql/*.ts"

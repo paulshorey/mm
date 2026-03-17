@@ -17,6 +17,7 @@ Database-first package for the `MARKETING_DB_URL` database.
 ## TypeScript adapter
 
 - `lib/db/postgres.ts`: connection accessor for app/runtime code
+- `services/notes-app.ts`: shared Notes app workflow layer for web and Android servers
 
 ## Notes
 
