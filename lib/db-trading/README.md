@@ -20,6 +20,11 @@ Set:
 export TRADING_DB_URL="postgres://..."
 ```
 
+`db:schema:snapshot` and `db:verify` require local PostgreSQL client tools.
+Use the same PostgreSQL major version as the target DB server and CI
+(`pg_dump`/`psql` 17 for the current GitHub Actions workflow). The snapshot
+script fails fast if the local client major version does not match the server.
+
 ## Fresh empty database
 
 Use this flow for a brand-new empty Postgres database:

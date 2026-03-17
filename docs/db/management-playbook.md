@@ -35,6 +35,12 @@ Before running package scripts, export the correct DB URL:
 
 The app `.env` files already contain these values.
 
+`db:schema:snapshot` and `db:verify` also require local PostgreSQL client tools.
+Match the client major version to the target DB server and CI. The current DB
+contract workflow runs PostgreSQL 17 service containers with PostgreSQL 17
+client tools, and the local snapshot scripts now fail fast if `pg_dump` and the
+server major versions do not match.
+
 ## First-time setup for fresh empty databases
 
 For a brand-new empty database, use the normal migration flow:
