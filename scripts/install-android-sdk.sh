@@ -108,9 +108,11 @@ PY
 }
 
 accept_android_licenses() {
+  set +e
   set +o pipefail
   yes | "$SDKMANAGER_BIN" --sdk_root="$SDK_ROOT" --licenses >/dev/null
   local pipe_status=("${PIPESTATUS[@]}")
+  set -e
   set -o pipefail
 
   local yes_exit="${pipe_status[0]:-0}"
@@ -130,6 +132,9 @@ install_android_packages() {
     echo "Android SDK packages already available in $SDK_ROOT"
     return
   fi
+
+  require_command "java" "Install a Java runtime before provisioning Android SDK packages."
+  require_command "yes" "Install coreutils before provisioning Android SDK packages."
 
   mkdir -p "$SDK_ROOT" "$ANDROID_USER_HOME_DIR"
   touch "$ANDROID_USER_HOME_DIR/repositories.cfg"
