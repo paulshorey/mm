@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { pool } from "./lib/db.js";
+import { evaluateHourlyLagRemediation, notifyHourlyLagRemediation } from "./lib/health/hourly-lag-remediation.js";
 import { getWritePipelineHealth } from "./lib/health/write-pipeline-health.js";
 import { getStreamStats, getStreamStatus, startDatabentoStream, stopDatabentoStream } from "./stream/tbbo-stream.js";
 
@@ -10,9 +11,12 @@ const port = Number(process.env.PORT) || 8080;
 const maxAllowedLagMinutes = Number(process.env.HOURLY_HEALTH_MAX_LAG_MINUTES || "2");
 const healthAlertIntervalMs = Number(process.env.WRITE_PIPELINE_HEALTH_ALERT_INTERVAL_MS || "60000");
 const healthStartupGraceMs = Number(process.env.WRITE_PIPELINE_HEALTH_STARTUP_GRACE_MS || "120000");
+const hourlyLagRemediationAfterMs = Number(process.env.WRITE_PIPELINE_UNHEALTHY_RESTART_AFTER_MS || "180000");
 let shuttingDown = false;
 let healthMonitorTimer: NodeJS.Timeout | null = null;
 let lastHealthSnapshot = "";
+let unhealthyLagSinceMs: number | null = null;
+let remediationInProgress = false;
 
 app.use(cors());
 
@@ -30,9 +34,19 @@ async function buildWritePipelineHealth() {
 async function checkWritePipelineHealthAndLog(): Promise<void> {
   try {
     const report = await buildWritePipelineHealth();
+    const remediationDecision = evaluateHourlyLagRemediation({
+      report,
+      nowMs: Date.now(),
+      remediationAfterMs: hourlyLagRemediationAfterMs,
+      unhealthyLagSinceMs,
+      remediationInProgress,
+    });
+    unhealthyLagSinceMs = remediationDecision.unhealthyLagSinceMs;
+    remediationInProgress = remediationDecision.remediationInProgress;
     const snapshot = `${report.status}|${report.reasons.join("||")}|${report.lag.staleTickers.join(",")}|${report.lag.warmingUpTickers.join(",")}`;
 
     if (snapshot === lastHealthSnapshot) {
+      await maybeRemediatePersistentHourlyLag(report, remediationDecision.shouldRemediate);
       return;
     }
 
@@ -52,6 +66,7 @@ async function checkWritePipelineHealthAndLog(): Promise<void> {
     }
 
     lastHealthSnapshot = snapshot;
+    await maybeRemediatePersistentHourlyLag(report, remediationDecision.shouldRemediate);
   } catch (error) {
     const snapshot = "error";
     if (snapshot === lastHealthSnapshot) {
@@ -60,6 +75,25 @@ async function checkWritePipelineHealthAndLog(): Promise<void> {
     console.error("❌ Write pipeline health check failed:", error);
     lastHealthSnapshot = snapshot;
   }
+}
+
+async function maybeRemediatePersistentHourlyLag(report: Awaited<ReturnType<typeof buildWritePipelineHealth>>, shouldRemediate: boolean) {
+  if (!shouldRemediate || unhealthyLagSinceMs === null || shuttingDown) {
+    return;
+  }
+
+  const confirmationReport = await buildWritePipelineHealth();
+  if (!(confirmationReport.status === "unhealthy" && confirmationReport.lag.staleTickers.length > 0)) {
+    unhealthyLagSinceMs = null;
+    remediationInProgress = false;
+    return;
+  }
+
+  await notifyHourlyLagRemediation({
+    report: confirmationReport,
+    unhealthyLagSinceMs,
+  });
+  await shutdown("AUTO_REMEDIATION", 1);
 }
 
 app.get("/api/v1/health", async (_req, res) => {
@@ -103,22 +137,31 @@ const server = app.listen(port, "::", () => {
   void startStreamWithRetry();
 });
 
-const shutdown = async (signal: string) => {
+const shutdown = async (signal: string, exitCode = 0) => {
   if (shuttingDown) {
     return;
   }
 
   shuttingDown = true;
   console.log(`${signal} received, shutting down gracefully...`);
+  const forceExitTimer = setTimeout(() => {
+    console.error(`Forcing process exit after delayed shutdown (${signal})`);
+    process.exit(exitCode);
+  }, 30_000);
+  forceExitTimer.unref();
 
-  server.close();
-  if (healthMonitorTimer) {
-    clearInterval(healthMonitorTimer);
-    healthMonitorTimer = null;
+  try {
+    server.close();
+    if (healthMonitorTimer) {
+      clearInterval(healthMonitorTimer);
+      healthMonitorTimer = null;
+    }
+    await stopDatabentoStream();
+    await pool.end();
+  } finally {
+    clearTimeout(forceExitTimer);
   }
-  await stopDatabentoStream();
-  await pool.end();
-  process.exit(0);
+  process.exit(exitCode);
 };
 
 process.on("SIGTERM", () => {

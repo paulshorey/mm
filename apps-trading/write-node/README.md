@@ -204,6 +204,13 @@ Optional session-calendar env vars:
   stale/recovery health logs (default `60000`)
 - `WRITE_PIPELINE_HEALTH_STARTUP_GRACE_MS` - optional startup grace window before
   stream readiness failures become unhealthy (default `120000`)
+- `WRITE_PIPELINE_UNHEALTHY_RESTART_AFTER_MS` - optional duration that hourly lag
+  must remain unhealthy before the service logs the event, sends SMS, and exits
+  non-zero for platform restart (default `180000`)
+- `TRADING_DB_URL` - required if you want automatic remediation events persisted
+  via `sqlLogAdd`
+- `TWILLIO_USERNAME_PASSWORD` - required if you want automatic remediation events
+  sent by SMS
 
 Session profiles live in `src/lib/trade/market-session-config.ts`. Start by
 adding/adjusting entries in `SESSION_PROFILE_BY_TICKER`, then use
@@ -232,6 +239,10 @@ warmup.
 boolean. It reports stream readiness, per-ticker source/target timestamps, and
 returns HTTP `503` when `candles_1h_1m` is stale beyond the configured lag
 threshold while the market is open.
+
+If unhealthy hourly lag persists beyond the configured remediation window, the
+service will log the event, send an SMS alert, and exit non-zero so the hosting
+platform can restart it.
 
 ## Developer rules
 

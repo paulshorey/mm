@@ -18,6 +18,7 @@ downstream feature-engineering or ML-specific logic.
   - Skips spread contracts (symbols containing "-") and gates trades by the configured session calendar using the trade event timestamp
   - Passes each valid trade to the aggregator
   - exposes lag-aware `/api/v1/health` inputs via stream readiness/status helpers
+  - can trigger automatic remediation restart when hourly lag stays unhealthy long enough
 
 - **`tbbo-1m-aggregator.ts`** is the live wrapper around the shared rolling-window engine
   - rejects late trades
