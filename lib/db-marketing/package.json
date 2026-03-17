@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./index.ts",
+    "./contracts/notes-app": "./contracts/notes-app.ts",
     "./db/postgres": "./lib/db/postgres.ts",
     "./generated/*": "./generated/*",
     "./generated/typescript/db-types": "./generated/typescript/db-types.ts",
@@ -14,7 +15,9 @@
     "./sql/*": "./sql/*.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "app:contracts:check": "node scripts/generate-app-contract.mjs --check",
+    "app:contracts:generate": "node scripts/generate-app-contract.mjs --write",
+    "check-types": "tsc --noEmit && pnpm app:contracts:check",
     "db:schema:snapshot": "bash scripts/snapshot-schema.sh",
     "db:types:generate": "node scripts/generate-types.mjs",
     "db:migrate": "node scripts/migrate.mjs",

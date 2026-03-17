@@ -10,6 +10,7 @@ on:
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps-marketing/notes-android/**"
+      - "apps-marketing/notes-next/**"
       - "apps-trading/view-next/**"
       - "apps-trading/tradingview-node/**"
   push:
@@ -23,6 +24,7 @@ on:
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
       - "apps-marketing/notes-android/**"
+      - "apps-marketing/notes-next/**"
       - "apps-trading/view-next/**"
       - "apps-trading/tradingview-node/**"
   workflow_dispatch:
