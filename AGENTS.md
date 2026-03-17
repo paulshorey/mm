@@ -51,6 +51,11 @@ In `lib/*` packages:
 - Use `pnpm --filter <app> <command>` or `cd apps/<app> && pnpm run <command>`
 - If request is ambiguous or contradictory, ask for clarification
 
+Cloud agent:
+
+- `cloud:install` installs PostgreSQL 17 client tools (psql, pg_dump) so
+  `db:migrate` and `db:verify` run in fresh sessions without manual apt setup.
+
 Remote DB operations:
 
 - `db:migrate` writes to the target database.
