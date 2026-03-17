@@ -3,8 +3,6 @@
 --
 
 
--- Dumped from database version 17.7
--- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -35,41 +33,6 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: candles_1m_1s; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.candles_1m_1s (
-    "time" timestamp with time zone NOT NULL,
-    ticker text NOT NULL,
-    open double precision NOT NULL,
-    high double precision NOT NULL,
-    low double precision NOT NULL,
-    close double precision NOT NULL,
-    volume double precision DEFAULT 0,
-    ask_volume double precision DEFAULT 0,
-    bid_volume double precision DEFAULT 0,
-    cvd_open double precision,
-    cvd_high double precision,
-    cvd_low double precision,
-    cvd_close double precision,
-    vd double precision,
-    trades integer DEFAULT 0 NOT NULL,
-    max_trade_size double precision DEFAULT 0 NOT NULL,
-    big_trades integer DEFAULT 0 NOT NULL,
-    big_volume double precision DEFAULT 0 NOT NULL,
-    symbol text,
-    vd_ratio double precision,
-    book_imbalance double precision,
-    price_pct double precision,
-    divergence double precision,
-    sum_bid_depth double precision DEFAULT 0 NOT NULL,
-    sum_ask_depth double precision DEFAULT 0 NOT NULL,
-    sum_price_volume double precision DEFAULT 0 NOT NULL,
-    unknown_volume double precision DEFAULT 0 NOT NULL
-);
-
-
---
 -- Name: candles_1h_1m; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -97,6 +60,41 @@ CREATE TABLE public.candles_1h_1m (
     max_trade_size double precision DEFAULT 0 NOT NULL,
     big_trades integer DEFAULT 0 NOT NULL,
     big_volume double precision DEFAULT 0 NOT NULL,
+    sum_bid_depth double precision DEFAULT 0 NOT NULL,
+    sum_ask_depth double precision DEFAULT 0 NOT NULL,
+    sum_price_volume double precision DEFAULT 0 NOT NULL,
+    unknown_volume double precision DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: candles_1m_1s; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.candles_1m_1s (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    open double precision NOT NULL,
+    high double precision NOT NULL,
+    low double precision NOT NULL,
+    close double precision NOT NULL,
+    volume double precision DEFAULT 0,
+    ask_volume double precision DEFAULT 0,
+    bid_volume double precision DEFAULT 0,
+    cvd_open double precision,
+    cvd_high double precision,
+    cvd_low double precision,
+    cvd_close double precision,
+    vd double precision,
+    trades integer DEFAULT 0 NOT NULL,
+    max_trade_size double precision DEFAULT 0 NOT NULL,
+    big_trades integer DEFAULT 0 NOT NULL,
+    big_volume double precision DEFAULT 0 NOT NULL,
+    symbol text,
+    vd_ratio double precision,
+    book_imbalance double precision,
+    price_pct double precision,
+    divergence double precision,
     sum_bid_depth double precision DEFAULT 0 NOT NULL,
     sum_ask_depth double precision DEFAULT 0 NOT NULL,
     sum_price_volume double precision DEFAULT 0 NOT NULL,

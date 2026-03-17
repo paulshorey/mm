@@ -56,9 +56,17 @@ In `lib/*` packages:
 - Use a full root install (`pnpm run deps:install`) when running repo-wide commands such as `pnpm build`, when touching multiple apps, or when changing shared workspace dependencies.
 - If request is ambiguous or contradictory, ask for clarification
 
-If DB schema changed:
+Cloud agent:
 
-- Instruct the user to run `pnpm --filter @lib/db-marketing db:migrate` to update the database to match the latest table structure. Do not run this yourself.
+- `cloud:install` installs PostgreSQL 17 client tools (psql, pg_dump) so
+  `db:migrate` and `db:verify` run in fresh sessions without manual apt setup.
+
+Remote DB operations:
+
+- `db:migrate` writes to the target database.
+- `db:verify` is not read-only; it runs `db:migrate` first, then regenerates local contract artifacts.
+- Only run remote `db:migrate` / `db:verify` when the user explicitly requests it.
+- Before running against a deployed DB, confirm the environment variable is present, the host is reachable from the cloud agent, and there are no unexpected pending migrations.
 
 ## Finish task:
 

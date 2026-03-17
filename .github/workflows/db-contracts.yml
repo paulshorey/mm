@@ -8,8 +8,8 @@ on:
       - "pnpm-lock.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
-      - "apps/view-next/**"
-      - "apps/tradingview-node/**"
+      - "apps-trading/view-next/**"
+      - "apps-trading/tradingview-node/**"
   push:
     branches:
       - main
@@ -19,17 +19,17 @@ on:
       - "pnpm-lock.yaml"
       - "lib/db-trading/**"
       - "lib/db-timescale/**"
-      - "apps/view-next/**"
-      - "apps/tradingview-node/**"
+      - "apps-trading/view-next/**"
+      - "apps-trading/tradingview-node/**"
   workflow_dispatch:
 
 jobs:
-  verify-postgres:
-    name: Verify Postgres contract
+  verify-trading:
+    name: Verify Trading contract
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17.9
         env:
           POSTGRES_DB: app_contracts
           POSTGRES_USER: postgres
@@ -55,8 +55,18 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install PostgreSQL client tools
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install PostgreSQL 17 client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common ca-certificates
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Show PostgreSQL versions
+        run: |
+          pg_dump --version
+          psql --version
+          psql "$TRADING_DB_URL" -Atqc "SELECT version()"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -69,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       timescale:
-        image: timescale/timescaledb:latest-pg17
+        image: timescale/timescaledb:2.25.2-pg17
         env:
           POSTGRES_DB: app_contracts
           POSTGRES_USER: postgres
@@ -95,8 +105,18 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install PostgreSQL client tools
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install PostgreSQL 17 client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common ca-certificates
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Show PostgreSQL versions
+        run: |
+          pg_dump --version
+          psql --version
+          psql "$TIMESCALE_DB_URL" -Atqc "SELECT version()"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
