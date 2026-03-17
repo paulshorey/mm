@@ -34,6 +34,7 @@ import "dotenv/config";
 import { createReadStream } from "fs";
 import { createInterface } from "readline";
 import { pool } from "../src/lib/db.js";
+import { Candles1h1mAggregator } from "../src/stream/candles-1h-1m-aggregator.js";
 import type { NormalizedTrade, TimedTradeInput } from "../src/lib/trade/index.js";
 import {
   RollingWindow1m,
@@ -79,12 +80,14 @@ const LOG_INTERVAL = 100_000;
 const WINDOW_SECONDS = 60;
 
 const rollingWindow = new RollingWindow1m();
+const hourlyAggregator = new Candles1h1mAggregator();
 
 const stats = {
   filesProcessed: 0,
   linesProcessed: 0,
   tradesProcessed: 0,
   candlesWritten: 0,
+  hourlyCandlesWritten: 0,
   skippedNonTrade: 0,
   skippedSpreads: 0,
   unknownSide: 0,
@@ -189,8 +192,12 @@ async function flushPendingCandles(): Promise<void> {
   for (let i = 0; i < pendingCandles.length; i += BATCH_SIZE) {
     const batch = pendingCandles.slice(i, i + BATCH_SIZE);
     await writeCandles(pool, TARGET_TABLE, batch);
+    await hourlyAggregator.addBaseCandles(batch);
+    await hourlyAggregator.flushCompleted();
     stats.candlesWritten += batch.length;
   }
+
+  stats.hourlyCandlesWritten = hourlyAggregator.getCandlesWritten();
 
   console.log(`💾 Flushed ${pendingCandles.length} rolling 1m candle(s) to ${TARGET_TABLE}`);
 }
@@ -256,6 +263,7 @@ function printSummary(): void {
   console.log(`   Trades processed:      ${stats.tradesProcessed.toLocaleString()}`);
   console.log(`   1-second buckets:      ${rollingStats.secondsProcessed.toLocaleString()}`);
   console.log(`   1-minute candles:      ${stats.candlesWritten.toLocaleString()}`);
+  console.log(`   1-hour candles:        ${stats.hourlyCandlesWritten.toLocaleString()}`);
   console.log(`   Skipped (warmup):      ${rollingStats.candlesSkippedWarmup.toLocaleString()}`);
   console.log(`   Synthetic seconds:     ${rollingStats.syntheticSecondsFilled.toLocaleString()}`);
   console.log(`   Gap resets:            ${rollingStats.gapResets.toLocaleString()}`);
@@ -302,11 +310,14 @@ async function main(): Promise<void> {
   console.log("");
 
   await loadCvdFromDatabase();
+  await hourlyAggregator.initialize();
 
   for (const file of files) {
     await processFile(file);
   }
 
+  await hourlyAggregator.flushAll();
+  stats.hourlyCandlesWritten = hourlyAggregator.getCandlesWritten();
   printSummary();
   await pool.end();
 }

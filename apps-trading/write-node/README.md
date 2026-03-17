@@ -5,8 +5,10 @@ Canonical futures timeseries writer.
 This app maintains:
 
 - `candles_1m_1s`: rolling 1-minute candles written every second from TBBO trades
+  with an explicit UTC `second` column
 - `candles_1h_1m`: rolling 1-hour candles written every minute from the
-  minute-boundary subset of `candles_1m_1s`
+  minute-boundary subset of `candles_1m_1s`, with an explicit UTC `minute`
+  column
 
 The shared rolling engine forward-fills short no-trade gaps as zero-volume
 seconds so minute-boundary rows stay available for the hourly layer. Extended
@@ -161,6 +163,8 @@ pnpm --filter write-node historical:1h1m --truncate
 
 Notes:
 
+- `historical:tbbo` writes canonical `candles_1m_1s` rows and advances
+  `candles_1h_1m` from the committed minute-boundary subset during the same run
 - `historical:1h1m` reads only minute-boundary rows from `candles_1m_1s`
 - `--truncate` is recommended for a full deterministic rebuild
 - without `--truncate`, the script upserts into `candles_1h_1m`
@@ -193,6 +197,20 @@ Optional session-calendar env vars:
 - `MARKET_SESSION_OPEN_WINDOWS` - comma-separated weekly open windows in local
   session time (overrides the selected profile's windows), for example:
   `Sun 17:00-Mon 16:00, Mon 17:00-Tue 16:00, Tue 17:00-Wed 16:00, Wed 17:00-Thu 16:00, Thu 17:00-Fri 16:00`
+- `HOURLY_HEALTH_MAX_LAG_MINUTES` - optional maximum allowed `candles_1h_1m`
+  lag behind committed minute-boundary `candles_1m_1s` rows before `/api/v1/health`
+  returns unhealthy (default `2`)
+- `WRITE_PIPELINE_HEALTH_ALERT_INTERVAL_MS` - optional interval for in-process
+  stale/recovery health logs (default `60000`)
+- `WRITE_PIPELINE_HEALTH_STARTUP_GRACE_MS` - optional startup grace window before
+  stream readiness failures become unhealthy (default `120000`)
+- `WRITE_PIPELINE_UNHEALTHY_RESTART_AFTER_MS` - optional duration that hourly lag
+  must remain unhealthy before the service logs the event, sends SMS, and exits
+  non-zero for platform restart (default `180000`)
+- `TRADING_DB_URL` - required if you want automatic remediation events persisted
+  via `sqlLogAdd`
+- `TWILLIO_USERNAME_PASSWORD` - required if you want automatic remediation events
+  sent by SMS
 
 Session profiles live in `src/lib/trade/market-session-config.ts`. Start by
 adding/adjusting entries in `SESSION_PROFILE_BY_TICKER`, then use
@@ -206,12 +224,25 @@ Live behavior:
 2. successful 1m writes at minute boundaries feed the hourly aggregator
 3. minute-boundary rows -> `candles_1h_1m`
 
+The hourly writer also performs continuous runtime reconciliation from canonical
+minute-boundary `candles_1m_1s` rows so missed handoffs can be replayed without
+waiting for a process restart.
+
 The live stream gates trades by the trade event timestamp in the configured
 session calendar, not by fixed UTC close/reopen assumptions.
 
 On startup, the hourly writer hydrates itself from the most recent
 minute-boundary `candles_1m_1s` rows so it does not need a fresh 60-minute
 warmup.
+
+`/api/v1/health` now returns structured pipeline health instead of a bare
+boolean. It reports stream readiness, per-ticker source/target timestamps, and
+returns HTTP `503` when `candles_1h_1m` is stale beyond the configured lag
+threshold while the market is open.
+
+If unhealthy hourly lag persists beyond the configured remediation window, the
+service will log the event, send an SMS alert, and exit non-zero so the hosting
+platform can restart it.
 
 ## Developer rules
 

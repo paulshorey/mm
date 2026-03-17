@@ -37,7 +37,7 @@ interface Queryable {
 
 interface HourlyAggregatorLike {
   initialize(): Promise<void>;
-  addBaseCandles(candles: CandleForDb[]): number;
+  addBaseCandles(candles: CandleForDb[]): Promise<number>;
   flushCompleted(): Promise<void>;
   flushAll(): Promise<void>;
 }
@@ -253,12 +253,16 @@ export class Tbbo1mAggregator {
     try {
       await this.writeCandlesFn(this.queryable, TARGET_TABLE, batch);
       this.candlesWritten += batch.length;
-      this.hourlyAggregator.addBaseCandles(batch);
-      await this.hourlyAggregator.flushCompleted();
-      return true;
     } catch (error) {
       console.error("❌ Failed to write 1m candles:", error);
       return false;
     }
+    try {
+      await this.hourlyAggregator.addBaseCandles(batch);
+      await this.hourlyAggregator.flushCompleted();
+    } catch (error) {
+      console.error(`❌ Failed to advance ${TARGET_TABLE} -> candles_1h_1m hourly aggregation:`, error);
+    }
+    return true;
   }
 }

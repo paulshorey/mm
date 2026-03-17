@@ -432,9 +432,15 @@ importers:
 
   apps-trading/write-node:
     dependencies:
+      '@lib/common':
+        specifier: workspace:*
+        version: link:../../lib/common
       '@lib/db-timescale':
         specifier: workspace:*
         version: link:../../lib/db-timescale
+      '@lib/db-trading':
+        specifier: workspace:*
+        version: link:../../lib/db-trading
       cors:
         specifier: ^2.8.5
         version: 2.8.6
