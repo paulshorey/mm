@@ -21,7 +21,6 @@ require_command() {
     exit 1
   fi
 }
-
 has_required_packages() {
   [[ -x "$SDKMANAGER_BIN" ]] &&
     [[ -x "$SDK_ROOT/platform-tools/adb" ]] &&
@@ -37,14 +36,12 @@ ensure_cmdline_tools() {
   require_command "python3" "Install Python 3 before provisioning the Android SDK."
   require_command "curl" "Install curl before provisioning the Android SDK."
   require_command "unzip" "Install unzip before provisioning the Android SDK."
-
   echo "Installing Android command-line tools into $SDK_ROOT"
   mkdir -p "$SDK_ROOT/cmdline-tools" "$ANDROID_USER_HOME_DIR"
   touch "$ANDROID_USER_HOME_DIR/repositories.cfg"
 
   local tmp_dir
   tmp_dir="$(mktemp -d)"
-
   (
     trap 'rm -rf "$tmp_dir"' EXIT
 
