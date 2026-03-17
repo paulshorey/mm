@@ -33,12 +33,14 @@ bash scripts/install-workspace-deps.sh "$@"
 
 bash scripts/install-android-sdk.sh
 
-# Set up Gradle tools to build the Android app
+# Preinstall the Android SDK used by notes-android so cloud builds reuse cached tooling.
 (
   cd apps-marketing/notes-android
   ./gradlew --no-daemon :app:help >/dev/null
 )
+bash "$ROOT_DIR/scripts/install-android-sdk.sh"
 
+# Install PostgreSQL 17 client tools (psql, pg_dump) for db:migrate and db:verify
 has_pg17_clients() {
   if [[ -x "${PG17_BINDIR}/psql" && -x "${PG17_BINDIR}/pg_dump" ]]; then
     return 0
@@ -52,10 +54,6 @@ has_pg17_clients() {
     && pg_dump --version | grep -qE '\b17(\.|[[:space:]])'
 }
 
-# Preinstall the Android SDK used by notes-android so cloud builds reuse cached tooling.
-bash "$ROOT_DIR/scripts/install-android-sdk.sh"
-
-# Install PostgreSQL 17 client tools (psql, pg_dump) for db:migrate and db:verify
 need_pg17=false
 if ! has_pg17_clients; then
   need_pg17=true
