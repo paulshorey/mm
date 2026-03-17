@@ -29,6 +29,11 @@ Set:
 export TIMESCALE_DB_URL="postgres://..."
 ```
 
+`db:schema:snapshot` and `db:verify` require local PostgreSQL client tools.
+Use the same PostgreSQL major version as the target DB server and CI
+(`pg_dump`/`psql` 17 for the current GitHub Actions workflow). The snapshot
+script fails fast if the local client major version does not match the server.
+
 The target DB must support TimescaleDB. The migration runner executes:
 
 ```sql
@@ -127,6 +132,9 @@ pnpm --filter @lib/db-timescale db:migrate
 pnpm --filter @lib/db-timescale db:verify
 ```
 
+`db:verify` is not read-only. It runs `db:migrate` first, then regenerates
+local contract artifacts and checks them with `git diff --exit-code`.
+
 ### Create a new migration
 
 ```bash
@@ -185,4 +193,4 @@ This package is verified in GitHub Actions against a fresh Timescale container:
 - `AGENTS.md` - concise rules for engineers and AI agents
 - `migrations/README.md` - migration authoring details
 - `docs/db/management-playbook.md` - repo-wide DB workflow
-- `apps/write-node/README.md` - writer app workflow using this package
+- `apps-trading/write-node/README.md` - writer app workflow using this package

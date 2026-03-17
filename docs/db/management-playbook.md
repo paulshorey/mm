@@ -5,6 +5,7 @@ monorepo.
 
 ## Packages and source of truth
 
+- `@lib/db-marketing` owns `MARKETING_DB_URL`
 - `@lib/db-trading` owns `TRADING_DB_URL`
 - `@lib/db-timescale` owns `TIMESCALE_DB_URL`
 - Source of truth is:
@@ -30,16 +31,24 @@ Always:
 
 Before running package scripts, export the correct DB URL:
 
+- Marketing: `MARKETING_DB_URL`
 - Postgres: `TRADING_DB_URL`
 - Timescale: `TIMESCALE_DB_URL`
 
 The app `.env` files already contain these values.
+
+`db:schema:snapshot` and `db:verify` also require local PostgreSQL client tools.
+Match the client major version to the target DB server and CI. The current DB
+contract workflow runs PostgreSQL 17 service containers with PostgreSQL 17
+client tools, and the local snapshot scripts now fail fast if `pg_dump` and the
+server major versions do not match.
 
 ## First-time setup for fresh empty databases
 
 For a brand-new empty database, use the normal migration flow:
 
 ```bash
+pnpm --filter @lib/db-marketing db:migrate
 pnpm --filter @lib/db-trading db:migrate
 pnpm --filter @lib/db-timescale db:migrate
 ```
@@ -53,6 +62,7 @@ Timescale note:
 
 Both DB packages include a baseline migration generated from the live DB:
 
+- `lib/db-marketing/migrations/202603141200__baseline.sql`
 - `lib/db-trading/migrations/202602180130__baseline.sql`
 - `lib/db-timescale/migrations/202602180131__baseline.sql`
 
@@ -60,6 +70,7 @@ For a database that already has the baseline schema, mark only the baseline as
 applied:
 
 ```bash
+pnpm --filter @lib/db-marketing db:migrate:baseline
 pnpm --filter @lib/db-trading db:migrate:baseline
 pnpm --filter @lib/db-timescale db:migrate:baseline
 ```
@@ -67,6 +78,7 @@ pnpm --filter @lib/db-timescale db:migrate:baseline
 After baselining, run the normal migration flow so later migrations still apply:
 
 ```bash
+pnpm --filter @lib/db-marketing db:migrate
 pnpm --filter @lib/db-trading db:migrate
 pnpm --filter @lib/db-timescale db:migrate
 ```
@@ -76,6 +88,7 @@ pnpm --filter @lib/db-timescale db:migrate
 Each DB package now has a contract verification command:
 
 ```bash
+pnpm --filter @lib/db-marketing db:verify
 pnpm --filter @lib/db-trading db:verify
 pnpm --filter @lib/db-timescale db:verify
 ```
@@ -90,6 +103,18 @@ Each command:
 
 The same verification commands run in CI against fresh Postgres and Timescale
 containers.
+
+`db:verify` is not read-only. It runs `db:migrate` first, so using it against a
+deployed remote database can apply pending migrations before regenerating local
+contract artifacts.
+
+Remote `db:migrate` / `db:verify` runs are allowed only with an explicit user
+request. Before running them from a cloud agent:
+
+1. confirm the corresponding `*_DB_URL` environment variable is present
+2. confirm the host is reachable from the current environment
+3. compare local migration files with `schema_migrations_cursor` and understand
+   any pending migrations before proceeding
 
 ## Creating a new migration
 
@@ -207,6 +232,7 @@ Example: add column `status` to `order_v1`.
 
 Generated files:
 
+- `lib/db-marketing/generated/typescript/db-types.ts`
 - `lib/db-trading/generated/typescript/db-types.ts`
 - `lib/db-timescale/generated/typescript/db-types.ts`
 
@@ -236,6 +262,15 @@ How to enforce:
 - [ ] `pnpm build` passes
 
 ## Script reference
+
+Marketing package:
+
+- `pnpm --filter @lib/db-marketing db:migration:new -- <name>`
+- `pnpm --filter @lib/db-marketing db:migrate`
+- `pnpm --filter @lib/db-marketing db:verify`
+- `pnpm --filter @lib/db-marketing db:migrate:baseline`
+- `pnpm --filter @lib/db-marketing db:schema:snapshot`
+- `pnpm --filter @lib/db-marketing db:types:generate`
 
 Postgres package:
 
