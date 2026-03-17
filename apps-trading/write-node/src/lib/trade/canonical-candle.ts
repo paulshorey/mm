@@ -31,8 +31,12 @@ type StoredCandleCommonColumn =
   | "sum_price_volume"
   | "unknown_volume";
 
-type Stored1mCandleRow = Pick<Candles1m1sRow, StoredCandleCommonColumn>;
-type Stored1hCandleRow = Pick<Candles1h1mRow, StoredCandleCommonColumn>;
+type Stored1mCandleRow = Omit<Pick<Candles1m1sRow, StoredCandleCommonColumn>, "time"> & {
+  time: Date | string;
+};
+type Stored1hCandleRow = Omit<Pick<Candles1h1mRow, StoredCandleCommonColumn>, "time"> & {
+  time: Date | string;
+};
 
 export type StoredCandleRow = Stored1mCandleRow | Stored1hCandleRow;
 
