@@ -7,19 +7,24 @@ This package owns:
 - Timescale/Postgres migration history
 - current schema snapshot
 - generated TypeScript/JSON schema artifacts
-- shared SQL query contracts for canonical candle tables
+- shared SQL query contracts for canonical candle and backtest tables
 
 If application code and the Timescale schema disagree, fix the contract here.
 
 ## Current canonical scope
 
-`write-node` currently writes and reads only:
+The current canonical Timescale tables are:
 
+- `public.backtest_1m_1s`
+- `public.backtest_1h_1m`
 - `public.candles_1m_1s`
 - `public.candles_1h_1m`
 
-`db:migrate` now converges the schema to only those two candle tables (plus
-the migration bookkeeping table `schema_migrations_cursor`).
+`write-node` owns the candle tables. `backtest-python` reads those candle
+tables and writes the backtest tables.
+
+`db:migrate` now converges the schema to only those four application tables
+(plus the migration bookkeeping table `schema_migrations_cursor`).
 
 ## Environment
 
@@ -55,6 +60,8 @@ What this does:
 
 - applies baseline schema history for canonical candle writes
 - applies forward migrations such as:
+  - `backtest_1m_1s`
+  - `backtest_1h_1m`
   - `candles_1h_1m`
   - `candles_1m_1s` contract cleanup
   - Timescale hypertable/compression setup
@@ -186,7 +193,7 @@ This package is verified in GitHub Actions against a fresh Timescale container:
 - `generated/typescript/db-types.ts`
 - `generated/contracts/db-schema.json`
 - `queries/**/*.sql` when shared SQL contracts change
-- app consumers when canonical candle contracts change
+- app consumers when canonical candle or backtest contracts change
 
 ## Related docs
 

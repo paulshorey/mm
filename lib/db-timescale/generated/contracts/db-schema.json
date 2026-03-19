@@ -1,4 +1,48 @@
 {
+  "backtest_1h_1m": [
+    {
+      "column": "time",
+      "nullable": false,
+      "type": "Date"
+    },
+    {
+      "column": "ticker",
+      "nullable": false,
+      "type": "string"
+    },
+    {
+      "column": "symbol",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "close_sma_20",
+      "nullable": false,
+      "type": "number"
+    }
+  ],
+  "backtest_1m_1s": [
+    {
+      "column": "time",
+      "nullable": false,
+      "type": "Date"
+    },
+    {
+      "column": "ticker",
+      "nullable": false,
+      "type": "string"
+    },
+    {
+      "column": "symbol",
+      "nullable": true,
+      "type": "string"
+    },
+    {
+      "column": "close_sma_20",
+      "nullable": false,
+      "type": "number"
+    }
+  ],
   "candles_1h_1m": [
     {
       "column": "time",

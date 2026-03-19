@@ -11,6 +11,8 @@ Database-first package for the `TIMESCALE_DB_URL` database.
 ## Runtime adapter
 
 - `lib/db/timescale.ts`: pooled DB connection accessor used by TypeScript apps.
+- `generated/contracts/db-schema.json`: machine-readable schema contract used by
+  the Python backtesting app and future generated clients.
 
 ## Polyglot support
 
@@ -28,4 +30,5 @@ for TypeScript, Python, C#, and R.
 - Migration files are forward-only SQL; do not add `BEGIN` / `COMMIT`.
 - For populated tables, migrations must explicitly backfill data and explicitly convert types with `USING` where needed.
 - Write Timescale operations idempotently when possible (`IF NOT EXISTS`, `if_not_exists => TRUE`).
-- After schema changes, keep `migrations/`, `schema/current.sql`, generated artifacts, queries, and app consumers in sync.
+- After schema changes, keep `migrations/`, `schema/current.sql`, generated
+  artifacts, queries, and app consumers in sync.

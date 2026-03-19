@@ -121,7 +121,7 @@ docs/
 
 `write-node` should stop at **canonical timeseries writing**.
 
-A future app, `market-analyze-python`, will consume this historical and live
+A downstream app, `backtest-python`, will consume this historical and live
 timeseries data to:
 
 - build multiple timeframes and lookback windows

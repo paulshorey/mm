@@ -33,6 +33,30 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: backtest_1h_1m; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.backtest_1h_1m (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    symbol text,
+    close_sma_20 double precision NOT NULL
+);
+
+
+--
+-- Name: backtest_1m_1s; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.backtest_1m_1s (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    symbol text,
+    close_sma_20 double precision NOT NULL
+);
+
+
+--
 -- Name: candles_1h_1m; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -103,6 +127,22 @@ CREATE TABLE public.candles_1m_1s (
 
 
 --
+-- Name: backtest_1h_1m backtest_1h_1m_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backtest_1h_1m
+    ADD CONSTRAINT backtest_1h_1m_pkey PRIMARY KEY (ticker, "time");
+
+
+--
+-- Name: backtest_1m_1s backtest_1m_1s_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backtest_1m_1s
+    ADD CONSTRAINT backtest_1m_1s_pkey PRIMARY KEY (ticker, "time");
+
+
+--
 -- Name: candles_1h_1m candles_1h_1m_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -116,6 +156,20 @@ ALTER TABLE ONLY public.candles_1h_1m
 
 ALTER TABLE ONLY public.candles_1m_1s
     ADD CONSTRAINT candles_1m_pkey PRIMARY KEY (ticker, "time");
+
+
+--
+-- Name: idx_backtest_1h_1m_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_backtest_1h_1m_time_desc ON public.backtest_1h_1m USING btree ("time" DESC);
+
+
+--
+-- Name: idx_backtest_1m_1s_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_backtest_1m_1s_time_desc ON public.backtest_1m_1s USING btree ("time" DESC);
 
 
 --
@@ -135,5 +189,3 @@ CREATE INDEX idx_candles_1m_1s_time_desc ON public.candles_1m_1s USING btree ("t
 --
 -- PostgreSQL database dump complete
 --
-
-
