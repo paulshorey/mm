@@ -12,7 +12,7 @@ Suggested targets:
 ## Current generated outputs
 
 - `typescript/db-types.ts` - generated row interfaces and table map
-- `contracts/db-schema.json` - machine-readable schema contract for other language tooling
+- `contracts/db-schema.json` - machine-readable schema contract currently consumed by the Python backtesting app and other language tooling
 
 ## Regenerate
 

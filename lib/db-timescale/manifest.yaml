@@ -2,6 +2,7 @@ database: timescale
 env_var: TIMESCALE_DB_URL
 owners:
   - apps/write-node
+  - apps/backtest-python
 source_of_truth:
   migrations: ./migrations
   schema_snapshot: ./schema/current.sql

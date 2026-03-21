@@ -1,0 +1,12 @@
+{
+  "name": "backtest-python",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "PYTHONPATH=src python3 -m backtest_python.verify_contracts && PYTHONPATH=src python3 -m compileall src tests",
+    "test": "PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py'",
+    "lint": "PYTHONPATH=src python3 -m backtest_python.verify_contracts",
+    "start": "PYTHONPATH=src python3 -m backtest_python",
+    "dev": "PYTHONPATH=src python3 -m backtest_python"
+  }
+}

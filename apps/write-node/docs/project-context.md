@@ -57,7 +57,7 @@ That means changes in this app should prioritize:
 
 ## Downstream boundary
 
-A future app, `market-analyze-python`, will sit downstream from this writer.
+A downstream app, `backtest-python`, will sit downstream from this writer.
 
 That app will consume the canonical historical and live timeseries to:
 
