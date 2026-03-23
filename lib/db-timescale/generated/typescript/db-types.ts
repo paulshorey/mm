@@ -1,6 +1,20 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Run: pnpm --filter @lib/db-timescale db:types:generate
 
+export interface Backtest1h1mRow {
+  "time": Date;
+  "ticker": string;
+  "symbol": string | null;
+  "close_sma_20": number;
+}
+
+export interface Backtest1m1sRow {
+  "time": Date;
+  "ticker": string;
+  "symbol": string | null;
+  "close_sma_20": number;
+}
+
 export interface Candles1h1mRow {
   "time": Date;
   "ticker": string;
@@ -29,6 +43,7 @@ export interface Candles1h1mRow {
   "sum_ask_depth": number;
   "sum_price_volume": number;
   "unknown_volume": number;
+  "minute": number;
 }
 
 export interface Candles1m1sRow {
@@ -59,9 +74,12 @@ export interface Candles1m1sRow {
   "sum_ask_depth": number;
   "sum_price_volume": number;
   "unknown_volume": number;
+  "second": number;
 }
 
 export interface TimescaleDbSchema {
+  "backtest_1h_1m": Backtest1h1mRow;
+  "backtest_1m_1s": Backtest1m1sRow;
   "candles_1h_1m": Candles1h1mRow;
   "candles_1m_1s": Candles1m1sRow;
 }

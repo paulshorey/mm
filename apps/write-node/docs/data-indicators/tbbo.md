@@ -22,7 +22,7 @@ full downstream feature set that future analysis apps may derive from them.
 | `big_volume`              | volume from those large trades                                |
 
 Richer multi-timeframe or multi-lookback feature sets belong downstream in
-`market-analyze-python`, not in this app's source-of-truth table design.
+`backtest-python`, not in this app's source-of-truth table design.
 
 `sum_price_volume` is stored as the additive accumulator needed for query-time
 VWAP calculation: `sum_price_volume / volume`. There is no stored `vwap`

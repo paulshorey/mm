@@ -28,6 +28,34 @@ SET row_security = off;
 
 
 
+--
+-- Name: sync_candles_1h_1m_minute(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sync_candles_1h_1m_minute() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.minute := EXTRACT(MINUTE FROM NEW."time" AT TIME ZONE 'UTC')::smallint;
+    RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: sync_candles_1m_1s_second(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.sync_candles_1m_1s_second() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.second := EXTRACT(SECOND FROM NEW."time" AT TIME ZONE 'UTC')::smallint;
+    RETURN NEW;
+END;
+$$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -63,7 +91,9 @@ CREATE TABLE public.candles_1h_1m (
     sum_bid_depth double precision DEFAULT 0 NOT NULL,
     sum_ask_depth double precision DEFAULT 0 NOT NULL,
     sum_price_volume double precision DEFAULT 0 NOT NULL,
-    unknown_volume double precision DEFAULT 0 NOT NULL
+    unknown_volume double precision DEFAULT 0 NOT NULL,
+    minute smallint NOT NULL,
+    CONSTRAINT candles_1h_1m_minute_range CHECK (((minute >= 0) AND (minute <= 59)))
 );
 
 
@@ -98,8 +128,50 @@ CREATE TABLE public.candles_1m_1s (
     sum_bid_depth double precision DEFAULT 0 NOT NULL,
     sum_ask_depth double precision DEFAULT 0 NOT NULL,
     sum_price_volume double precision DEFAULT 0 NOT NULL,
-    unknown_volume double precision DEFAULT 0 NOT NULL
+    unknown_volume double precision DEFAULT 0 NOT NULL,
+    second smallint NOT NULL,
+    CONSTRAINT candles_1m_1s_second_range CHECK (((second >= 0) AND (second <= 59)))
 );
+
+
+--
+-- Name: backtest_1h_1m; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.backtest_1h_1m (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    symbol text,
+    close_sma_20 double precision NOT NULL
+);
+
+
+--
+-- Name: backtest_1m_1s; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.backtest_1m_1s (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    symbol text,
+    close_sma_20 double precision NOT NULL
+);
+
+
+--
+-- Name: backtest_1h_1m backtest_1h_1m_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backtest_1h_1m
+    ADD CONSTRAINT backtest_1h_1m_pkey PRIMARY KEY (ticker, "time");
+
+
+--
+-- Name: backtest_1m_1s backtest_1m_1s_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backtest_1m_1s
+    ADD CONSTRAINT backtest_1m_1s_pkey PRIMARY KEY (ticker, "time");
 
 
 --
@@ -119,6 +191,20 @@ ALTER TABLE ONLY public.candles_1m_1s
 
 
 --
+-- Name: idx_backtest_1h_1m_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_backtest_1h_1m_time_desc ON public.backtest_1h_1m USING btree ("time" DESC);
+
+
+--
+-- Name: idx_backtest_1m_1s_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_backtest_1m_1s_time_desc ON public.backtest_1m_1s USING btree ("time" DESC);
+
+
+--
 -- Name: idx_candles_1h_1m_time_desc; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -130,6 +216,20 @@ CREATE INDEX idx_candles_1h_1m_time_desc ON public.candles_1h_1m USING btree ("t
 --
 
 CREATE INDEX idx_candles_1m_1s_time_desc ON public.candles_1m_1s USING btree ("time" DESC);
+
+
+--
+-- Name: candles_1h_1m candles_1h_1m_sync_minute; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER candles_1h_1m_sync_minute BEFORE INSERT OR UPDATE ON public.candles_1h_1m FOR EACH ROW EXECUTE FUNCTION public.sync_candles_1h_1m_minute();
+
+
+--
+-- Name: candles_1m_1s candles_1m_1s_sync_second; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER candles_1m_1s_sync_second BEFORE INSERT OR UPDATE ON public.candles_1m_1s FOR EACH ROW EXECUTE FUNCTION public.sync_candles_1m_1s_second();
 
 
 --

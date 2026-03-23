@@ -20,10 +20,17 @@ Set:
 export TRADING_DB_URL="postgres://..."
 ```
 
-`db:schema:snapshot` and `db:verify` require local PostgreSQL client tools.
+`db:schema:snapshot`, `db:verify`, and `db:migrate-and-verify` require local PostgreSQL client tools.
 Use the same PostgreSQL major version as the target DB server and CI
 (`pg_dump`/`psql` 17 for the current GitHub Actions workflow). The snapshot
 script fails fast if the local client major version does not match the server.
+
+## How connection and tooling work
+
+- **`db:migrate`** uses only the Node `pg` client. It connects to whatever `TRADING_DB_URL` points to (local or remote). It does not start a temporary local Postgres server.
+- **`db:verify`** runs `pg_dump` (via `db:schema:snapshot`) against `TRADING_DB_URL`, regenerates `schema/current.sql` and generated types/contracts, runs sanity SQL checks, and fails if `git diff` shows uncommitted changes. It does **not** run migrations.
+- **`db:migrate-and-verify`** runs `db:migrate`, then the same flow as `db:verify`.
+- **GitHub Actions** (`.github/workflows/db-contracts.yml`) points `TRADING_DB_URL` at an ephemeral `postgres:17` service container on `localhost`, not at production.
 
 ## Fresh empty database
 
@@ -31,7 +38,7 @@ Use this flow for a brand-new empty Postgres database:
 
 ```bash
 pnpm --filter @lib/db-trading db:migrate
-pnpm --filter @lib/db-trading db:verify
+pnpm --filter @lib/db-trading db:migrate-and-verify
 ```
 
 What this does:
@@ -49,7 +56,7 @@ older/manual setup and has not yet been put under migration tracking:
 ```bash
 pnpm --filter @lib/db-trading db:migrate:baseline
 pnpm --filter @lib/db-trading db:migrate
-pnpm --filter @lib/db-trading db:verify
+pnpm --filter @lib/db-trading db:migrate-and-verify
 ```
 
 `db:migrate:baseline` records only baseline migrations. It does **not** mark
@@ -102,11 +109,11 @@ pnpm --filter @lib/db-trading db:migrate
 ### Verify DB contract
 
 ```bash
-pnpm --filter @lib/db-trading db:verify
+pnpm --filter @lib/db-trading db:migrate-and-verify
 ```
 
-`db:verify` is not read-only. It runs `db:migrate` first, then regenerates
-local contract artifacts and checks them with `git diff --exit-code`.
+`db:migrate-and-verify` runs `db:migrate`, then regenerates local contract artifacts
+and checks them with `git diff --exit-code` (same as `db:verify`).
 
 ### Create a new migration
 
@@ -141,7 +148,7 @@ Or:
 pnpm --filter @lib/db-trading db:sync
 ```
 
-For most engineering work, `db:verify` is the safer command because it checks
+For most engineering work, `db:migrate-and-verify` is the safer command because it checks
 reproducibility too.
 
 ## CI

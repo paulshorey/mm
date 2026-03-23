@@ -18,10 +18,11 @@ Database-first package for the `TRADING_DB_URL` database.
 - Keep SQL and migration contracts database-first; generated language bindings are derived artifacts.
 - Keep `sql/*` helpers focused on database access only (query shape, serialization, SQL defaults).
 - Do not import `@lib/common` from this package. Runtime concerns like request IP lookup, response formatting, and SMS alerts belong in apps or `@lib/common`.
-- Fresh empty DB: run `pnpm --filter @lib/db-trading db:migrate`, then `db:verify`.
-- Existing pre-migration DB with baseline schema already present: run `db:migrate:baseline` once, then `db:migrate`, then `db:verify`.
-- `db:verify` is not read-only; it runs `db:migrate` first.
-- Only run `db:migrate` / `db:verify` against a deployed remote DB when the user explicitly requests it. Check connectivity and pending migrations first.
+- Fresh empty DB: run `pnpm --filter @lib/db-trading db:migrate`, then `db:migrate-and-verify`.
+- Existing pre-migration DB with baseline schema already present: run `db:migrate:baseline` once, then `db:migrate`, then `db:migrate-and-verify`.
+- `db:migrate` uses Node `pg` only (no `pg_dump`). `db:verify` runs snapshot + regenerate artifacts + SQL checks + `git diff`; install matching `psql`/`pg_dump` for the server major version.
+- `db:migrate-and-verify` runs `db:migrate` then `db:verify`. CI uses a fresh Postgres 17 service container.
+- Run `db:migrate-and-verify` after adding or editing migrations. Run `db:verify` to confirm repo matches the live DB. If verify fails on `git diff`, commit the regenerated artifacts.
 - Never manually create or alter tables outside migrations.
 - Migration files are forward-only SQL; do not add `BEGIN` / `COMMIT`.
 - For populated tables, migrations must explicitly backfill data and explicitly convert types with `USING` where needed.

@@ -51,4 +51,4 @@ ingest path right now.
 This live writer should stop at canonical timeseries persistence.
 
 Downstream feature engineering, multi-lookback indicator generation, and ML
-training/inference belong in the future `market-analyze-python` app.
+training/inference belong in the `backtest-python` app.
