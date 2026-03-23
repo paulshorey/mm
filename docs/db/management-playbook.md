@@ -116,13 +116,11 @@ Against a deployed remote database, `db:migrate-and-verify` applies pending migr
 before regenerating local contract artifacts; use `db:verify` alone to diff the live
 DB against the repo without migrating.
 
-Remote `db:migrate` / `db:migrate-and-verify` runs are allowed only with an explicit user
-request. Before running them from a cloud agent:
-
-1. confirm the corresponding `*_DB_URL` environment variable is present
-2. confirm the host is reachable from the current environment
-3. compare local migration files with `schema_migrations_cursor` and understand
-   any pending migrations before proceeding
+Agents and developers should run `db:migrate-and-verify` after adding or editing
+migrations, and `db:verify` to confirm the repo matches the live DB. If verify
+fails on the `git diff` step, commit the regenerated artifacts (`schema/current.sql`,
+`generated/*`). Before running, confirm the `*_DB_URL` env var is set and the
+host is reachable.
 
 ## Creating a new migration
 

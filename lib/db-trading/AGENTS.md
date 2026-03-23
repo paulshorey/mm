@@ -21,8 +21,8 @@ Database-first package for the `TRADING_DB_URL` database.
 - Fresh empty DB: run `pnpm --filter @lib/db-trading db:migrate`, then `db:migrate-and-verify`.
 - Existing pre-migration DB with baseline schema already present: run `db:migrate:baseline` once, then `db:migrate`, then `db:migrate-and-verify`.
 - `db:migrate` uses Node `pg` only (no `pg_dump`). `db:verify` runs snapshot + regenerate artifacts + SQL checks + `git diff`; install matching `psql`/`pg_dump` for the server major version.
-- `db:migrate-and-verify` runs `db:migrate` then `db:verify`. CI uses a fresh Postgres 17 service container, not production URLs.
-- Only run `db:migrate` / `db:migrate-and-verify` against a deployed remote DB when the user explicitly requests it. Check connectivity and pending migrations first.
+- `db:migrate-and-verify` runs `db:migrate` then `db:verify`. CI uses a fresh Postgres 17 service container.
+- Run `db:migrate-and-verify` after adding or editing migrations. Run `db:verify` to confirm repo matches the live DB. If verify fails on `git diff`, commit the regenerated artifacts.
 - Never manually create or alter tables outside migrations.
 - Migration files are forward-only SQL; do not add `BEGIN` / `COMMIT`.
 - For populated tables, migrations must explicitly backfill data and explicitly convert types with `USING` where needed.

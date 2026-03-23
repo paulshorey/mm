@@ -58,12 +58,13 @@ Cloud agent:
 
 - `cloud:install` installs PostgreSQL 17 client tools (`psql`, `pg_dump`) so `db:verify` and `db:migrate-and-verify` (schema snapshot) run without manual apt setup. `db:migrate` only needs the Node `pg` client.
 
-Remote DB operations:
+DB operations:
 
-- `db:migrate` writes to the target database (via `TRADING_DB_URL` / `TIMESCALE_DB_URL`).
-- `db:migrate-and-verify` runs `scripts/migrate.mjs` then `scripts/verify.mjs` (pnpm chains the two). `db:verify` runs only `verify.mjs`.
-- Only run remote `db:migrate` / `db:migrate-and-verify` when the user explicitly requests it.
-- Before running against a deployed DB, confirm the environment variable is present, the host is reachable from the cloud agent, and there are no unexpected pending migrations.
+- `db:migrate` applies pending migrations to the database at `TRADING_DB_URL` / `TIMESCALE_DB_URL`.
+- `db:verify` snapshots the live DB, regenerates contract artifacts, runs SQL checks, and fails if `git diff` shows drift.
+- `db:migrate-and-verify` chains `migrate.mjs && verify.mjs`. Use it after adding or editing migrations.
+- Agents should run `db:migrate-and-verify` when they add or change migrations, and `db:verify` to confirm the repo matches the live DB. If verify fails on `git diff`, commit the regenerated artifacts.
+- Before running, confirm the `*_DB_URL` env var is set and the host is reachable.
 
 ## Finish task:
 
