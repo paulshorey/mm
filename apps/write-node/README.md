@@ -7,6 +7,8 @@ This app maintains:
 - `candles_1m_1s`: rolling 1-minute candles written every second from TBBO trades
 - `candles_1h_1m`: rolling 1-hour candles written every minute from the
   minute-boundary subset of `candles_1m_1s`
+- `candles_1d_1h`: rolling 1-day candles written every hour from the
+  hour-boundary subset of `candles_1h_1m`
 
 The shared rolling engine forward-fills short no-trade gaps as zero-volume
 seconds so minute-boundary rows stay available for the hourly layer. Extended
@@ -159,13 +161,23 @@ pnpm --filter write-node historical:tbbo "/path/to/file1.json" "/path/to/file2.j
 pnpm --filter write-node historical:1h1m --truncate
 ```
 
+### Canonical 1h@1m -> canonical 1d@1h
+
+```bash
+pnpm --filter write-node historical:1d1h --truncate
+```
+
 Notes:
 
 - `historical:1h1m` reads only minute-boundary rows from `candles_1m_1s`
+- `historical:1d1h` reads only hour-boundary rows from `candles_1h_1m`
 - `--truncate` is recommended for a full deterministic rebuild
-- without `--truncate`, the script upserts into `candles_1h_1m`
-- if you intentionally start from an empty DB, run the DB migrations first, then
-  rebuild `candles_1m_1s`, then rebuild `candles_1h_1m`
+- without `--truncate`, the script upserts into the target table
+- for an empty DB, run the DB migrations first, then rebuild in order:
+  `candles_1m_1s` → `candles_1h_1m` → `candles_1d_1h`
+
+See [`docs/backfill.md`](./docs/backfill.md) for the full end-to-end runbook
+including downloading TBBO, continuity checks, and live-writer verification.
 
 ## Live flow
 

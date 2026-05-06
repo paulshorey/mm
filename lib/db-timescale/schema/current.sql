@@ -33,6 +33,41 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: candles_1d_1h; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.candles_1d_1h (
+    "time" timestamp with time zone NOT NULL,
+    ticker text NOT NULL,
+    symbol text,
+    open double precision NOT NULL,
+    high double precision NOT NULL,
+    low double precision NOT NULL,
+    close double precision NOT NULL,
+    volume double precision DEFAULT 0 NOT NULL,
+    ask_volume double precision DEFAULT 0 NOT NULL,
+    bid_volume double precision DEFAULT 0 NOT NULL,
+    cvd_open double precision,
+    cvd_high double precision,
+    cvd_low double precision,
+    cvd_close double precision,
+    vd double precision,
+    vd_ratio double precision,
+    book_imbalance double precision,
+    price_pct double precision,
+    divergence double precision,
+    trades integer DEFAULT 0 NOT NULL,
+    max_trade_size double precision DEFAULT 0 NOT NULL,
+    big_trades integer DEFAULT 0 NOT NULL,
+    big_volume double precision DEFAULT 0 NOT NULL,
+    sum_bid_depth double precision DEFAULT 0 NOT NULL,
+    sum_ask_depth double precision DEFAULT 0 NOT NULL,
+    sum_price_volume double precision DEFAULT 0 NOT NULL,
+    unknown_volume double precision DEFAULT 0 NOT NULL
+);
+
+
+--
 -- Name: candles_1h_1m; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -103,6 +138,14 @@ CREATE TABLE public.candles_1m_1s (
 
 
 --
+-- Name: candles_1d_1h candles_1d_1h_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candles_1d_1h
+    ADD CONSTRAINT candles_1d_1h_pkey PRIMARY KEY (ticker, "time");
+
+
+--
 -- Name: candles_1h_1m candles_1h_1m_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -116,6 +159,13 @@ ALTER TABLE ONLY public.candles_1h_1m
 
 ALTER TABLE ONLY public.candles_1m_1s
     ADD CONSTRAINT candles_1m_pkey PRIMARY KEY (ticker, "time");
+
+
+--
+-- Name: idx_candles_1d_1h_time_desc; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candles_1d_1h_time_desc ON public.candles_1d_1h USING btree ("time" DESC);
 
 
 --

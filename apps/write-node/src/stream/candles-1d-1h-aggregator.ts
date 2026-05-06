@@ -1,16 +1,28 @@
+/**
+ * Live aggregator for canonical rolling `candles_1d_1h`.
+ *
+ * Each row is a trailing 24-hour rolling window for a ticker, derived from the
+ * hour-boundary subset of canonical `candles_1h_1m` rows. The cadence of new
+ * rows is one per hour.
+ *
+ * Mirrors the structure of `Candles1h1mAggregator`: hydrate from the canonical
+ * source table on startup, reconcile any source rows newer than the latest
+ * target row, then accept hour-boundary inputs forwarded by the upstream
+ * aggregator at runtime.
+ */
+
 import { pool } from "../lib/db.js";
 import type { CandleForDb, StoredCandleRow } from "../lib/trade/index.js";
-import { RollingCandleWindow, candleForDbFromStoredRow, isMinuteBoundary, writeCandles } from "../lib/trade/index.js";
-import { Candles1d1hAggregator } from "./candles-1d-1h-aggregator.js";
+import { RollingCandleWindow, candleForDbFromStoredRow, isHourBoundary, writeCandles } from "../lib/trade/index.js";
 
-const SOURCE_TABLE = "candles_1m_1s";
-const TARGET_TABLE = "candles_1h_1m";
-const HYDRATION_WINDOW_ROWS = 60;
-const WINDOW_MINUTES = 60;
-const WRITE_BATCH_SIZE = 500;
+const SOURCE_TABLE = "candles_1h_1m";
+const TARGET_TABLE = "candles_1d_1h";
+const HYDRATION_WINDOW_ROWS = 24;
+const WINDOW_HOURS = 24;
+const WRITE_BATCH_SIZE = 200;
 const HYDRATION_RETRY_LOG_INTERVAL_MS = 30_000;
 const RECONCILIATION_PAGE_SIZE = 5_000;
-const RECONCILIATION_FLUSH_THRESHOLD = 10_000;
+const RECONCILIATION_FLUSH_THRESHOLD = 5_000;
 
 const SOURCE_COLUMNS = `
   time,
@@ -78,7 +90,7 @@ const HYDRATION_QUERY = `
       ${SOURCE_COLUMNS},
       ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY time DESC) AS rn
     FROM ${SOURCE_TABLE}
-    WHERE time = date_trunc('minute', time)
+    WHERE time = date_trunc('hour', time)
   )
   SELECT
     ${SOURCE_COLUMNS}
@@ -122,27 +134,18 @@ interface ReconciliationResult {
   replayed: number;
 }
 
-interface DailyAggregatorLike {
-  initialize(): Promise<void>;
-  addBaseCandles(candles: CandleForDb[]): number;
-  flushCompleted(): Promise<void>;
-  flushAll(): Promise<void>;
-}
-
-interface Candles1h1mAggregatorOptions {
+interface Candles1d1hAggregatorOptions {
   queryable?: Queryable;
   writeCandlesFn?: typeof writeCandles;
-  dailyAggregator?: DailyAggregatorLike | null;
 }
 
-export class Candles1h1mAggregator {
+export class Candles1d1hAggregator {
   private readonly queryable: Queryable;
   private readonly writeCandlesFn: typeof writeCandles;
-  private readonly dailyAggregator: DailyAggregatorLike | null;
   private readonly rollingWindow = new RollingCandleWindow({
-    windowSize: WINDOW_MINUTES,
-    expectedIntervalMs: 60_000,
-    label: "1h@1m",
+    windowSize: WINDOW_HOURS,
+    expectedIntervalMs: 60 * 60 * 1000,
+    label: "1d@1h",
   });
 
   private initialized = false;
@@ -151,32 +154,27 @@ export class Candles1h1mAggregator {
   private hydrationPromise: Promise<boolean> | null = null;
   private lastHydrationBlockedLogTime = 0;
 
-  constructor(options: Candles1h1mAggregatorOptions = {}) {
+  constructor(options: Candles1d1hAggregatorOptions = {}) {
     this.queryable = options.queryable ?? pool;
     this.writeCandlesFn = options.writeCandlesFn ?? writeCandles;
-    this.dailyAggregator =
-      options.dailyAggregator === undefined ? new Candles1d1hAggregator({ queryable: this.queryable }) : options.dailyAggregator;
   }
 
   async initialize(): Promise<void> {
     await this.ensureInitialized();
-    if (this.dailyAggregator) {
-      await this.dailyAggregator.initialize();
-    }
   }
 
   addBaseCandles(candles: CandleForDb[]): number {
-    const minuteBoundaryCandles = candles.filter((candle) => isMinuteBoundary(candle.time));
-    if (minuteBoundaryCandles.length === 0) {
+    const hourBoundaryCandles = candles.filter((candle) => isHourBoundary(candle.time));
+    if (hourBoundaryCandles.length === 0) {
       return 0;
     }
 
     if (!this.initialized) {
-      this.bufferedBaseCandles.push(...minuteBoundaryCandles);
-      return minuteBoundaryCandles.length;
+      this.bufferedBaseCandles.push(...hourBoundaryCandles);
+      return hourBoundaryCandles.length;
     }
 
-    return this.rollingWindow.addCandles(minuteBoundaryCandles);
+    return this.rollingWindow.addCandles(hourBoundaryCandles);
   }
 
   async flushCompleted(): Promise<void> {
@@ -187,16 +185,10 @@ export class Candles1h1mAggregator {
     }
 
     await this.flushPendingCandles();
-    if (this.dailyAggregator) {
-      await this.dailyAggregator.flushCompleted();
-    }
   }
 
   async flushAll(): Promise<void> {
     await this.flushCompleted();
-    if (this.dailyAggregator) {
-      await this.dailyAggregator.flushAll();
-    }
   }
 
   getCandlesWritten(): number {
@@ -212,7 +204,6 @@ export class Candles1h1mAggregator {
     let written = 0;
     let dropped = 0;
     const retryCandles: CandleForDb[] = [];
-    const successfullyWritten: CandleForDb[] = [];
 
     for (let i = 0; i < pendingCandles.length; i += WRITE_BATCH_SIZE) {
       const batch = pendingCandles.slice(i, i + WRITE_BATCH_SIZE);
@@ -221,7 +212,6 @@ export class Candles1h1mAggregator {
         await this.writeCandlesFn(this.queryable, TARGET_TABLE, batch);
         written += batch.length;
         this.candlesWritten += batch.length;
-        successfullyWritten.push(...batch);
       } catch (error) {
         dropped += batch.length;
         retryCandles.push(...batch);
@@ -234,14 +224,10 @@ export class Candles1h1mAggregator {
     }
 
     if (written > 0) {
-      console.log(`✅ Flushed ${written} rolling 1h candle(s) to ${TARGET_TABLE}`);
+      console.log(`✅ Flushed ${written} rolling 1d candle(s) to ${TARGET_TABLE}`);
     }
     if (dropped > 0) {
-      console.warn(`⚠️ Requeued ${dropped} rolling 1h candle(s) after DB write failures`);
-    }
-
-    if (successfullyWritten.length > 0 && this.dailyAggregator) {
-      this.dailyAggregator.addBaseCandles(successfullyWritten);
+      console.warn(`⚠️ Requeued ${dropped} rolling 1d candle(s) after DB write failures`);
     }
   }
 
@@ -265,7 +251,9 @@ export class Candles1h1mAggregator {
       const latestTargetTimes = await this.loadLatestTargetTimes();
       const recentSourceRows = await this.queryable.query<StoredCandleRow>(HYDRATION_QUERY, [HYDRATION_WINDOW_ROWS]);
 
-      const latestTargetTimeByTicker = new Map(latestTargetTimes.map((row) => [row.ticker, new Date(row.latest_target_time).getTime()]));
+      const latestTargetTimeByTicker = new Map(
+        latestTargetTimes.map((row) => [row.ticker, new Date(row.latest_target_time).getTime()]),
+      );
       const recentSeedCandles = recentSourceRows.rows
         .filter((row) => !latestTargetTimeByTicker.has(row.ticker))
         .map((row) => candleForDbFromStoredRow(row, { requireCompleteCvd: true }));
@@ -275,17 +263,17 @@ export class Candles1h1mAggregator {
 
       const totalSeeded = seedCandles.length + reconciliation.seeded;
       if (totalSeeded > 0) {
-        console.log(`📚 Hydrated ${totalSeeded} canonical 1m row(s) into ${TARGET_TABLE}`);
+        console.log(`📚 Hydrated ${totalSeeded} canonical 1h row(s) into ${TARGET_TABLE}`);
       } else {
-        console.log(`📚 No canonical 1m rows available yet to hydrate ${TARGET_TABLE}`);
+        console.log(`📚 No canonical 1h rows available yet to hydrate ${TARGET_TABLE}`);
       }
       if (reconciliation.replayed > 0) {
-        console.log(`🔁 Replayed ${reconciliation.replayed} canonical 1m row(s) newer than ${TARGET_TABLE}`);
+        console.log(`🔁 Replayed ${reconciliation.replayed} canonical 1h row(s) newer than ${TARGET_TABLE}`);
       }
 
       const replayed = this.replayBufferedBaseCandles();
       if (replayed > 0) {
-        console.log(`📥 Replayed ${replayed} buffered canonical 1m row(s) into ${TARGET_TABLE}`);
+        console.log(`📥 Replayed ${replayed} buffered canonical 1h row(s) into ${TARGET_TABLE}`);
       }
 
       this.initialized = true;
@@ -369,7 +357,10 @@ export class Candles1h1mAggregator {
     const values: unknown[] = [];
     const placeholders = latestTargetTimes.map((row, index) => {
       const offset = index * 2;
-      values.push(row.ticker, row.latest_target_time instanceof Date ? row.latest_target_time.toISOString() : row.latest_target_time);
+      values.push(
+        row.ticker,
+        row.latest_target_time instanceof Date ? row.latest_target_time.toISOString() : row.latest_target_time,
+      );
       return `($${offset + 1}, $${offset + 2}::timestamptz)`;
     });
     const cursorTickerIndex = values.length + 1;
@@ -387,8 +378,8 @@ export class Candles1h1mAggregator {
       FROM ${SOURCE_TABLE}
       JOIN latest_target
         ON latest_target.ticker = ${SOURCE_TABLE}.ticker
-      WHERE time = date_trunc('minute', time)
-        AND time >= latest_target.latest_target_time - INTERVAL '${WINDOW_MINUTES - 1} minutes'
+      WHERE time = date_trunc('hour', time)
+        AND time >= latest_target.latest_target_time - INTERVAL '${WINDOW_HOURS - 1} hours'
         AND (
           $${cursorTickerIndex} = ''
           OR (${SOURCE_TABLE}.ticker, ${SOURCE_TABLE}.time) > ($${cursorTickerIndex}, $${cursorTimeIndex}::timestamptz)
@@ -409,7 +400,7 @@ export class Candles1h1mAggregator {
 
     console.warn(
       `⚠️ ${TARGET_TABLE} is still waiting on startup hydration; ` +
-        `buffered ${this.bufferedBaseCandles.length} minute-boundary base candle(s) for retry`,
+        `buffered ${this.bufferedBaseCandles.length} hour-boundary base candle(s) for retry`,
     );
     this.lastHydrationBlockedLogTime = now;
   }

@@ -120,6 +120,10 @@ export class Tbbo1mAggregator {
     };
   }
 
+  getTickerSnapshots() {
+    return this.rollingWindow.getTickerSnapshots();
+  }
+
   addRecord(record: TbboRecord): boolean {
     if (this.isLateTrade(record)) {
       return false;

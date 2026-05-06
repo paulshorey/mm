@@ -73,6 +73,7 @@ test("requeues hourly candles after transient write failure", async () => {
   let hydrationQueries = 0;
 
   const aggregator = new Candles1h1mAggregator({
+    dailyAggregator: null,
     queryable: {
       query: async <Row = unknown>(text: string, _values?: unknown[]) => {
         if (isLatestTargetQuery(text)) {
@@ -119,6 +120,7 @@ test("retries startup hydration and replays buffered base candles", async () => 
   let hydrationQueries = 0;
 
   const aggregator = new Candles1h1mAggregator({
+    dailyAggregator: null,
     queryable: {
       query: async <Row = unknown>(text: string, _values?: unknown[]) => {
         if (isLatestTargetQuery(text)) {
@@ -165,6 +167,7 @@ test("reconciles missing hourly rows from canonical 1m source on startup", async
   let reconciliationQueryCount = 0;
 
   const aggregator = new Candles1h1mAggregator({
+    dailyAggregator: null,
     queryable: {
       query: async <Row = unknown>(text: string, _values?: unknown[]) => {
         if (isLatestTargetQuery(text)) {

@@ -93,6 +93,21 @@ export function isMinuteBoundary(timestamp: string): boolean {
 }
 
 /**
+ * Check whether an ISO timestamp lands exactly on an hour boundary.
+ *
+ * Used by the daily rolling aggregator to filter the minute-cadence
+ * `candles_1h_1m` stream down to its hour-boundary subset.
+ */
+export function isHourBoundary(timestamp: string): boolean {
+  const date = new Date(timestamp);
+  return (
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+  );
+}
+
+/**
  * Check if a trade timestamp is too old to process
  *
  * @param nsTimestamp - Trade timestamp in nanoseconds

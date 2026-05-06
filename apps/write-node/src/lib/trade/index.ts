@@ -28,6 +28,7 @@ export {
   getMinuteBucket,
   getSecondBucket,
   isMinuteBoundary,
+  isHourBoundary,
   toMinuteBucket,
   toSecondBucket,
   checkTradeAge,

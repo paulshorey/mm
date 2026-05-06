@@ -17,6 +17,7 @@ import {
   isMarketOpenAt,
   toSecondBucket,
 } from "../lib/trade/index.js";
+import type { AggregatorStats, RollingTickerSnapshot } from "../lib/trade/index.js";
 import { Tbbo1mAggregator, TbboRecord } from "./tbbo-1m-aggregator.js";
 
 // Configuration from environment (all required - no defaults)
@@ -640,5 +641,23 @@ export function getStreamStatus(): {
     authenticated: state.authenticated,
     streaming: state.sessionStarted,
     reconnectAttempts: state.reconnectAttempts,
+  };
+}
+
+/**
+ * Snapshot of the live 1m aggregator state for ops endpoints.
+ *
+ * Returns null if the aggregator has not been started yet.
+ */
+export function getAggregatorSnapshot(): {
+  stats: AggregatorStats;
+  tickers: RollingTickerSnapshot[];
+} | null {
+  if (!state.aggregator) {
+    return null;
+  }
+  return {
+    stats: state.aggregator.getStats(),
+    tickers: state.aggregator.getTickerSnapshots(),
   };
 }

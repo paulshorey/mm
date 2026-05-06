@@ -1,11 +1,7 @@
 # Finishing `write-node`
 
-`write-node` is already in good shape. The shared rolling-window engine is
-deterministic, live and historical paths share logic, CVD continuity carries
-across restarts, and Timescale hypertables/compression are configured.
-
-This document tracks the remaining work to make it the canonical, durable
-source of truth across all in-scope tickers and timeframes.
+Phase 1 of the [project roadmap](./roadmap.md). Code-complete; remaining work
+is operational.
 
 ## Status today
 
@@ -18,107 +14,116 @@ Already implemented and working:
   (basis points), divergence, trades, max_trade_size, big_trades, big_volume.
 - Additive accumulators: sum_price_volume, sum_bid_depth, sum_ask_depth,
   unknown_volume.
-- Two canonical tables: `candles_1m_1s`, `candles_1h_1m`.
+- Three canonical tables: `candles_1m_1s`, `candles_1h_1m`, `candles_1d_1h`.
 - Tests covering aggregator behaviour and rolling-session continuity.
+- Live stream forwards `1m → 1h → 1d` deterministically through shared
+  rolling-window code.
 
-## Remaining work
+## What shipped in this phase
 
-### 1. Multi-ticker rollout (operational)
+### 1. Multi-ticker thresholds — done
 
-The code already supports any number of tickers. What's missing is config and
-runbook.
+`SI` and `HG` added to `LARGE_TRADE_THRESHOLDS` in
+`apps/write-node/src/lib/trade/thresholds.ts`. Together with the existing
+`SESSION_PROFILE_BY_TICKER` entries, the writer now supports:
 
-Action items:
+ES, NQ, RTY, YM, CL, GC, SI, HG, NG (Globex), NK (Tokyo).
 
-- Add `SI` and `HG` to `LARGE_TRADE_THRESHOLDS` in
-  `apps/write-node/src/lib/trade/thresholds.ts`. Both are already in the
-  per-ticker session profile map.
-- Document the live env vars used in production:
-  - `DATABENTO_DATASET=GLBX.MDP3`
-  - `DATABENTO_STYPE=parent`
-  - `DATABENTO_SYMBOLS=ES.FUT,NQ.FUT,GC.FUT,SI.FUT,HG.FUT,CL.FUT`
-- Confirm Databento subscription includes those parent symbols.
-- Add a write-node ops checklist (start, restart, verify, backfill).
+Adding a new ticker now requires only:
 
-### 2. Daily timeframe (`candles_1d_1h`)
+- entry in `SESSION_PROFILE_BY_TICKER`
+- entry in `LARGE_TRADE_THRESHOLDS` (or fallback to `DEFAULT`)
+- inclusion in the live `DATABENTO_SYMBOLS` env var
 
-Add a third canonical layer following the same pattern as `1h@1m`:
+### 2. Daily timeframe `candles_1d_1h` — done
 
-- New migration in `lib/db-timescale/migrations/` creating
-  `public.candles_1d_1h` with the same column shape as `candles_1h_1m`, plus
-  hypertable + compression policy. Window meaning: trailing 24 hours.
-- New aggregator `src/stream/candles-1d-1h-aggregator.ts` that consumes
-  hour-boundary rows of `candles_1h_1m` and writes daily rows.
-- New historical script `scripts/candles-1d-1h.ts` that derives daily rows
-  from existing `candles_1h_1m` content.
-- Reuse `RollingCandleWindow` with `windowSize: 24, expectedIntervalMs: 3_600_000`.
-- Live wiring: `candles-1h-1m-aggregator.ts` already forwards completed hourly
-  rows; add a `candles-1d-1h-aggregator` consumer in the same flow.
+- Migration: `lib/db-timescale/migrations/202605061830__add_candles_1d_1h.sql`
+  (table + 6-month hypertable + 6-month compression policy).
+- Schema snapshot, generated TypeScript row type, and JSON contract artifact
+  updated to include the new table.
+- `db:verify` now enforces the `candles_1d_1h` table, index, and hypertable.
+- New `RollingCandleWindow` instance with `windowSize=24`,
+  `expectedIntervalMs=3_600_000`, label `1d@1h`. Same engine as `1h@1m`.
+- New live aggregator `apps/write-node/src/stream/candles-1d-1h-aggregator.ts`
+  mirroring the `Candles1h1mAggregator` pattern: hydrate, reconcile, replay
+  buffered, write.
+- New historical rebuild script
+  `apps/write-node/scripts/candles-1d-1h.ts` and
+  `pnpm --filter write-node historical:1d1h --truncate`.
+- Live wiring: `Candles1h1mAggregator` instantiates a `Candles1d1hAggregator`
+  by default and forwards successfully-written hour rows to it on every
+  flush. Tests can opt out with `dailyAggregator: null`.
+- New tests in `candles-1d-1h-aggregator.test.ts` covering warmup-then-emit
+  and hour-boundary filtering.
 
-Acceptance:
+### 3. Operational stats endpoint — done
 
-- Daily rows continuous across days for all in-scope tickers.
-- Continuous CVD across the daily layer.
-- Reproducible historical rebuild via `pnpm --filter write-node historical:1d1h --truncate`.
+- `GET /api/v1/stats` on the write-node HTTP server returns:
+  - `stream.status` — connected / authenticated / streaming / reconnect attempts
+  - `stream.counters` — message counts, skip counts, market-open by ticker
+  - `aggregator.stats` — records processed, candles written, late/unknown
+    counts, gap resets, CVD by ticker
+  - `aggregator.tickers` — per-ticker rolling window state (warmup progress,
+    ring size, current CVD)
+- Reuses the existing `Tbbo1mAggregator.getStats()` plus a new
+  `getTickerSnapshots()` accessor exposing the underlying `RollingWindow1m`
+  ticker snapshots through the live module.
 
-### 3. Optional: pure 1-second candles (`candles_1s_1s`)
+### 4. Backfill runbook — done
 
-The current `candles_1m_1s` table is **rolling 60-second candles** written
-each second, not pure 1-second candles. The rolling-window engine internally
-already constructs a `SecondSummary` per second.
+`apps/write-node/docs/backfill.md` is the end-to-end runbook covering:
 
-If pure 1-second OHLCV is needed (for ML or short-horizon backtests), add:
+- prerequisites (DB migrations applied, Databento access)
+- TBBO download via the Databento CLI
+- `historical:tbbo` for `candles_1m_1s`
+- `historical:1h1m --truncate` for `candles_1h_1m`
+- `historical:1d1h --truncate` for `candles_1d_1h`
+- continuity checks (row counts, CVD continuity, layer alignment)
+- live writer monitoring via `/api/v1/stats`
+- common backfill pitfalls
 
-- Migration creating `candles_1s_1s` with the same column shape, window=1s.
-- Persist `SecondSummary` rows directly (no warmup, no rolling aggregation).
+## Remaining work in this phase (operational)
 
-This is optional. Most multi-timeframe research can use `candles_1m_1s` as the
-finest grain because it already exposes per-second cadence.
+These are config/ops tasks, not code:
 
-### 4. Operational visibility
+1. **Live env config in production.** Set the production `DATABENTO_SYMBOLS`
+   to the full in-scope list, e.g.:
+   `ES.FUT,NQ.FUT,GC.FUT,SI.FUT,HG.FUT,CL.FUT`.
+2. **Apply the new migration to the dev DB.** Run
+   `pnpm --filter @lib/db-timescale db:migrate` followed by `db:verify` against
+   the deployed Timescale to add `candles_1d_1h` (the new migration file is
+   forward-only and idempotent).
+3. **Run the full backfill.** Follow
+   [`backfill.md`](../../apps/write-node/docs/backfill.md) for the in-scope
+   tickers across the desired date range.
+4. **Confirm warmup live.** Hit `/api/v1/stats` after a few minutes of live
+   streaming; every configured ticker should report warmup complete and a
+   ring size matching the windowSeconds for its layer.
 
-Today the only HTTP route is `/api/v1/health`. Add a small read-only stats
-endpoint so external monitors and humans can see liveness without a DB query:
+Phase 1 exit criteria (unchanged): clean canonical history for ES, NQ, GC,
+SI, HG, CL across 1m@1s, 1h@1m, 1d@1h with continuous CVD and stable rolling
+stats.
 
-- `GET /api/v1/stats` returns aggregator counters, ring-buffer state per
-  ticker, last write timestamp per ticker, current CVD per ticker.
+## Optional future polish (not on the critical path)
 
-Source for the data already exists via `RollingWindow1m.getStats()` and
-`getTickerSnapshots()`.
+- **Per-ticker holiday overrides** on top of the weekly session calendar.
+- **Configurable per-ticker large-trade thresholds** via env or config file.
+- **Persisted aggregator stats snapshot table** so stats are queryable
+  historically, not only via the live `/api/v1/stats` endpoint.
+- **Replay tooling** that re-runs a date range and diffs against the existing
+  table to verify determinism after engine changes.
+- **Pure 1-second candles (`candles_1s_1s`)** — explicitly out of scope. The
+  per-second cadence is already stored implicitly in `candles_1m_1s`; downstream
+  code can extract per-second snapshots from those rows when needed.
 
-### 5. Backfill runbook
-
-A documented playbook is missing. Recommended addition:
-
-```
-docs/operations/backfill.md  (or apps/write-node/docs/backfill.md)
-```
-
-Required content:
-
-1. How to download Databento TBBO for a date range (CLI snippet, dataset,
-   schema, symbols).
-2. How to run `historical:tbbo` over those files (chunked, with progress).
-3. How to run `historical:1h1m --truncate` (or incremental).
-4. How to run `historical:1d1h` (after the daily layer ships).
-5. How to verify continuity: row count per day per ticker, no gaps inside
-   open-market windows, CVD monotonicity sanity checks.
-
-### 6. Roadmap items intentionally NOT in write-node
+## Roadmap items intentionally NOT in write-node
 
 Do not add these to `write-node`:
 
-- RSI / MACD / Bollinger / multi-period indicators (downstream).
-- Multi-period CVD slope / Z-score (downstream).
-- ML feature tables (downstream).
-- Any model training or inference (downstream).
+- RSI / MACD / Bollinger / multi-period indicators.
+- Multi-period CVD slope / Z-score / vol-adjusted features.
+- ML feature tables, model registry, predictions.
+- Any model training or inference logic.
 
-These belong in `apps/backtest-python`. See `backtest-python.md`.
-
-## Stretch nice-to-haves
-
-- Per-ticker holiday overrides on top of the weekly session calendar.
-- Configurable per-ticker large-trade thresholds via env (currently hardcoded).
-- Persisted aggregator stats snapshot table for easier ops queries.
-- Replay tooling that re-runs a date range and diffs against the existing
-  table to verify determinism after engine changes.
+These belong in `apps/backtest-python`. See
+[`docs/project/backtest-python.md`](./backtest-python.md).

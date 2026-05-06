@@ -10,6 +10,7 @@
     "build": "tsc --noEmit",
     "historical:tbbo": "tsx scripts/tbbo-1m-1s.ts",
     "historical:1h1m": "tsx scripts/candles-1h-1m.ts",
+    "historical:1d1h": "tsx scripts/candles-1d-1h.ts",
     "env:pull": "node ../../scripts/fetch-infisical.mjs --app write-node"
   },
   "author": "",

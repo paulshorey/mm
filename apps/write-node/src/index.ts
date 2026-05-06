@@ -2,7 +2,13 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { pool } from "./lib/db.js";
-import { startDatabentoStream, stopDatabentoStream } from "./stream/tbbo-stream.js";
+import {
+  getAggregatorSnapshot,
+  getStreamStats,
+  getStreamStatus,
+  startDatabentoStream,
+  stopDatabentoStream,
+} from "./stream/tbbo-stream.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 8080;
@@ -12,6 +18,17 @@ app.use(cors());
 
 app.get("/api/v1/health", (_req, res) => {
   res.json(true);
+});
+
+app.get("/api/v1/stats", (_req, res) => {
+  const aggregator = getAggregatorSnapshot();
+  res.json({
+    stream: {
+      status: getStreamStatus(),
+      counters: getStreamStats(),
+    },
+    aggregator: aggregator ?? { status: "not_started" },
+  });
 });
 
 const startStreamWithRetry = async () => {

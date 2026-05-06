@@ -45,19 +45,14 @@ Properties:
   `sum_ask_depth`, `unknown_volume`) let higher timeframes recompute derived
   metrics correctly from raw aggregated fields.
 
-Existing canonical tables:
+Canonical tables:
 
-| Table             | Window | Cadence | Source                                |
-| ----------------- | ------ | ------- | ------------------------------------- |
-| `candles_1m_1s`   | 60s    | 1s      | TBBO trades (front-month stitched)    |
-| `candles_1h_1m`   | 60m    | 1m      | minute-boundary rows of `candles_1m_1s` |
-
-Planned canonical tables (see `write-node-completion.md`):
-
-| Table             | Window | Cadence | Source                                |
-| ----------------- | ------ | ------- | ------------------------------------- |
-| `candles_1d_1h`   | 24h    | 1h      | hour-boundary rows of `candles_1h_1m` |
-| `candles_1s_1s`   | 1s     | 1s      | optional pure 1-second bars           |
+| Table             | Window | Cadence | Source                                  | Status      |
+| ----------------- | ------ | ------- | --------------------------------------- | ----------- |
+| `candles_1m_1s`   | 60s    | 1s      | TBBO trades (front-month stitched)      | shipped     |
+| `candles_1h_1m`   | 60m    | 1m      | minute-boundary rows of `candles_1m_1s` | shipped     |
+| `candles_1d_1h`   | 24h    | 1h      | hour-boundary rows of `candles_1h_1m`   | shipped     |
+| `candles_1s_1s`   | 1s     | 1s      | optional pure 1-second bars             | not planned |
 
 ## Tickers in scope
 
@@ -77,19 +72,21 @@ these; remaining work is operational (env config, backfill orchestration).
 
 ## Phases
 
-### Phase 1 — Finish canonical writer (write-node)
+### Phase 1 — Finish canonical writer (write-node) — code-complete
 
-See [write-node-completion.md](./write-node-completion.md) for full detail.
+All code, schema, and docs work for this phase has shipped. See
+[write-node-completion.md](./write-node-completion.md) for the detailed
+status per item. Remaining work in this phase is operational only:
 
-1. Multi-ticker live ingest in production with monitoring.
-2. Daily timeframe table `candles_1d_1h` with shared rolling-window engine.
-3. Backfill runbook for new tickers (historical TBBO -> 1m@1s -> 1h@1m -> 1d@1h).
-4. Lightweight stats endpoint for ops visibility.
+- Production env config (`DATABENTO_SYMBOLS`) for the full ticker set.
+- Backfill the canonical history per [`apps/write-node/docs/backfill.md`](../../apps/write-node/docs/backfill.md).
+- Confirm `/api/v1/stats` shows all configured tickers warmed up live.
 
-Exit criteria: clean canonical history exists for ES, NQ, GC, SI, HG, CL across
-1m@1s, 1h@1m, 1d@1h, with continuous CVD and stable rolling stats.
+Phase 1 exit criteria (unchanged): clean canonical history exists for ES, NQ,
+GC, SI, HG, CL across 1m@1s, 1h@1m, 1d@1h, with continuous CVD and stable
+rolling stats.
 
-### Phase 2 — Scaffold backtest-python
+### Phase 2 — Scaffold backtest-python — current focus
 
 See [backtest-python.md](./backtest-python.md) for full detail.
 

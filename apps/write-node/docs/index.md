@@ -5,6 +5,7 @@ This folder documents the current write pipeline only.
 ## Read this first
 
 - `project-context.md` - concise project purpose, boundaries, and downstream plan
+- `backfill.md` - end-to-end runbook for historical TBBO -> 1m@1s -> 1h@1m -> 1d@1h
 
 ## Current system
 
@@ -14,11 +15,14 @@ This folder documents the current write pipeline only.
 - write one candle row every second to `candles_1m_1s`
 - derive rolling 1-hour candles from minute-boundary `candles_1m_1s` rows
 - write one hourly row every minute to `candles_1h_1m`
+- derive rolling 1-day candles from hour-boundary `candles_1h_1m` rows
+- write one daily row every hour to `candles_1d_1h`
 
 ## Roadmap the docs should assume
 
 - current: `1m` candles at `1s` resolution
 - current: `1h` candles at `1m` resolution
+- current: `1d` candles at `1h` resolution
 
 ## Kept documents
 
