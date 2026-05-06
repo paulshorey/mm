@@ -117,20 +117,43 @@ docs/
   index.md
 ```
 
-## Relationship to future apps
+## Relationship to other apps
 
-`write-node` should stop at **canonical timeseries writing**.
+`write-node` stops at **canonical timeseries writing**.
 
-A future app, `market-analyze-python`, will consume this historical and live
-timeseries data to:
+The downstream Python research app `apps/backtest-python` consumes these
+canonical tables to:
 
-- build multiple timeframes and lookback windows
-- calculate indicators and derived features such as RSI, CVD, volume, and volatility
-- write those model-ready parameters into separate downstream tables
-- support both model training on historical data and inference on live data
+- align rows across multiple canonical timeframes (1m@1s, 1h@1m, planned 1d@1h)
+- compute multi-period indicators (RSI, MACD, etc.) and CVD-derived features
+- write derived feature timeseries to `features_v1` and similar downstream tables
+- train and evaluate ML models, persist runs to `models` / `backtests` / `predictions`
 
-That downstream feature-engineering and ML workflow should not be folded back
-into `write-node`.
+That downstream feature-engineering, ML, and backtesting workflow must not be
+folded back into `write-node`.
+
+See `docs/project/roadmap.md` and `docs/project/backtest-python.md` at the
+repo root for the full plan.
+
+## Roadmap
+
+Already shipped:
+
+- `candles_1m_1s` (rolling 60-second window written every second)
+- `candles_1h_1m` (rolling 60-minute window written every minute)
+
+Planned next layer (see `docs/project/write-node-completion.md`):
+
+- `candles_1d_1h` (rolling 24-hour window written every hour, derived from
+  hour-boundary rows of `candles_1h_1m`)
+
+`SI` and `HG` are now configured in `LARGE_TRADE_THRESHOLDS`, so the supported
+ticker set for live ingest is ES, NQ, RTY, YM, GC, SI, HG, CL, NG (Globex)
+plus NK (Tokyo). Adding more tickers requires only:
+
+- entry in `SESSION_PROFILE_BY_TICKER`
+- entry in `LARGE_TRADE_THRESHOLDS` (or fallback to DEFAULT)
+- inclusion in the live `DATABENTO_SYMBOLS` env var
 
 ## Documentation
 

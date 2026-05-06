@@ -4,10 +4,11 @@
 
 ### Apps `./apps/`
 
-- `view-next` - TypeScript app to display financial charts and data analysis visualizations
-- `write-node` - TypeScript server that connects to data providers, ingests price and volume data per trade, calculates indicators, aggregates candles and higher timeframes for backtestsing
-- `tradingview-node` - Node.js/Express API for TradingView webhook ingest and strength reads
-- `log-next` - logging and observability dashboard
+- `write-node` - canonical timeseries writer. Ingests TBBO trade data (Databento live + historical files), stitches front-month contracts, computes per-row CVD/VD/book imbalance, and writes rolling candle tables to TimescaleDB.
+- `view-next` - financial charting app for price + relative-strength visualization.
+- `tradingview-node` - Express API for TradingView webhook ingest and strength reads.
+- `log-next` - logging and observability dashboard.
+- `backtest-python` - Python research app for downstream feature engineering, ML training, and backtesting on top of `write-node` canonical tables. Reads from TimescaleDB; writes its own derived feature/model/backtest tables.
 
 ### Shared Libraries `./lib/`
 
@@ -64,6 +65,28 @@ Run `cloud:install` to install PostgreSQL 17 client tools (psql, pg_dump) if not
 ## Finish task:
 
 - Run `pnpm build`, fix issues, then run `pnpm build` again until there are no more issues to fix.
+
+## App boundaries
+
+- `write-node` owns canonical timeseries writes only. It does not own indicators
+  beyond per-row structural metrics (CVD, VD, book imbalance, divergence) and
+  does not own ML feature engineering.
+- `backtest-python` owns derived feature engineering, multi-period indicators
+  (RSI, etc.), ML training/inference, and backtests. It reads canonical tables
+  and writes its own feature/model/backtest tables.
+- `view-next` and `log-next` are read-only consumers; they do not write
+  canonical or derived tables.
+
+## Project planning
+
+High-level plans live under `./docs/project/`:
+
+- `docs/project/roadmap.md` - phased roadmap across all apps
+- `docs/project/write-node-completion.md` - finishing the canonical writer
+- `docs/project/backtest-python.md` - architecture and implementation plan
+  for the Python research app
+
+Keep these docs short and aligned with the apps that actually exist.
 
 ## AGENTS maintenance
 

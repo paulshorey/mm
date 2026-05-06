@@ -57,16 +57,16 @@ That means changes in this app should prioritize:
 
 ## Downstream boundary
 
-A future app, `market-analyze-python`, will sit downstream from this writer.
+`apps/backtest-python` sits downstream from this writer.
 
-That app will consume the canonical historical and live timeseries to:
+That app consumes the canonical historical and live timeseries to:
 
-- build multiple timeframes
+- align across canonical timeframes (1m@1s, 1h@1m, planned 1d@1h)
 - apply multiple lookback periods
-- calculate indicators and features such as RSI, CVD, volume, and volatility
-- store model-ready parameters in separate tables for ML training and inference
+- calculate indicators and features such as RSI, multi-period CVD slope, and volatility
+- store model-ready parameters in `features_v1` and run training/backtests
+  recorded to `models`, `backtests`, and `predictions`
 
-`write-node` should remain focused on canonical timeseries writing, not
-full feature engineering or ML workflows.
-
-...test deploy...
+`write-node` remains focused on canonical timeseries writing, not full feature
+engineering or ML workflows. See `docs/project/backtest-python.md` at the repo
+root for that app's plan.

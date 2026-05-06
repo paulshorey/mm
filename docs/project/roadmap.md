@@ -1,0 +1,171 @@
+# Project roadmap
+
+End goal: an effective day-trading research and backtest framework using
+multi-timeframe rolling-window candles, structural order-flow metrics (CVD,
+VD), multi-timeframe RSI, and machine-learning models trained on the resulting
+feature set.
+
+The repo is organized so each layer has one job and a hard contract with the
+next:
+
+```
+Databento TBBO trades
+        │
+        ▼
+   write-node           (TypeScript, monorepo)
+        │
+        ▼
+   TimescaleDB          (canonical candle tables)
+        │
+        ▼
+   backtest-python      (Python, monorepo)
+        │
+        ▼
+   feature/model tables (TimescaleDB)
+        │
+        ▼
+   view-next            (Next.js dashboards)
+```
+
+## Rolling-window interval aggregation
+
+The defining design idea of this repo:
+
+> Each stored row is a **trailing rolling window** of length T, written at a
+> finer cadence C. So `candles_1m_1s` is the trailing 60 seconds **written
+> every second**, not a 1-minute bar that appears once per minute.
+
+Properties:
+
+- 60x more rows per timeframe than traditional candles (richer ML training
+  data, better signal localization).
+- Every higher timeframe is built from boundary rows of the lower timeframe
+  (deterministic, no double aggregation).
+- Stored additive accumulators (`sum_price_volume`, `sum_bid_depth`,
+  `sum_ask_depth`, `unknown_volume`) let higher timeframes recompute derived
+  metrics correctly from raw aggregated fields.
+
+Existing canonical tables:
+
+| Table             | Window | Cadence | Source                                |
+| ----------------- | ------ | ------- | ------------------------------------- |
+| `candles_1m_1s`   | 60s    | 1s      | TBBO trades (front-month stitched)    |
+| `candles_1h_1m`   | 60m    | 1m      | minute-boundary rows of `candles_1m_1s` |
+
+Planned canonical tables (see `write-node-completion.md`):
+
+| Table             | Window | Cadence | Source                                |
+| ----------------- | ------ | ------- | ------------------------------------- |
+| `candles_1d_1h`   | 24h    | 1h      | hour-boundary rows of `candles_1h_1m` |
+| `candles_1s_1s`   | 1s     | 1s      | optional pure 1-second bars           |
+
+## Tickers in scope
+
+Initial coverage (CME futures, front-month stitched):
+
+| Ticker | Market               | Session profile |
+| ------ | -------------------- | --------------- |
+| ES     | E-mini S&P 500       | globex          |
+| NQ     | E-mini Nasdaq-100    | globex          |
+| GC     | Gold                 | globex          |
+| SI     | Silver               | globex          |
+| HG     | Copper               | globex          |
+| CL     | WTI Crude            | globex          |
+
+`SESSION_PROFILE_BY_TICKER` and `LARGE_TRADE_THRESHOLDS` already cover most of
+these; remaining work is operational (env config, backfill orchestration).
+
+## Phases
+
+### Phase 1 — Finish canonical writer (write-node)
+
+See [write-node-completion.md](./write-node-completion.md) for full detail.
+
+1. Multi-ticker live ingest in production with monitoring.
+2. Daily timeframe table `candles_1d_1h` with shared rolling-window engine.
+3. Backfill runbook for new tickers (historical TBBO -> 1m@1s -> 1h@1m -> 1d@1h).
+4. Lightweight stats endpoint for ops visibility.
+
+Exit criteria: clean canonical history exists for ES, NQ, GC, SI, HG, CL across
+1m@1s, 1h@1m, 1d@1h, with continuous CVD and stable rolling stats.
+
+### Phase 2 — Scaffold backtest-python
+
+See [backtest-python.md](./backtest-python.md) for full detail.
+
+1. Bootstrap Python app inside the monorepo.
+2. Read-only client that loads canonical candles into pandas/polars.
+3. Notebooks to explore data, validate quality, and prototype features.
+4. First feature: multi-timeframe RSI written to a `features_v1` table.
+
+Exit criteria: a Python script can read 1m/1h/1d candles for any ticker and
+write multi-timeframe RSI(7), RSI(14), RSI(28) into a feature table that
+view-next can render.
+
+### Phase 3 — Backtesting engine
+
+1. Strategy interface (signal -> position sizing -> fills).
+2. Walk-forward evaluation with realistic slippage and commission.
+3. Metrics: Sharpe, Sortino, max drawdown, hit rate, expectancy, exposure.
+4. Backtest result tables persisted to TimescaleDB and viewable in `view-next`.
+
+Exit criteria: at least one baseline rules-based strategy (e.g. CVD divergence
++ multi-timeframe RSI) is fully backtested across all in-scope tickers with
+reproducible metrics.
+
+### Phase 4 — Machine learning
+
+1. Feature engineering pipeline: multi-timeframe candles + multi-period
+   indicators + structural metrics -> tabular feature vectors keyed by
+   `(ticker, time)`.
+2. Label generation: forward-return targets, classification labels, or
+   risk-adjusted PnL labels.
+3. Baseline models: gradient-boosted trees (LightGBM/XGBoost) for tabular
+   data, then optionally sequence models (LSTM/Transformer) once tabular
+   baselines are honest.
+4. Train/validation/test split must be **time-based**, never random.
+5. Live inference path: same feature pipeline runs against the latest
+   canonical rows and writes predictions to a `predictions` table.
+
+Exit criteria: at least one model produces predictions that beat a documented
+baseline (random / always-flat / EMA crossover) on out-of-sample data with
+reproducible artifacts.
+
+### Phase 5 — Live signal & risk loop (out of immediate scope)
+
+- Position sizing rules.
+- Risk caps (per-ticker, per-day, per-strategy).
+- Alerting and human-in-the-loop confirmation.
+- Optional broker integration.
+
+This phase intentionally lives outside the current research apps. It should be
+a separate service that consumes the `predictions` table, not a write-node or
+backtest-python responsibility.
+
+## Cross-cutting principles
+
+- **Database-first.** Schema changes go through `@lib/db-timescale` migrations.
+  Never alter tables outside migrations.
+- **Forward-only migrations.** Never edit an applied migration.
+- **Determinism.** Live and historical paths must produce identical canonical
+  rows for the same input data. Shared library code over duplicated logic.
+- **Time-based splits.** No random shuffling for ML on timeseries.
+- **Reproducibility.** Every backtest and model run records inputs, params,
+  data range, and metrics so it can be repeated.
+- **No leaks.** Features must use only data available at the row's `time`.
+  Forward-looking labels are fine; forward-looking features are not.
+
+## Operating model
+
+Today this is a personal research project, not a SaaS. The "business plan" is
+the research roadmap above plus a small set of operational habits:
+
+- Run `write-node` continuously in a managed environment (Railway today) so
+  canonical data accumulates day over day.
+- Run `backtest-python` on a development machine for research, and as a
+  scheduled job for nightly feature/backtest refresh once the pipeline is
+  stable.
+- Treat canonical TimescaleDB tables as the durable asset. Apps are
+  recoverable; canonical data is harder to recreate cheaply (Databento costs).
+- Keep all derived features and models in TimescaleDB so any client (notebook,
+  view-next, future service) reads from one source of truth.

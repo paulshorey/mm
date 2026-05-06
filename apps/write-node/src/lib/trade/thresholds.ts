@@ -30,6 +30,10 @@ export const LARGE_TRADE_THRESHOLDS: Record<string, number> = {
   CL: 25,
   // Gold - CME block minimum is 25
   GC: 25,
+  // Silver - CME block minimum is 25
+  SI: 25,
+  // Copper (HG) - CME block minimum is 25
+  HG: 25,
   // Natural Gas - higher threshold due to different market dynamics
   NG: 50,
   // Default for unknown instruments
